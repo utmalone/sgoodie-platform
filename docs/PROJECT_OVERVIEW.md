@@ -63,18 +63,17 @@ The new design will be inspired by modern photography portfolio sites:
 
 ### Frontend Stack
 - **Framework:** Next.js 14+ (Latest Stable) - App Router
-- **Rendering Strategy:** **Static Site Generation (SSG)** for all public pages
+- **Rendering Strategy:** **SSG + ISR (On-Demand Revalidation)** for public pages
   - **Why SSG?** Best SEO performance - pre-rendered HTML, perfect for search engines
-  - **SEO Benefits:** Full HTML content, meta tags, structured data, social sharing
+  - **Freshness:** Revalidate only impacted pages after admin updates
   - **Performance:** Fastest possible page loads, CDN-served static files
-  - **Note:** We are NOT using SPA (Single Page App) - SPAs have poor SEO
+  - **Note:** Public pages are NOT SPA. Admin dashboard can be client-side.
 - **UI Library:** React 18+ (Latest Stable)
-- **Data Fetching:** TanStack Query (React Query) v5+ (Latest Stable)
-  - Server state management
-  - Caching and synchronization
-  - Optimistic updates
+- **Data Fetching:** Server Components + cached `fetch` for public pages
+- **Admin Data Fetching:** TanStack Query (React Query) v5+ for dashboard UI
 - **Styling:** Tailwind CSS (Latest Stable)
-- **Image Optimization:** Next.js Image component with AWS CloudFront CDN
+- **Image Pipeline:** Pre-generate responsive variants (AVIF/WebP/JPEG) at upload
+- **Image Delivery:** S3 + CloudFront, Next.js uses custom loader or `unoptimized`
 - **State Management:** React Context API or Zustand (for admin state)
 - **Language:** TypeScript 5+ (Latest Stable)
 
@@ -82,9 +81,10 @@ The new design will be inspired by modern photography portfolio sites:
 **See [TECHNICAL_ARCHITECTURE.md](./TECHNICAL_ARCHITECTURE.md) for complete technical architecture details.**
 
 ### Backend Stack
-- **API:** Next.js API Routes (for simple operations)
-- **Serverless Functions:** AWS Lambda (for complex operations, if needed)
-- **Authentication:** AWS Cognito or NextAuth.js (for admin login)
+- **API:** Next.js Route Handlers (App Router) for admin CRUD + presigned uploads
+- **Async Processing:** Optional AWS Lambda for heavy image processing (S3 event)
+- **Authentication:** NextAuth.js (Credentials) with hashed password in DynamoDB
+- **Future Auth Option:** AWS Cognito if multi-admin/MFA becomes necessary
 - **File Storage:** AWS S3 (for photo storage)
 - **Database:** 
   - **Option 1:** DynamoDB (NoSQL, serverless, pay-per-use) - **Recommended for cost**
@@ -92,14 +92,14 @@ The new design will be inspired by modern photography portfolio sites:
   - **Option 3:** AWS Amplify DataStore (simplified, but may have limitations)
 
 ### Infrastructure
-- **Hosting:** AWS Amplify (frontend + API routes)
-- **CDN:** CloudFront (via Amplify)
+- **Hosting:** AWS Amplify Hosting with Next.js SSR/ISR support (single app)
+- **CDN:** CloudFront (Amplify for app, separate for images)
 - **Infrastructure as Code:** Terraform (reusable modules)
-- **CI/CD:** AWS Amplify (automatic deployments from GitHub)
+- **CI/CD:** GitHub Actions for Terraform, Amplify build for app deploy
 
 ### Local Development Strategy
 
-**CRITICAL: All development will happen locally using Docker and LocalStack before deploying to AWS.**
+**Local-first development with LocalStack for S3/DynamoDB, plus an early staging environment for auth and image pipeline parity.**
 
 This approach ensures:
 - **Zero AWS costs** during development
@@ -113,8 +113,7 @@ This approach ensures:
 **LocalStack** is a cloud service emulator that runs in Docker and provides local versions of AWS services. We'll use it to emulate:
 - **S3** (photo storage)
 - **DynamoDB** (database)
-- **Lambda** (serverless functions, if needed)
-- **Cognito** (authentication, if needed)
+- **Lambda** (optional, for local image processing tests)
 
 **Docker Compose Configuration:**
 ```yaml
@@ -264,6 +263,10 @@ npm run dev
 
 **LocalStack Dashboard:** http://localhost:4566
 
+**Early Staging Parity Check:**
+- Validate auth, image variants, and CloudFront behavior in a small staging stack
+- LocalStack does not fully emulate Cognito/CloudFront/Amplify behavior
+
 #### Local Development Benefits
 
 - **Cost:** $0 AWS charges during development
@@ -283,11 +286,11 @@ When ready to deploy:
 
 **Workflow:**
 ```
-Local Development → LocalStack (Docker)
-     ↓
-Test & Perfect Code
-     ↓
-Terraform Deploy → Real AWS
+Local Development -> LocalStack (Docker)
+     |
+Early Staging Parity Check
+     |
+Terraform Deploy -> Real AWS
 ```
 
 #### Package.json Scripts
@@ -316,11 +319,11 @@ Terraform Deploy → Real AWS
 
 **Data Structure:**
 ```
-- Projects Table: project_id, category, title, description, photos[], order, created_at
-- Photos Table: photo_id, project_id, url (S3), alt_text, order, created_at
-- Pages Table: page_id, page_type, content (JSON), photos[], updated_at
-- Settings Table: setting_key, setting_value (JSON)
-- Admin Users Table: user_id, email, password_hash, created_at
+- Projects Table: project_id (PK), category (GSI1PK), order (GSI1SK), title, description, created_at
+- Photos Table: project_id (PK), order#photo_id (SK), s3_key, alt_text, created_at
+- Pages Table: page_id (PK), content (JSON), updated_at
+- Settings Table: setting_key (PK), setting_value (JSON)
+- Admin Users Table: user_id (PK), email, password_hash, created_at
 ```
 
 **S3 Buckets:**
@@ -515,7 +518,7 @@ module "thumbnail_storage" {
 
 ## 6. Development Workflow
 
-**CRITICAL: All development happens locally first. We will NOT deploy to AWS until everything is working perfectly locally.**
+**Local-first development, plus an early staging parity check before production.**
 
 ### Phase 1: Local Development Setup (Week 1)
 1. **Docker & LocalStack Setup**
@@ -544,7 +547,7 @@ module "thumbnail_storage" {
    - Verify everything works locally before proceeding
 
 ### Phase 1.5: Terraform Modules (Week 1-2) - For Future AWS Deployment
-**Note: Terraform modules will be created but NOT deployed until local development is complete.**
+**Note: Terraform modules will be created early, but applied after local validation and staging parity check.**
 
 1. **Terraform Modules Creation**
    - Create reusable modules for all AWS resources
@@ -670,7 +673,7 @@ module "thumbnail_storage" {
    - Structured data
 
 ### Phase 6: Local Testing & Validation (Week 7-8)
-**CRITICAL: All testing happens locally. Do NOT deploy to AWS until everything is perfect.**
+**Local-first testing, plus a staging parity check for auth and image delivery.**
 
 1. **Local Testing**
    - Unit tests (run locally)
@@ -786,15 +789,16 @@ module "thumbnail_storage" {
 
 ## 8. Technical Decisions & Rationale
 
-### Why Next.js with SSG (Static Site Generation)?
+### Why Next.js with SSG + ISR (Static Site Generation + Revalidation)?
 - **Best SEO:** Pre-rendered HTML at build time - search engines see full content immediately
-- **NOT SPA:** We are using SSG, not SPA - SPAs have poor SEO (empty HTML, requires JavaScript)
+- **NOT SPA:** Public pages are not SPA - SPAs have poor SEO (empty HTML, requires JavaScript)
 - **Performance:** Fastest possible page loads, CDN-served static files
+- **Freshness:** On-demand revalidation updates only affected pages
 - **Social Sharing:** Perfect Open Graph tags, rich previews on social media
-- **API Routes:** Built-in backend capabilities for admin operations
-- **Image Optimization:** Built-in image optimization with Next.js Image
+- **Built-in Backend:** Route Handlers for admin operations
+- **Image Pipeline:** Pre-generated variants + CDN for image-heavy pages
 - **React Ecosystem:** Large community and resources
-- **AWS Amplify Support:** Native Next.js SSG support, automatic rebuilds on content changes
+- **AWS Amplify Support:** Next.js SSG/ISR support on Amplify Hosting
 
 ### Why AWS Amplify?
 - **Easy Deployment:** Automatic deployments from GitHub
@@ -894,12 +898,12 @@ module "thumbnail_storage" {
 
 ## 12. Next Steps
 
-**Local Development First - No AWS Deployment Until Everything Works Locally**
+**Local-First + Staging Parity Check Before Production**
 
 1. **Review all documentation** in `docs/` folder
 2. **Set up Docker and LocalStack** for local AWS service emulation
 3. **Initialize Next.js project** with proper monorepo structure
-4. **Set up React Query** for data fetching
+4. **Set up React Query** for admin dashboard data fetching
 5. **Configure AWS SDK clients** to work with LocalStack
 6. **Create LocalStack setup scripts** (S3 buckets, DynamoDB tables)
 7. **Set up GitHub Actions workflows** for CI/CD
@@ -929,6 +933,6 @@ module "thumbnail_storage" {
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2025-01-16  
+**Document Version:** 1.1  
+**Last Updated:** 2026-02-03  
 **Author:** Development Team

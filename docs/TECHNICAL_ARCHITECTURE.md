@@ -1,7 +1,7 @@
 # Technical Architecture - S.Goodie Photography Platform
 
-**Last Updated:** 2025-01-16  
-**Version:** 1.0
+**Last Updated:** 2026-02-03  
+**Version:** 1.1
 
 ---
 
@@ -60,32 +60,36 @@
                     └─────────────────┘
 ```
 
+**Updated Architecture (Recommended)**
+- Single Next.js app (public + admin + Route Handlers)
+- AWS Amplify Hosting with SSR/ISR
+- S3 + CloudFront for image delivery
+- DynamoDB for content data
+- Optional Lambda for heavy image processing (S3 event)
+
 ### Architecture Principles
 
-1. **Separation of Concerns**
-   - Frontend and backend are separate build processes
-   - Changes to one don't trigger rebuilds of the other
-   - Independent deployment pipelines
+1. **Single App, Clear Boundaries**
+   - One Next.js deployable for public pages, admin UI, and API
+   - Route groups keep public and admin code separated
 
-2. **Static Site Generation (SSG)**
-   - All public pages pre-rendered at build time
-   - Maximum SEO performance
-   - Fastest possible page loads
+2. **SSG + ISR**
+   - Public pages pre-rendered at build time
+   - On-demand revalidation for content updates
+   - Maximum SEO performance with fresh content
 
-3. **Serverless Backend**
-   - AWS Lambda functions for API operations
-   - No server management
-   - Auto-scaling
+3. **Built-In Backend**
+   - Next.js Route Handlers for admin CRUD and uploads
+   - Optional Lambda only for heavy async image processing
 
 4. **Infrastructure as Code**
    - All AWS resources defined in Terraform
    - Version controlled
    - Reproducible deployments
 
-5. **Local-First Development**
-   - LocalStack for AWS service emulation
-   - Zero AWS costs during development
-   - Same code works locally and in AWS
+5. **Local-First + Staging Parity**
+   - LocalStack for S3/DynamoDB emulation
+   - Early staging check for auth and image delivery parity
 
 ---
 
@@ -95,17 +99,15 @@
 
 - **Framework:** Next.js 14+ (Latest Stable)
   - App Router (not Pages Router)
-  - Static Site Generation (SSG) for public pages
-  - Server-Side Rendering (SSR) for dynamic content if needed
+  - Static Site Generation (SSG) + ISR for public pages
+  - Server-Side Rendering (SSR) only when truly required
 
 - **React:** 18+ (Latest Stable)
   - Client components for interactivity
   - Server components for static content
 
-- **Data Fetching:** TanStack Query (React Query) v5+ (Latest Stable)
-  - Server state management
-  - Caching and synchronization
-  - Optimistic updates
+- **Data Fetching:** Server Components + cached `fetch` for public pages
+- **Admin Data Fetching:** TanStack Query (React Query) v5+ for dashboard UI
 
 - **Styling:** Tailwind CSS (Latest Stable)
   - Utility-first CSS framework
@@ -116,7 +118,7 @@
   - Type safety
   - Better developer experience
 
-- **Image Optimization:** Next.js Image component
+- **Image Optimization:** Pre-generated variants + CDN delivery
   - Automatic WebP conversion
   - Lazy loading
   - Responsive images
@@ -124,11 +126,12 @@
 ### Backend
 
 - **Runtime:** Node.js 20+ (Latest LTS)
-- **Framework:** AWS Lambda (Serverless)
-- **API:** RESTful API design
+- **Framework:** Next.js Route Handlers (App Router)
+- **API:** REST/JSON endpoints via Route Handlers
 - **Language:** TypeScript 5+ (Latest Stable)
-- **Authentication:** AWS Cognito or NextAuth.js
+- **Authentication:** NextAuth.js (Credentials), Cognito optional later
 - **File Upload:** Direct S3 uploads (presigned URLs)
+- **Async Processing:** Optional Lambda for heavy image processing
 
 ### Database
 
@@ -154,8 +157,7 @@
 
 - **Infrastructure as Code:** Terraform (Latest Stable)
 - **CI/CD:** GitHub Actions
-- **Hosting:** AWS Amplify (Frontend)
-- **API Gateway:** AWS API Gateway (for Lambda)
+- **Hosting:** AWS Amplify Hosting (Next.js SSR/ISR)
 
 ### Development Tools
 
@@ -169,7 +171,23 @@
 
 ## Project Structure
 
-### Monorepo Structure
+### Recommended Structure (Single App)
+
+```
+sgoodie-platform/
+  app/                    # Next.js App Router (public + admin + API)
+  components/             # UI and layout components
+  lib/                    # Data access, auth, AWS clients
+  public/                 # Static assets
+  scripts/                # LocalStack setup and utilities
+  terraform/              # Infrastructure as Code
+  docs/                   # Documentation
+  docker-compose.yml      # LocalStack setup
+  package.json
+  README.md
+```
+
+### Legacy Monorepo Structure (Not Recommended)
 
 ```
 sgoodie-platform/
@@ -210,21 +228,14 @@ sgoodie-platform/
 └── README.md
 ```
 
-### Key Separation Points
+### Key Separation Points (Recommended)
 
-1. **Frontend (`apps/frontend/`)**
-   - Next.js application
-   - Public-facing website
-   - Admin dashboard
-   - Builds to static files (SSG)
+1. **Web App (`app/`)**
+   - Public website (SSG + ISR)
+   - Admin dashboard (client-side)
+   - API Route Handlers (admin CRUD, uploads, revalidation)
 
-2. **Backend (`services/backend/`)**
-   - Lambda functions
-   - API endpoints
-   - Authentication logic
-   - File upload handling
-
-3. **Infrastructure (`terraform/`)**
+2. **Infrastructure (`terraform/`)**
    - AWS resource definitions
    - Environment configurations
    - Reusable modules
@@ -234,6 +245,8 @@ sgoodie-platform/
 ## Frontend Architecture
 
 ### Next.js App Router Structure
+
+**Note:** In the recommended single-app structure, the App Router lives at `app/` in the repo root. The tree below is illustrative.
 
 ```
 apps/frontend/
@@ -281,6 +294,8 @@ apps/frontend/
 ```
 
 ### React Query Integration
+
+**Note:** Use React Query for admin/dashboard UI only. Public pages use server components and cached `fetch`.
 
 **Setup:**
 ```typescript
@@ -397,6 +412,34 @@ export default async function ProjectPage({ params }: { params: { id: string } }
 }
 ```
 
+### On-Demand Revalidation (ISR)
+
+**Trigger revalidation after admin updates:**
+```typescript
+// app/api/admin/revalidate/route.ts
+import { revalidatePath, revalidateTag } from 'next/cache';
+
+export async function POST(request: Request) {
+  const { paths, tags } = await request.json();
+
+  (paths || []).forEach((path: string) => revalidatePath(path));
+  (tags || []).forEach((tag: string) => revalidateTag(tag));
+
+  return Response.json({ revalidated: true });
+}
+```
+
+**Tag data fetches for targeted revalidation:**
+```typescript
+// lib/api/projects.ts
+export async function getProjectsByCategory(category: string) {
+  const res = await fetch(`${process.env.API_BASE_URL}/projects?category=${category}`, {
+    next: { tags: [`projects:${category}`] },
+  });
+  return res.json();
+}
+```
+
 ### Build Configuration
 
 **next.config.js:**
@@ -421,7 +464,47 @@ module.exports = nextConfig;
 
 ## Backend Architecture
 
-### Lambda Function Structure
+### Route Handler Structure (Recommended)
+
+```
+app/api/
+  auth/                     # NextAuth routes
+  projects/                 # Admin CRUD for projects
+  photos/                   # Presigned upload + metadata
+  admin/revalidate/         # On-demand ISR revalidation
+```
+
+### Route Handler Example (Recommended)
+
+```typescript
+// app/api/projects/route.ts
+import { QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { db } from '@/lib/aws/dynamodb';
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const category = searchParams.get('category');
+
+  if (!category) {
+    return Response.json({ error: 'category is required' }, { status: 400 });
+  }
+
+  const result = await db.send(
+    new QueryCommand({
+      TableName: process.env.DYNAMODB_TABLE_PROJECTS!,
+      IndexName: 'gsi_category_order',
+      KeyConditionExpression: 'category = :category',
+      ExpressionAttributeValues: { ':category': category },
+    })
+  );
+
+  return Response.json(result.Items ?? []);
+}
+```
+
+### Legacy Lambda Function Structure (Not Recommended)
+
+#### Legacy Lambda Function Structure Details
 
 ```
 services/backend/
@@ -453,7 +536,7 @@ services/backend/
 └── package.json
 ```
 
-### Serverless Framework Configuration
+#### Legacy Serverless Framework Configuration Details
 
 **serverless.yml:**
 ```yaml
@@ -528,7 +611,7 @@ custom:
       prod: sgoodie-photos-prod
 ```
 
-### Lambda Handler Example
+#### Legacy Lambda Handler Example
 
 ```typescript
 // src/handlers/projects/list.ts
@@ -588,29 +671,33 @@ export const handler = async (
 ```
 Table: sgoodie-projects-prod
 Partition Key: project_id (String)
-Sort Key: None (or created_at if needed)
+Sort Key: None
 
 Attributes:
 - project_id: String (UUID)
 - category: String (interiors, travel, brand-marketing)
 - title: String
 - description: String
-- photos: List (Array of photo objects)
 - order: Number (for sorting)
+- cover_photo_id: String
 - created_at: String (ISO 8601)
 - updated_at: String (ISO 8601)
 - published: Boolean
+
+GSI: gsi_category_order
+- GSI Partition Key: category
+- GSI Sort Key: order
 ```
 
 **Photos Table:**
 ```
 Table: sgoodie-photos-prod
-Partition Key: photo_id (String)
-Sort Key: None
+Partition Key: project_id (String)
+Sort Key: order#photo_id (String)
 
 Attributes:
-- photo_id: String (UUID)
 - project_id: String (UUID)
+- photo_id: String (UUID)
 - s3_key: String
 - s3_url: String
 - alt_text: String
@@ -648,8 +735,8 @@ Attributes:
 
 1. **Get all projects by category**
    - Table: Projects
-   - Operation: Scan with FilterExpression
-   - Index: GSI on category (if needed for performance)
+   - Operation: Query on GSI `gsi_category_order`
+   - Index: category (PK) + order (SK)
 
 2. **Get single project**
    - Table: Projects
@@ -659,7 +746,7 @@ Attributes:
 3. **Get photos for project**
    - Table: Photos
    - Operation: Query
-   - Index: GSI on project_id
+   - Key: project_id (PK)
 
 ---
 
@@ -685,6 +772,10 @@ sgoodie-photos-prod/
         └── {temp_id}.jpg
 ```
 
+**Image Variants (Recommended):**
+- Store pre-generated sizes under `projects/{project_id}/variants/{photo_id}/{width}.jpg`
+- Include AVIF/WebP/JPEG for responsive delivery
+
 ### S3 Configuration
 
 - **Versioning:** Enabled (for backups)
@@ -703,27 +794,23 @@ sgoodie-photos-prod/
 
 1. **Login:**
    - Admin enters email/password
-   - Frontend sends to `/api/auth/login`
-   - Backend verifies credentials (DynamoDB)
-   - Returns JWT token
+   - NextAuth Credentials provider verifies against DynamoDB
+   - Session created automatically
 
 2. **Token Storage:**
-   - JWT stored in HttpOnly cookie (secure)
-   - Token expires after 24 hours
-   - Refresh token for extended sessions
+   - Secure, HttpOnly session cookies (NextAuth)
+   - Session duration configured in NextAuth
 
 3. **Protected Routes:**
-   - Middleware checks JWT token
-   - Validates token signature
-   - Extracts user information
-   - Allows/denies access
+   - Middleware checks NextAuth session
+   - Redirects unauthenticated users to login
 
 ### Implementation Options
 
 **Option 1: NextAuth.js (Recommended)**
 - Built-in session management
-- JWT support
-- Works with Next.js API routes
+- Credentials provider for single-admin login
+- Works with Next.js Route Handlers
 - Easy to implement
 
 **Option 2: AWS Cognito**
@@ -738,35 +825,23 @@ sgoodie-photos-prod/
 
 ## Deployment Architecture
 
-### Frontend Deployment (AWS Amplify)
+### Application Deployment (AWS Amplify Hosting)
 
 **Amplify App Configuration:**
-- **Build Settings:** `amplify.yml` in `apps/frontend/`
+- **Build Settings:** `amplify.yml` in repo root
 - **Build Command:** `npm run build`
 - **Output Directory:** `.next`
-- **Base Directory:** `apps/frontend`
-- **Watch Path:** `apps/frontend/**/*` (only frontend changes trigger build)
+- **Base Directory:** `.`
+- **Watch Path:** `app/**/*`, `components/**/*`, `lib/**/*`
 
 **Build Process:**
 1. GitHub push to `main` branch
-2. Amplify detects changes in `apps/frontend/`
+2. Amplify detects changes in app code
 3. Runs build command
-4. Deploys static files to CDN
+4. Deploys app (public pages + admin UI + Route Handlers)
 5. Invalidates CloudFront cache
 
-### Backend Deployment (Serverless Framework)
-
-**Deployment Process:**
-1. GitHub push to `main` branch
-2. GitHub Actions detects changes in `services/backend/`
-3. Runs `serverless deploy`
-4. Creates/updates Lambda functions
-5. Updates API Gateway
-
-**Separation:**
-- Frontend changes in `apps/frontend/` → Only Amplify rebuilds
-- Backend changes in `services/backend/` → Only Lambda deploys
-- Terraform changes → Only infrastructure updates
+**Single Deploy:** UI and API update together in the same build
 
 ---
 
@@ -790,9 +865,8 @@ sgoodie-photos-prod/
    - Merge to `main`
 
 3. **On Merge to `main`:**
-   - **Step 1:** Run Terraform (ensure AWS resources exist)
-   - **Step 2:** Deploy Backend (if backend changed)
-   - **Step 3:** Deploy Frontend (if frontend changed)
+   - **Step 1:** Run Terraform (if infrastructure changed)
+   - **Step 2:** Deploy App (Amplify build)
 
 ### GitHub Actions Workflows
 
@@ -819,13 +893,14 @@ terraform/
 └── main.tf
 ```
 
+**Note:** In the recommended architecture, the `api-gateway` module is not required. The `lambda-function` module is optional and only used for async image processing.
+
 ### AWS Resources
 
 - **S3 Buckets:** Photo storage
 - **DynamoDB Tables:** Database
-- **Lambda Functions:** Backend API
-- **API Gateway:** API endpoints
-- **Amplify Apps:** Frontend hosting
+- **Lambda Functions:** Optional async image processing
+- **Amplify Apps:** App hosting (SSR/ISR)
 - **CloudFront:** CDN
 - **IAM Roles:** Permissions
 - **Cognito:** Authentication (if used)
@@ -844,7 +919,7 @@ services:
     image: localstack/localstack:latest
     container_name: sgoodie-localstack
     environment:
-      SERVICES: s3,dynamodb,lambda
+      SERVICES: s3,dynamodb
     ports:
       - "4566:4566"
 ```
@@ -852,10 +927,14 @@ services:
 ### Environment Detection
 
 **AWS SDK clients automatically detect environment:**
-- `USE_LOCALSTACK=true` → Use LocalStack
-- `USE_LOCALSTACK=false` → Use real AWS
+- `USE_LOCALSTACK=true` -> Use LocalStack
+- `USE_LOCALSTACK=false` -> Use real AWS
 
 **Same code works in both environments!**
+
+**Staging Parity Check (Recommended):**
+- Validate auth and image delivery in a small staging stack
+- LocalStack does not fully emulate Cognito/CloudFront/Amplify behavior
 
 ---
 
@@ -863,14 +942,14 @@ services:
 
 ### Frontend
 
-- **SSG:** Pre-rendered pages = instant load
-- **Image Optimization:** Next.js Image component
+- **SSG + ISR:** Pre-rendered pages with on-demand freshness
+- **Image Optimization:** Pre-generated variants + CDN delivery
 - **CDN:** CloudFront for global delivery
-- **Caching:** React Query for API responses
+- **Caching:** React Query for admin API responses
 
 ### Backend
 
-- **Lambda:** Auto-scaling, pay-per-use
+- **Route Handlers:** Auto-scaling via Amplify Hosting
 - **DynamoDB:** Single-digit millisecond latency
 - **S3:** Direct uploads (presigned URLs)
 
@@ -893,16 +972,16 @@ services:
 
 ### Backend Security
 
-- **Authentication:** JWT tokens
-- **Authorization:** Role-based access control
+- **Authentication:** NextAuth sessions (HttpOnly cookies)
+- **Authorization:** Admin-only route protection
 - **Input Validation:** Zod schemas
-- **Rate Limiting:** API Gateway throttling
+- **Rate Limiting:** Middleware or AWS WAF/CloudFront
 
 ### Infrastructure Security
 
 - **IAM:** Least privilege principle
 - **Encryption:** S3 and DynamoDB encryption at rest
-- **VPC:** Lambda in VPC if needed (future)
+- **VPC:** Lambda in VPC if used (optional)
 - **Secrets:** AWS Secrets Manager
 
 ---
@@ -917,8 +996,8 @@ services:
 
 ### Backend
 
-- **CloudWatch Logs:** Lambda function logs
-- **CloudWatch Metrics:** Function invocations, errors
+- **Amplify Logs:** App server logs and build logs
+- **CloudWatch Metrics:** For Lambda if async processing is enabled
 - **X-Ray:** Distributed tracing (if needed)
 
 ### Database
@@ -933,7 +1012,7 @@ services:
 ### Current Architecture Supports
 
 - **Frontend:** Unlimited (CDN-served static files)
-- **Backend:** Auto-scaling Lambda (up to 1000 concurrent)
+- **Backend:** Auto-scaling Route Handlers via Amplify
 - **Database:** DynamoDB on-demand (unlimited)
 - **Storage:** S3 (unlimited)
 
@@ -941,8 +1020,8 @@ services:
 
 - **Database:** Add ElastiCache for caching
 - **CDN:** Already using CloudFront
-- **API:** API Gateway throttling and caching
-- **Lambda:** Reserved concurrency if needed
+- **API:** App-level caching and rate limiting
+- **Lambda:** Reserved concurrency if async processing is enabled
 
 ---
 
@@ -951,7 +1030,7 @@ services:
 ### Current Estimates
 
 - **Amplify:** $5-10/month (low-medium traffic)
-- **Lambda:** $0-2/month (minimal usage)
+- **Lambda:** $0-2/month (optional image processing)
 - **DynamoDB:** $5-10/month (on-demand)
 - **S3:** $2-5/month (50-100 GB)
 - **CloudFront:** $0-5/month (likely free tier)
@@ -964,7 +1043,7 @@ services:
 2. **DynamoDB On-Demand:** Pay per request
 3. **CloudFront Caching:** Reduce origin requests
 4. **Image Optimization:** Reduce storage costs
-5. **Lambda Reserved Concurrency:** Only if needed
+5. **Lambda Reserved Concurrency:** Only if async processing is enabled
 
 ---
 

@@ -70,9 +70,9 @@
 
 ---
 
-## Recommended Approach: Next.js with SSG (Static Site Generation)
+## Recommended Approach: Next.js with SSG + ISR (Static Site Generation + Revalidation)
 
-For a photography portfolio website, **SSG is the best choice**:
+For a photography portfolio website, **SSG + ISR is the best choice**:
 
 ### Why SSG for This Project?
 
@@ -92,9 +92,9 @@ For a photography portfolio website, **SSG is the best choice**:
    - AWS Amplify serves static files very cheaply
 
 4. **When content updates**
-   - Admin uploads new photos → Rebuild site
-   - Admin edits content → Rebuild site
-   - Rebuilds are fast (minutes) and happen automatically
+   - Admin uploads new photos -> Revalidate affected pages
+   - Admin edits content -> Revalidate affected pages
+   - No full-site rebuild required
 
 ### Next.js Rendering Modes
 
@@ -113,7 +113,22 @@ For a photography portfolio website, **SSG is the best choice**:
    - Fastest performance
    - Works perfectly with AWS Amplify
 
-2. **Server-Side Rendering (SSR)** - Use for dynamic content
+2. **ISR (On-Demand Revalidation)** - ✅ **RECOMMENDED FOR UPDATES**
+   ```typescript
+   // app/api/admin/revalidate/route.ts
+   import { revalidatePath } from 'next/cache';
+
+   export async function POST(request: Request) {
+     const { path } = await request.json();
+     revalidatePath(path);
+     return Response.json({ revalidated: true });
+   }
+   ```
+   - Updates only the affected pages
+   - Avoids full-site rebuilds
+   - Keeps SEO and performance benefits of SSG
+
+3. **Server-Side Rendering (SSR)** - Use for dynamic content
    ```typescript
    // app/projects/[id]/page.tsx
    export default async function ProjectPage({ params }) {
@@ -125,7 +140,7 @@ For a photography portfolio website, **SSG is the best choice**:
    - Good for frequently changing content
    - Still excellent SEO (full HTML)
 
-3. **Client-Side Rendering (SPA)** - ❌ **NOT RECOMMENDED**
+4. **Client-Side Rendering (SPA)** - ❌ **NOT RECOMMENDED**
    ```typescript
    'use client';
    export default function Page() {
@@ -142,9 +157,9 @@ For a photography portfolio website, **SSG is the best choice**:
 
 ## Implementation Strategy
 
-### Public Pages: Use SSG
+### Public Pages: Use SSG + ISR
 
-**All public-facing pages should use Static Site Generation:**
+**All public-facing pages should use Static Site Generation with on-demand revalidation:**
 
 ```typescript
 // app/page.tsx - Home page
@@ -184,15 +199,27 @@ export default function AdminDashboard() {
 }
 ```
 
-### API Routes: For Dynamic Operations
+### Route Handlers: For Dynamic Operations
 
-**Use API routes for admin operations:**
+**Use Route Handlers for admin operations:**
 
 ```typescript
 // app/api/projects/route.ts
 export async function POST(request: Request) {
   // Handle photo uploads, content updates
-  // These trigger site rebuild
+  // Trigger on-demand revalidation for affected pages
+}
+```
+
+**Revalidation endpoint (recommended):**
+```typescript
+// app/api/admin/revalidate/route.ts
+import { revalidatePath } from 'next/cache';
+
+export async function POST(request: Request) {
+  const { path } = await request.json();
+  revalidatePath(path);
+  return Response.json({ revalidated: true });
 }
 ```
 
@@ -200,13 +227,17 @@ export async function POST(request: Request) {
 
 ## AWS Amplify Support
 
-**AWS Amplify fully supports Next.js SSG and SSR:**
+**AWS Amplify supports Next.js SSG, ISR, and SSR:**
 
 ### Static Site Generation (SSG)
 - ✅ Pre-renders at build time
 - ✅ Serves static files from CDN
-- ✅ Automatic rebuilds on content changes
 - ✅ Perfect for portfolio sites
+
+### Incremental Static Regeneration (ISR)
+- ✅ Revalidates only affected pages
+- ✅ Avoids full-site rebuilds
+- ✅ Keeps SEO and performance benefits
 
 ### Server-Side Rendering (SSR)
 - ✅ Renders on each request
@@ -337,19 +368,18 @@ import Image from 'next/image';
 
 **When admin updates content:**
 
-1. **Admin uploads photo or edits content** → API route saves to DynamoDB/S3
-2. **Trigger rebuild** → Webhook or scheduled job
-3. **Next.js rebuilds site** → Fetches latest data, pre-renders all pages
-4. **Deploy to Amplify** → New static files deployed
-5. **CDN cache cleared** → Users see updated content
+1. **Admin uploads photo or edits content** -> API route saves to DynamoDB/S3
+2. **Trigger revalidation** -> Revalidate only affected paths/tags
+3. **Next.js regenerates pages** -> Only impacted pages updated
+4. **CDN cache updated** -> Users see new content quickly
 
-**Rebuild time:** 2-5 minutes (acceptable for portfolio site)
+**Update time:** Seconds to a few minutes (no full rebuild)
 
 ---
 
 ## Performance & SEO Metrics
 
-**Expected results with SSG:**
+**Expected results with SSG + ISR:**
 
 - ✅ **Lighthouse SEO Score:** 100/100
 - ✅ **First Contentful Paint:** < 1s
@@ -363,16 +393,16 @@ import Image from 'next/image';
 
 **For S.Goodie Photography website:**
 
-1. ✅ **Use Next.js with Static Site Generation (SSG)** for all public pages
+1. ✅ **Use Next.js with SSG + ISR** for all public pages
 2. ✅ **Perfect SEO** - Full HTML, meta tags, structured data
 3. ✅ **Fast performance** - Pre-rendered, CDN-served
 4. ✅ **Cost-effective** - Static files, no server costs
-5. ✅ **AWS Amplify support** - Native Next.js SSG support
-6. ✅ **Easy content updates** - Rebuild on content changes
+5. ✅ **AWS Amplify support** - Next.js SSG/ISR support
+6. ✅ **Easy content updates** - On-demand revalidation
 
 **Do NOT use SPA for public pages** - It will hurt SEO significantly.
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2025-01-16
+**Document Version:** 1.1  
+**Last Updated:** 2026-02-03

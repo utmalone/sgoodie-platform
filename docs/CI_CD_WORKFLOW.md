@@ -1,13 +1,13 @@
 # CI/CD Workflow Documentation
 
-**Last Updated:** 2025-01-16  
-**Version:** 1.0
+**Last Updated:** 2026-02-03  
+**Version:** 1.1
 
 ---
 
 ## Overview
 
-This document describes the CI/CD (Continuous Integration/Continuous Deployment) workflow for the S.Goodie Photography Platform. The workflow ensures that code changes are properly tested, infrastructure is updated, and deployments happen automatically when code is merged to the `main` branch.
+This document describes the CI/CD (Continuous Integration/Continuous Deployment) workflow for the S.Goodie Photography Platform. The workflow ensures that code changes are properly tested, infrastructure is updated, and the single Next.js app (public + admin + API) deploys via Amplify when code is merged to the `main` branch.
 
 ---
 
@@ -29,7 +29,7 @@ This document describes the CI/CD (Continuous Integration/Continuous Deployment)
 ### Workflow
 
 ```
-Developer → develop branch → PR → main branch → Deploy
+Developer -> develop branch -> PR -> main branch -> Deploy
 ```
 
 1. **Development:** Work on `develop` branch, push commits
@@ -45,18 +45,16 @@ Developer → develop branch → PR → main branch → Deploy
 
 | Change Location | Triggers | Process |
 |----------------|----------|---------|
-| `apps/frontend/**` | Frontend deployment | Amplify rebuild |
-| `services/backend/**` | Backend deployment | Lambda deploy |
+| `app/**`, `components/**`, `lib/**` | App deployment | Amplify build |
 | `terraform/**` | Infrastructure update | Terraform apply |
 | `docs/**` | Nothing | Documentation only |
-| Root files | Nothing | Config files only |
+| Root config files | App deployment | Amplify build |
 
 ### Separation Logic
 
-- **Frontend changes** in `apps/frontend/` → Only Amplify rebuilds
-- **Backend changes** in `services/backend/` → Only Lambda deploys
-- **Terraform changes** in `terraform/` → Only infrastructure updates
-- **Multiple changes** → All relevant processes run in parallel
+- **App code changes** -> Amplify build
+- **Terraform changes** -> Terraform apply
+- **Docs only** -> No deployment
 
 ---
 
@@ -66,35 +64,26 @@ Developer → develop branch → PR → main branch → Deploy
 
 Located in `.github/workflows/`:
 
-1. **`terraform-ci.yml`** - Infrastructure deployment
-2. **`backend-ci.yml`** - Backend Lambda deployment
-3. **`frontend-ci.yml`** - Frontend Amplify deployment (optional, Amplify auto-detects)
+1. **`deploy.yml`** - Terraform apply (if needed) + Amplify build trigger
 
 ### Workflow Execution Order
 
 When PR is merged to `main`:
 
-1. **Terraform Workflow** (runs first)
+1. **Terraform job** (runs first if `terraform/**` changed)
    - Ensures AWS resources exist
    - Creates/updates infrastructure
-   - Must succeed before other deployments
 
-2. **Backend Workflow** (runs if backend changed)
-   - Deploys Lambda functions
-   - Updates API Gateway
-   - Runs in parallel with frontend if both changed
-
-3. **Frontend Workflow** (runs if frontend changed)
-   - Triggers Amplify rebuild
-   - Or deploys directly (if not using Amplify auto-deploy)
+2. **Amplify build trigger**
+   - Deploys the single Next.js app (public + admin + API)
 
 ---
 
-## Terraform Workflow
+## Deploy Workflow
 
-### Workflow: `terraform-ci.yml`
+### Workflow: `deploy.yml`
 
-**Trigger:** PR merged to `main` AND changes in `terraform/`
+**Trigger:** PR merged to `main` (push). Terraform job runs only if `terraform/**` changed.
 
 **Steps:**
 
@@ -147,9 +136,39 @@ When PR is merged to `main`:
 
 ---
 
-## Backend Workflow
+## Amplify Build Trigger (Recommended)
 
-### Workflow: `backend-ci.yml`
+**Trigger:** On merge to `main` after Terraform job completes (if any)
+
+**Steps:**
+
+1. **Configure AWS Credentials**
+   ```yaml
+   - uses: aws-actions/configure-aws-credentials@v4
+     with:
+       aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+       aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+       aws-region: us-east-1
+   ```
+
+2. **Trigger Amplify Build**
+   ```yaml
+   - run: |
+       aws amplify start-job \
+         --app-id ${{ secrets.AMPLIFY_APP_ID }} \
+         --branch-name main \
+         --job-type RELEASE
+   ```
+
+**Note:** Disable Amplify auto-deploy if you want Terraform to always run first.
+
+---
+
+## Legacy Backend Workflow (Not Used)
+
+**Note:** The current architecture uses Next.js Route Handlers; no separate backend deploy.
+
+### Legacy Workflow: `backend-ci.yml`
 
 **Trigger:** PR merged to `main` AND changes in `services/backend/`
 
@@ -207,9 +226,11 @@ When PR is merged to `main`:
 
 ---
 
-## Frontend Workflow
+## Legacy Frontend Workflow (Not Used)
 
-### Option 1: Amplify Auto-Deploy (Recommended)
+**Note:** Use the Amplify Build Trigger section above for the recommended flow.
+
+### Legacy Option 1: Amplify Auto-Deploy
 
 **AWS Amplify automatically detects changes** in `apps/frontend/` when code is pushed to `main`. No GitHub Actions workflow needed.
 
@@ -226,7 +247,7 @@ When PR is merged to `main`:
 3. Automatically triggers build
 4. Deploys to CDN
 
-### Option 2: Manual GitHub Actions (If Needed)
+### Legacy Option 2: Manual GitHub Actions
 
 **Workflow: `frontend-ci.yml`**
 
@@ -247,33 +268,24 @@ When PR is merged to `main`:
 
 ### Terraform Must Run First
 
-**Why:** Backend and frontend deployments need AWS resources to exist.
+**Why:** The app needs AWS resources (S3, DynamoDB) to exist before deploy.
 
-**Solution:** Use workflow dependencies or sequential execution.
+**Solution:** Use a single `deploy.yml` with job dependencies.
 
-**Option 1: Sequential (Recommended)**
 ```yaml
-# terraform-ci.yml
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    if: needs_terraform == true
     steps: [...]
-    
-# backend-ci.yml
-jobs:
-  backend:
-    needs: terraform  # Wait for terraform
+
+  amplify:
+    needs: [terraform]
     runs-on: ubuntu-latest
     steps: [...]
 ```
 
-**Option 2: Check Resources Exist**
-```yaml
-# backend-ci.yml
-- name: Verify DynamoDB table exists
-  run: |
-    aws dynamodb describe-table --table-name sgoodie-projects-prod
-```
+**Alternative:** If Amplify auto-deploy is enabled, apply Terraform manually before merging.
 
 ---
 
@@ -305,10 +317,9 @@ Set in workflow files or GitHub repository settings:
 Configure branch protection rules:
 
 1. **Terraform Plan** - Must pass (if terraform changed)
-2. **Backend Tests** - Must pass (if backend changed)
-3. **Frontend Tests** - Must pass (if frontend changed)
-4. **Linting** - Must pass
-5. **Type Checking** - Must pass
+2. **App Tests** - Must pass (if app changed)
+3. **Linting** - Must pass
+4. **Type Checking** - Must pass
 
 ### Branch Protection Rules
 
@@ -323,7 +334,7 @@ Configure branch protection rules:
 
 ## Rollback Procedures
 
-### Frontend Rollback
+### App Rollback
 
 **Via Amplify Console:**
 1. Go to Amplify app
@@ -335,19 +346,6 @@ Configure branch protection rules:
 1. Revert commit on `main`
 2. Push revert
 3. Amplify automatically redeploys
-
-### Backend Rollback
-
-**Via Serverless:**
-```bash
-cd services/backend
-serverless deploy --stage prod --version <previous-version>
-```
-
-**Via Git:**
-1. Revert commit on `main`
-2. Push revert
-3. GitHub Actions redeploys
 
 ### Infrastructure Rollback
 
@@ -392,12 +390,12 @@ terraform apply -target=<resource>  # Rollback specific resource
 - Verify Terraform state is accessible
 - Check for resource conflicts
 
-**2. Backend Deployment Fails:**
+**2. App Deployment Fails:**
 - Check AWS credentials
-- Verify IAM permissions
-- Check Serverless configuration
+- Verify Amplify app configuration
+- Check build logs in Amplify
 
-**3. Frontend Build Fails:**
+**3. Build Fails:**
 - Check Node.js version
 - Verify dependencies
 - Check build logs in Amplify
@@ -436,7 +434,7 @@ terraform apply -target=<resource>  # Rollback specific resource
 
 ## Workflow Examples
 
-### Example 1: Frontend Only Change
+### Example 1: App-Only Change
 
 **Scenario:** Developer updates home page design
 
@@ -444,27 +442,12 @@ terraform apply -target=<resource>  # Rollback specific resource
 1. Push to `develop` branch
 2. Create PR: `develop` → `main`
 3. Merge PR
-4. **Only frontend workflow runs:**
-   - Amplify detects change in `apps/frontend/`
-   - Triggers build
-   - Deploys to CDN
-5. Backend and Terraform workflows **do not run**
+4. **Only app deployment runs:**
+   - Amplify builds the app
+   - Deploys UI + API together
+5. Terraform does not run unless `terraform/**` changed
 
-### Example 2: Backend Only Change
-
-**Scenario:** Developer adds new API endpoint
-
-**Process:**
-1. Push to `develop` branch
-2. Create PR: `develop` → `main`
-3. Merge PR
-4. **Terraform runs first** (ensures resources exist)
-5. **Backend workflow runs:**
-   - Deploys Lambda function
-   - Updates API Gateway
-6. Frontend workflow **does not run**
-
-### Example 3: Infrastructure Change
+### Example 2: Infrastructure Change
 
 **Scenario:** Developer adds new S3 bucket
 
@@ -472,23 +455,22 @@ terraform apply -target=<resource>  # Rollback specific resource
 1. Push to `develop` branch
 2. Create PR: `develop` → `main`
 3. Merge PR
-4. **Only Terraform workflow runs:**
+4. **Only Terraform job runs:**
    - Creates S3 bucket
    - Updates IAM permissions
-5. Backend and frontend workflows **do not run**
+5. Amplify build does not run unless app changed
 
-### Example 4: Full Stack Change
+### Example 3: App + Infrastructure Change
 
-**Scenario:** Developer adds new feature (frontend + backend + infrastructure)
+**Scenario:** Developer adds new feature (app code + infrastructure)
 
 **Process:**
 1. Push to `develop` branch
 2. Create PR: `develop` → `main`
 3. Merge PR
-4. **All workflows run:**
-   - Terraform runs first
-   - Backend and frontend run in parallel (after Terraform)
-5. Everything deploys together
+4. **Terraform job runs first** (if `terraform/**` changed)
+5. **Amplify build runs after Terraform**
+6. Everything deploys together
 
 ---
 
@@ -515,6 +497,6 @@ terraform apply -target=<resource>  # Rollback specific resource
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2025-01-16  
+**Document Version:** 1.1  
+**Last Updated:** 2026-02-03  
 **Maintained By:** Development Team
