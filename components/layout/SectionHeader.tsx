@@ -1,3 +1,5 @@
+'use client';
+
 type SectionHeaderProps = {
   title: string;
   subtitle?: string;

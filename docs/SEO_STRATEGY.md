@@ -1,408 +1,75 @@
-# SEO Strategy: SPA vs Server-Side Rendering
+# SEO Strategy and Implementation
 
-**For S.Goodie Photography Portfolio Website**
-
----
-
-## Quick Answer: Server-Side is MUCH Better for SEO
-
-**SPAs have WORSE SEO, not better.** For a public business website, we should use **Next.js with Static Site Generation (SSG)** or **Server-Side Rendering (SSR)**.
+**Last Updated:** 2026-02-03
+**Version:** 2.0
 
 ---
 
-## SEO Comparison
+## 1. SEO Approach
 
-### ❌ SPA (Single Page Application) - Poor SEO
+The public site is built with Next.js App Router and is ready for SSG or ISR in production. This ensures that search engines receive fully rendered HTML and metadata.
 
-**How SPAs Work:**
-- Initial HTML is minimal/empty
-- JavaScript must execute to render content
-- Content is loaded dynamically via API calls
-- All routing happens client-side
-
-**SEO Problems:**
-1. **Search engines see empty HTML initially**
-   - Google has to execute JavaScript to see content
-   - Slower indexing
-   - May miss content if JavaScript fails
-
-2. **Social media sharing doesn't work well**
-   - Open Graph meta tags aren't in initial HTML
-   - Facebook/Twitter see empty pages
-   - No preview images when sharing links
-
-3. **Slower initial page load**
-   - Users see blank page while JavaScript loads
-   - Poor user experience = lower SEO rankings
-
-4. **Limited crawlability**
-   - Some search engines don't execute JavaScript well
-   - Older crawlers can't see content at all
-
-### ✅ Server-Side Rendering (SSR/SSG) - Excellent SEO
-
-**How SSR/SSG Works:**
-- Full HTML content in initial response
-- Content is pre-rendered (SSG) or rendered on server (SSR)
-- Search engines see complete content immediately
-- Meta tags, structured data all in HTML
-
-**SEO Benefits:**
-1. **Immediate content visibility**
-   - Search engines see full HTML immediately
-   - No JavaScript execution needed
-   - Faster indexing
-
-2. **Perfect social media sharing**
-   - Open Graph tags in HTML
-   - Preview images work perfectly
-   - Rich previews on Facebook, Twitter, LinkedIn
-
-3. **Better performance**
-   - Faster initial page load
-   - Better user experience = higher SEO rankings
-   - Lower bounce rate
-
-4. **Universal crawlability**
-   - Works with all search engines
-   - Works even if JavaScript is disabled
-   - Better accessibility
+Admin-only pages are client-side and are not indexed.
 
 ---
 
-## Recommended Approach: Next.js with SSG + ISR (Static Site Generation + Revalidation)
+## 2. Current SEO Implementation
 
-For a photography portfolio website, **SSG + ISR is the best choice**:
+### Page Metadata
+- Each page stores `metaTitle`, `metaDescription`, and `metaKeywords`
+- Public pages use `generateMetadata` to emit these values
 
-### Why SSG for This Project?
+### Photo Metadata
+- Each photo stores `alt`, `metaTitle`, `metaDescription`, and `metaKeywords`
+- Photo metadata is editable in the admin Photos area
 
-1. **Most content is static**
-   - Portfolio pages don't change frequently
-   - About page is mostly static
-   - Project pages are static once created
-
-2. **Best SEO performance**
-   - Pre-rendered HTML at build time
-   - Fastest possible page loads
-   - Perfect for search engines
-
-3. **Cost-effective**
-   - Static files served from CDN
-   - No server compute costs
-   - AWS Amplify serves static files very cheaply
-
-4. **When content updates**
-   - Admin uploads new photos -> Revalidate affected pages
-   - Admin edits content -> Revalidate affected pages
-   - No full-site rebuild required
-
-### Next.js Rendering Modes
-
-**Next.js App Router supports:**
-
-1. **Static Site Generation (SSG)** - ✅ **RECOMMENDED**
-   ```typescript
-   // app/page.tsx
-   export default async function HomePage() {
-     const projects = await getProjects(); // Fetch at build time
-     return <Portfolio projects={projects} />;
-   }
-   ```
-   - Pre-renders at build time
-   - Perfect HTML for SEO
-   - Fastest performance
-   - Works perfectly with AWS Amplify
-
-2. **ISR (On-Demand Revalidation)** - ✅ **RECOMMENDED FOR UPDATES**
-   ```typescript
-   // app/api/admin/revalidate/route.ts
-   import { revalidatePath } from 'next/cache';
-
-   export async function POST(request: Request) {
-     const { path } = await request.json();
-     revalidatePath(path);
-     return Response.json({ revalidated: true });
-   }
-   ```
-   - Updates only the affected pages
-   - Avoids full-site rebuilds
-   - Keeps SEO and performance benefits of SSG
-
-3. **Server-Side Rendering (SSR)** - Use for dynamic content
-   ```typescript
-   // app/projects/[id]/page.tsx
-   export default async function ProjectPage({ params }) {
-     const project = await getProject(params.id); // Fetch on each request
-     return <ProjectDetails project={project} />;
-   }
-   ```
-   - Renders on each request
-   - Good for frequently changing content
-   - Still excellent SEO (full HTML)
-
-4. **Client-Side Rendering (SPA)** - ❌ **NOT RECOMMENDED**
-   ```typescript
-   'use client';
-   export default function Page() {
-     const [data, setData] = useState(null);
-     useEffect(() => {
-       fetch('/api/data').then(setData); // Client-side only
-     }, []);
-   }
-   ```
-   - Only use for admin dashboard (not public pages)
-   - Poor SEO
+### Admin Workflow
+- Pages: edit copy and SEO metadata in `/admin/pages`
+- Photos: upload, reorder, and edit metadata in `/admin/photos`
 
 ---
 
-## Implementation Strategy
+## 3. AI-Assisted SEO
 
-### Public Pages: Use SSG + ISR
+### AI Fix (Single Field)
+- AI Fix buttons are available on page text and metadata fields
+- AI Fix buttons are available on photo metadata fields
 
-**All public-facing pages should use Static Site Generation with on-demand revalidation:**
+### AI Context Rules (Implemented)
+- Page metadata AI receives:
+  - Page text (intro, body, CTA)
+  - Photo metadata for the page gallery
+- Photo metadata AI receives:
+  - Page metadata and page text
+  - Other photo metadata on the same page
 
-```typescript
-// app/page.tsx - Home page
-export default async function HomePage() {
-  const featuredProjects = await getFeaturedProjects(); // Build time
-  return <HomePageContent projects={featuredProjects} />;
-}
-
-// app/work/interiors/page.tsx - Portfolio category
-export default async function InteriorsPage() {
-  const projects = await getProjectsByCategory('interiors'); // Build time
-  return <PortfolioGrid projects={projects} />;
-}
-
-// app/projects/[id]/page.tsx - Project detail
-export async function generateStaticParams() {
-  const projects = await getAllProjects();
-  return projects.map(project => ({ id: project.id }));
-}
-
-export default async function ProjectPage({ params }) {
-  const project = await getProject(params.id); // Build time
-  return <ProjectDetails project={project} />;
-}
-```
-
-### Admin Pages: Can Use Client-Side
-
-**Admin dashboard can use client-side rendering (not public, so SEO doesn't matter):**
-
-```typescript
-// app/admin/dashboard/page.tsx
-'use client';
-export default function AdminDashboard() {
-  // Client-side rendering is fine for admin
-  // Not indexed by search engines anyway
-}
-```
-
-### Route Handlers: For Dynamic Operations
-
-**Use Route Handlers for admin operations:**
-
-```typescript
-// app/api/projects/route.ts
-export async function POST(request: Request) {
-  // Handle photo uploads, content updates
-  // Trigger on-demand revalidation for affected pages
-}
-```
-
-**Revalidation endpoint (recommended):**
-```typescript
-// app/api/admin/revalidate/route.ts
-import { revalidatePath } from 'next/cache';
-
-export async function POST(request: Request) {
-  const { path } = await request.json();
-  revalidatePath(path);
-  return Response.json({ revalidated: true });
-}
-```
+This helps keep keywords consistent while avoiding repetition and stuffing.
 
 ---
 
-## AWS Amplify Support
+## 4. Rendering and Indexing
 
-**AWS Amplify supports Next.js SSG, ISR, and SSR:**
-
-### Static Site Generation (SSG)
-- ✅ Pre-renders at build time
-- ✅ Serves static files from CDN
-- ✅ Perfect for portfolio sites
-
-### Incremental Static Regeneration (ISR)
-- ✅ Revalidates only affected pages
-- ✅ Avoids full-site rebuilds
-- ✅ Keeps SEO and performance benefits
-
-### Server-Side Rendering (SSR)
-- ✅ Renders on each request
-- ✅ Supports dynamic content
-- ✅ Still excellent SEO
-- ✅ Works with API routes
-
-### Build Configuration
-
-**amplify.yml:**
-```yaml
-version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - npm ci
-    build:
-      commands:
-        - npm run build
-  artifacts:
-    baseDirectory: .next
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-      - .next/cache/**/*
-```
-
-**Next.js automatically:**
-- Detects SSG vs SSR
-- Pre-renders static pages at build time
-- Sets up API routes
-- Optimizes images
-- Generates sitemap
+- Public pages use server components and are SEO-friendly
+- Admin pages are protected and excluded from analytics tracking
 
 ---
 
-## SEO Best Practices We'll Implement
+## 5. Planned SEO Enhancements
 
-### 1. Meta Tags (SSG makes this easy)
-```typescript
-// app/layout.tsx
-export const metadata = {
-  title: 'S.Goodie Photography | Professional Photography Services',
-  description: 'Professional photography specializing in interiors, travel, and brand marketing.',
-  openGraph: {
-    title: 'S.Goodie Photography',
-    description: 'Professional photography services',
-    images: ['/og-image.jpg'],
-  },
-};
-
-// app/projects/[id]/page.tsx
-export async function generateMetadata({ params }) {
-  const project = await getProject(params.id);
-  return {
-    title: `${project.title} | S.Goodie Photography`,
-    description: project.description,
-    openGraph: {
-      images: [project.featuredImage],
-    },
-  };
-}
-```
-
-### 2. Structured Data (JSON-LD)
-```typescript
-// app/layout.tsx
-export default function RootLayout() {
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'PhotographyBusiness',
-    name: 'S.Goodie Photography',
-    // ... more structured data
-  };
-
-  return (
-    <html>
-      <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      </head>
-      <body>{children}</body>
-    </html>
-  );
-}
-```
-
-### 3. Sitemap Generation
-```typescript
-// app/sitemap.ts
-export default async function sitemap() {
-  const projects = await getAllProjects();
-  return [
-    {
-      url: 'https://sgoodiephotography.com',
-      lastModified: new Date(),
-    },
-    ...projects.map(project => ({
-      url: `https://sgoodiephotography.com/projects/${project.id}`,
-      lastModified: project.updatedAt,
-    })),
-  ];
-}
-```
-
-### 4. Image Optimization
-```typescript
-// Next.js Image component automatically optimizes
-import Image from 'next/image';
-
-<Image
-  src={photo.url}
-  alt={photo.altText}
-  width={1200}
-  height={800}
-  priority // For above-the-fold images
-/>
-```
+- Open Graph and Twitter metadata for social previews
+- JSON-LD structured data
+- Sitemap generation
+- Image optimization pipeline (responsive sizes, WebP and AVIF)
 
 ---
 
-## Content Update Workflow
+## 6. Summary
 
-**When admin updates content:**
-
-1. **Admin uploads photo or edits content** -> API route saves to DynamoDB/S3
-2. **Trigger revalidation** -> Revalidate only affected paths/tags
-3. **Next.js regenerates pages** -> Only impacted pages updated
-4. **CDN cache updated** -> Users see new content quickly
-
-**Update time:** Seconds to a few minutes (no full rebuild)
+- The site already supports editable metadata at the page and photo level
+- AI Fix tooling provides SEO-friendly copy with consistent keywords
+- The architecture is compatible with SSG and ISR for optimal indexing
 
 ---
 
-## Performance & SEO Metrics
-
-**Expected results with SSG + ISR:**
-
-- ✅ **Lighthouse SEO Score:** 100/100
-- ✅ **First Contentful Paint:** < 1s
-- ✅ **Time to Interactive:** < 2s
-- ✅ **Google PageSpeed:** 95+
-- ✅ **Search Engine Indexing:** Immediate (full HTML)
-
----
-
-## Conclusion
-
-**For S.Goodie Photography website:**
-
-1. ✅ **Use Next.js with SSG + ISR** for all public pages
-2. ✅ **Perfect SEO** - Full HTML, meta tags, structured data
-3. ✅ **Fast performance** - Pre-rendered, CDN-served
-4. ✅ **Cost-effective** - Static files, no server costs
-5. ✅ **AWS Amplify support** - Next.js SSG/ISR support
-6. ✅ **Easy content updates** - On-demand revalidation
-
-**Do NOT use SPA for public pages** - It will hurt SEO significantly.
-
----
-
-**Document Version:** 1.1  
+**Document Version:** 2.0
 **Last Updated:** 2026-02-03

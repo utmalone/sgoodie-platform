@@ -1,0 +1,35 @@
+[
+    {
+        "id":  "photo-1",
+        "src":  "/placeholder.svg",
+        "alt":  "Modern loft interior",
+        "width":  1200,
+        "height":  800,
+        "createdAt":  "2026-02-03T00:00:00.000Z",
+        "metaTitle":  "",
+        "metaDescription":  "",
+        "metaKeywords":  ""
+    },
+    {
+        "id":  "photo-2",
+        "src":  "/placeholder.svg",
+        "alt":  "Coastal travel photography",
+        "width":  1200,
+        "height":  800,
+        "createdAt":  "2026-02-03T00:00:00.000Z",
+        "metaTitle":  "",
+        "metaDescription":  "",
+        "metaKeywords":  ""
+    },
+    {
+        "id":  "photo-3",
+        "src":  "/placeholder.svg",
+        "alt":  "Brand marketing portraits",
+        "width":  1200,
+        "height":  800,
+        "createdAt":  "2026-02-03T00:00:00.000Z",
+        "metaTitle":  "",
+        "metaDescription":  "",
+        "metaKeywords":  ""
+    }
+]

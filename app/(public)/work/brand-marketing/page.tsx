@@ -1,17 +1,31 @@
+import type { Metadata } from 'next';
 import { SectionHeader } from '@/components/layout/SectionHeader';
 import { ProjectGrid } from '@/components/portfolio/ProjectGrid';
+import { PhotoGrid } from '@/components/portfolio/PhotoGrid';
 import { getProjectsByCategory } from '@/lib/data/projects';
+import { getPageBySlug } from '@/lib/data/pages';
+import { getPhotosByIds } from '@/lib/data/photos';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await getPageBySlug('brand-marketing');
+  return {
+    title: page.metaTitle || page.title,
+    description: page.metaDescription || page.intro,
+    keywords: page.metaKeywords || undefined
+  };
+}
 
 export default async function BrandMarketingPage() {
   const projects = await getProjectsByCategory('brand-marketing');
+  const page = await getPageBySlug('brand-marketing');
+  const galleryPhotos = await getPhotosByIds(page.gallery);
 
   return (
-    <section>
-      <SectionHeader
-        title="Brand Marketing"
-        subtitle="Confident brand imagery for personal, editorial, and commercial clients."
-      />
+    <section className="space-y-10">
+      <SectionHeader title={page.title} subtitle={page.intro} />
+      {page.body && <p className="max-w-2xl text-sm text-black/60">{page.body}</p>}
       <ProjectGrid projects={projects} />
+      <PhotoGrid photos={galleryPhotos} />
     </section>
   );
 }

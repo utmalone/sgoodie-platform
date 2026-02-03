@@ -1,0 +1,87 @@
+[
+    {
+        "slug":  "home",
+        "title":  "S.Goodie Photography",
+        "intro":  "Modern photography for interiors, travel, and brand storytelling.",
+        "body":  "Curated visuals designed to highlight space, light, and identity. Build your next project with imagery that feels intentional and elevated.",
+        "ctaLabel":  "View Portfolio",
+        "ctaUrl":  "/work",
+        "gallery":  [
+                        "photo-1",
+                        "photo-2"
+                    ],
+        "metaTitle":  "",
+        "metaDescription":  "",
+        "metaKeywords":  ""
+    },
+    {
+        "slug":  "about",
+        "title":  "S.Goodie Photography",
+        "intro":  "S.Goodie is a photography studio specializing in interiors, travel, and brand marketing imagery.",
+        "body":  "We focus on light, spatial storytelling, and refined detail to bring every project to life. From boutique hotels to modern residences and personal brands, we craft visual narratives that feel elevated, authentic, and timeless.",
+        "ctaLabel":  "Start a Project",
+        "ctaUrl":  "mailto:hello@sgoodie.com",
+        "gallery":  [
+                        "photo-3"
+                    ],
+        "metaTitle":  "",
+        "metaDescription":  "",
+        "metaKeywords":  ""
+    },
+    {
+        "slug":  "work",
+        "title":  "Portfolio Collections",
+        "intro":  "Browse the portfolio by category. Each collection is curated to showcase light, composition, and story.",
+        "body":  "Explore interiors, travel, and brand marketing collections to see how each project is shaped by intent and atmosphere.",
+        "ctaLabel":  "View All Projects",
+        "ctaUrl":  "/work",
+        "gallery":  [
+
+                    ],
+        "metaTitle":  "",
+        "metaDescription":  "",
+        "metaKeywords":  ""
+    },
+    {
+        "slug":  "interiors",
+        "title":  "Interiors",
+        "intro":  "Architectural and interior photography for homes, hospitality, and commercial spaces.",
+        "body":  "From boutique hotels to modern residences, each set is captured with a focus on texture, light, and quiet detail.",
+        "ctaLabel":  "Request a Quote",
+        "ctaUrl":  "mailto:hello@sgoodie.com",
+        "gallery":  [
+                        "photo-1"
+                    ],
+        "metaTitle":  "",
+        "metaDescription":  "",
+        "metaKeywords":  ""
+    },
+    {
+        "slug":  "travel",
+        "title":  "Travel",
+        "intro":  "Light-driven, story-rich travel photography that captures place and atmosphere.",
+        "body":  "We document destinations with a calm, editorial eye, preserving the feeling of the place.",
+        "ctaLabel":  "Plan a Story",
+        "ctaUrl":  "mailto:hello@sgoodie.com",
+        "gallery":  [
+                        "photo-2"
+                    ],
+        "metaTitle":  "",
+        "metaDescription":  "",
+        "metaKeywords":  ""
+    },
+    {
+        "slug":  "brand-marketing",
+        "title":  "Brand Marketing",
+        "intro":  "Confident brand imagery for personal, editorial, and commercial clients.",
+        "body":  "Portraits, product details, and visual narratives designed to help brands feel bold and coherent.",
+        "ctaLabel":  "Collaborate",
+        "ctaUrl":  "mailto:hello@sgoodie.com",
+        "gallery":  [
+                        "photo-3"
+                    ],
+        "metaTitle":  "",
+        "metaDescription":  "",
+        "metaKeywords":  ""
+    }
+]

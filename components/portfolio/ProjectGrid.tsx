@@ -1,3 +1,5 @@
+'use client';
+
 import type { Project } from '@/types';
 import { ProjectCard } from './ProjectCard';
 

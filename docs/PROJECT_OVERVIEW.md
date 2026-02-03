@@ -1,939 +1,152 @@
 # S.Goodie Photography Platform - Project Overview
 
-**Repository:** `sgoodie-platform`  
-**Created:** 2025-01-16  
-**Status:** Planning Phase
+**Repository:** `sgoodie-platform`
+**Created:** 2025-01-16
+**Status:** Active development (local prototype with mock data)
+**Last Updated:** 2026-02-03
 
 ---
 
 ## 1. Migration Purpose & Goals
 
 ### Current State
-- **Platform:** WordPress website hosted on Bluehost
-- **Issues:**
+- Platform: WordPress website hosted on Bluehost
+- Issues:
   - Slow page load times
   - High hosting costs
   - Limited customization and control
   - Poor performance for image-heavy portfolio site
 
 ### Migration Goals
-1. **Performance:** Dramatically improve page load speeds through modern web technologies and CDN
-2. **Cost Reduction:** Move from expensive Bluehost hosting to cost-effective AWS infrastructure
-3. **Modern Architecture:** Build on Next.js/React for seamless frontend/backend integration
-4. **Scalability:** Infrastructure that can grow with the business
-5. **Control:** Full control over design, functionality, and content management
-6. **Design Refresh:** Complete redesign inspired by modern photography portfolio sites
+1. Performance: Reduce page load times with modern web tech and optimized images
+2. Cost reduction: Lower hosting costs using scalable cloud infrastructure
+3. Modern architecture: Next.js based frontend and backend in one app
+4. Scalability: Architecture that grows with the business
+5. Control: Full control of design, functionality, and content management
+6. Design refresh: Clean editorial layout inspired by leading photography portfolios
 
 ### Success Metrics
-- Page load time < 2 seconds (vs current slow performance)
-- Monthly hosting costs reduced by 50%+ compared to Bluehost
+- Page load time under 2 seconds
+- Hosting costs reduced by 50 percent or more
 - Improved SEO and user experience
-- Easy content management for site owner
+- Simple, safe content management for the site owner
 
 ---
 
-## 2. Project Intent & Vision
+## 2. Current Build Snapshot (What Is Implemented)
 
-### Business Context
-S.Goodie Photography is a professional photography business specializing in:
-- **Interiors Photography** (home & garden, restaurant, hotel sub-categories)
-- **Travel Photography**
-- **Brand Marketing Photography**
-- **Personal Branding Packages**
+### Public Site
+- Next.js App Router with server components for public pages
+- Pages: Home, About, Work, and category pages (Interiors, Travel, Brand Marketing)
+- Project grids and detail layouts driven by local JSON data
+- Page metadata support via `generateMetadata`
 
-### Website Purpose
-The website serves as a digital art gallery showcasing the photographer's work. It needs to:
-- Display high-quality photography portfolios
-- Allow visitors to browse by category
-- Showcase individual projects with detailed views
-- Present professional branding and about information
-- Enable easy content management for the site owner
+### Admin (Authenticated)
+- NextAuth credentials login (single admin)
+- Admin dashboard with real analytics (local mock DB)
+- Pages editor: text only (no photo upload here)
+- Photos editor: upload, assign to pages, drag to reorder, edit metadata
+- Preview mode: admin-only preview that mirrors the public UI
 
-### Design Inspiration
-The new design will be inspired by modern photography portfolio sites:
-- **Home Page:** Clean, minimal design similar to [jennverrier.com](https://www.jennverrier.com/)
-- **Menu Structure:** Split portfolio into Interiors (home & garden, restaurant, hotel), Travel, and Brand Marketing
-- **Portfolio Pages:** Grid-based layout similar to [jennverrier.com/architectural-photography-portfolio](https://www.jennverrier.com/architectural-photography-portfolio)
-- **Personal Branding:** Package presentation similar to [allegraanderson.com/personal-branding-packages](https://allegraanderson.com/personal-branding-packages)
-- **Project Detail Pages:** Immersive, full-screen experience similar to [drewkelly.com/#/tenakeetime/](https://drewkelly.com/#/tenakeetime/)
+### AI Features
+- AI Fix buttons on page text and metadata fields
+- AI Fix buttons on photo metadata fields
+- Dashboard batch AI optimize:
+  - SEO metadata for pages and photos
+  - Text copy for pages
+- AI model dropdown with curated top models
+- OpenAI integration via the Responses API
+
+### Analytics (Real, Stored Locally)
+- Client-side tracking of page views and time on page
+- Events stored in `data/local/analytics.json`
+- Dashboard filters: daily, monthly, quarterly, yearly
+- Top pages table uses friendly labels for non-technical admins
 
 ---
 
-## 3. Technical Architecture
+## 3. UX and Design Direction
 
-### Frontend Stack
-- **Framework:** Next.js 14+ (Latest Stable) - App Router
-- **Rendering Strategy:** **SSG + ISR (On-Demand Revalidation)** for public pages
-  - **Why SSG?** Best SEO performance - pre-rendered HTML, perfect for search engines
-  - **Freshness:** Revalidate only impacted pages after admin updates
-  - **Performance:** Fastest possible page loads, CDN-served static files
-  - **Note:** Public pages are NOT SPA. Admin dashboard can be client-side.
-- **UI Library:** React 18+ (Latest Stable)
-- **Data Fetching:** Server Components + cached `fetch` for public pages
-- **Admin Data Fetching:** TanStack Query (React Query) v5+ for dashboard UI
-- **Styling:** Tailwind CSS (Latest Stable)
-- **Image Pipeline:** Pre-generate responsive variants (AVIF/WebP/JPEG) at upload
-- **Image Delivery:** S3 + CloudFront, Next.js uses custom loader or `unoptimized`
-- **State Management:** React Context API or Zustand (for admin state)
-- **Language:** TypeScript 5+ (Latest Stable)
+The visual direction is based on a clean, editorial photography portfolio style.
+Use `docs/JENN_VERRIER_UX_REFERENCE.md` for a detailed UI and UX breakdown of the reference site.
 
-**See [SEO_STRATEGY.md](./SEO_STRATEGY.md) for detailed explanation of why SSG is better than SPA for SEO.**  
-**See [TECHNICAL_ARCHITECTURE.md](./TECHNICAL_ARCHITECTURE.md) for complete technical architecture details.**
+---
 
-### Backend Stack
-- **API:** Next.js Route Handlers (App Router) for admin CRUD + presigned uploads
-- **Async Processing:** Optional AWS Lambda for heavy image processing (S3 event)
-- **Authentication:** NextAuth.js (Credentials) with hashed password in DynamoDB
-- **Future Auth Option:** AWS Cognito if multi-admin/MFA becomes necessary
-- **File Storage:** AWS S3 (for photo storage)
-- **Database:** 
-  - **Option 1:** DynamoDB (NoSQL, serverless, pay-per-use) - **Recommended for cost**
-  - **Option 2:** PostgreSQL on RDS (more features, higher cost)
-  - **Option 3:** AWS Amplify DataStore (simplified, but may have limitations)
+## 4. Technical Architecture Summary (Current)
 
-### Infrastructure
-- **Hosting:** AWS Amplify Hosting with Next.js SSR/ISR support (single app)
-- **CDN:** CloudFront (Amplify for app, separate for images)
-- **Infrastructure as Code:** Terraform (reusable modules)
-- **CI/CD:** GitHub Actions for Terraform, Amplify build for app deploy
+- Framework: Next.js 14 (App Router)
+- Language: TypeScript 5
+- Styling: Tailwind CSS
+- Auth: NextAuth (Credentials)
+- Data: Local JSON store under `data/local` seeded from `data/seed`
+- API: Next.js Route Handlers in `app/api`
+- Analytics: Client provider + API storage
+- AI: OpenAI Responses API via server routes
 
-### Local Development Strategy
+---
 
-**Local-first development with LocalStack for S3/DynamoDB, plus an early staging environment for auth and image pipeline parity.**
+## 5. Local Development
 
-This approach ensures:
-- **Zero AWS costs** during development
-- **Faster iteration** (no network latency)
-- **Offline development** capability
-- **Easy testing** and debugging
-- **Same code works** in both local and AWS environments
-
-#### Docker & LocalStack Setup
-
-**LocalStack** is a cloud service emulator that runs in Docker and provides local versions of AWS services. We'll use it to emulate:
-- **S3** (photo storage)
-- **DynamoDB** (database)
-- **Lambda** (optional, for local image processing tests)
-
-**Docker Compose Configuration:**
-```yaml
-version: '3.8'
-services:
-  localstack:
-    image: localstack/localstack:latest
-    container_name: sgoodie-localstack
-    environment:
-      SERVICES: s3,dynamodb,lambda
-      DEBUG: 1
-      DATA_DIR: /var/lib/localstack/data
-      PERSISTENCE: 1
-    ports:
-      - "4566:4566"
-    volumes:
-      - localstack_data:/var/lib/localstack
-    tmpfs:
-      - /tmp
-
-volumes:
-  localstack_data:
-```
-
-#### Local Development Workflow
-
-**1. Prerequisites:**
+### Prerequisites
 - Node.js 20+
-- Docker Desktop (for LocalStack)
 - npm 10+
 
-**2. Start LocalStack:**
+### Setup
+1. Copy `.env.example` to `.env.local` and update values
+2. Ensure `USE_MOCK_DATA=true` (local JSON storage)
+3. Set admin credentials in `.env.local`
+4. Add your OpenAI key if AI features are needed
+
+### Commands
 ```bash
-# Start LocalStack in Docker
-docker-compose up localstack -d
-
-# Wait a few seconds, then setup resources
-npm run setup:localstack
-```
-
-**3. Environment Configuration:**
-
-Create `.env.local` in project root:
-```bash
-# Local Development (LocalStack)
-NODE_ENV=development
-USE_LOCALSTACK=true
-AWS_REGION=us-east-1
-
-# S3 Buckets (LocalStack)
-S3_BUCKET_PHOTOS=sgoodie-photos-dev
-S3_BUCKET_THUMBNAILS=sgoodie-photos-thumbnails-dev
-S3_BUCKET_UPLOADS=sgoodie-admin-uploads-dev
-
-# DynamoDB Tables (LocalStack)
-DYNAMODB_TABLE_PROJECTS=sgoodie-projects-dev
-DYNAMODB_TABLE_PHOTOS=sgoodie-photos-dev
-DYNAMODB_TABLE_PAGES=sgoodie-pages-dev
-DYNAMODB_TABLE_SETTINGS=sgoodie-settings-dev
-DYNAMODB_TABLE_ADMINS=sgoodie-admins-dev
-
-# Authentication (local)
-JWT_SECRET=local-dev-secret-key-change-in-production
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=local-nextauth-secret-change-in-production
-
-# Next.js
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3000/api
-```
-
-**4. Setup Scripts:**
-
-Create `scripts/setup-localstack.ts` to initialize:
-- S3 buckets
-- DynamoDB tables
-- Any other required resources
-
-**5. AWS SDK Configuration Pattern:**
-
-All AWS SDK clients will automatically detect the environment and use LocalStack when `USE_LOCALSTACK=true`:
-
-```typescript
-// lib/aws/s3.ts
-import { S3Client } from '@aws-sdk/client-s3';
-
-function getS3Client(): S3Client {
-  const isLocal = process.env.NODE_ENV === 'development' || 
-                  process.env.USE_LOCALSTACK === 'true';
-
-  if (isLocal) {
-    return new S3Client({
-      endpoint: 'http://localhost:4566',
-      region: process.env.AWS_REGION || 'us-east-1',
-      credentials: {
-        accessKeyId: 'test',
-        secretAccessKey: 'test',
-      },
-      forcePathStyle: true, // Required for LocalStack
-    });
-  }
-
-  // Production: Use real AWS
-  return new S3Client({
-    region: process.env.AWS_REGION || 'us-east-1',
-  });
-}
-```
-
-```typescript
-// lib/aws/dynamodb.ts
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-
-function getDynamoDBClient(): DynamoDBClient {
-  const isLocal = process.env.NODE_ENV === 'development' || 
-                  process.env.USE_LOCALSTACK === 'true';
-
-  if (isLocal) {
-    return new DynamoDBClient({
-      endpoint: 'http://localhost:4566',
-      region: process.env.AWS_REGION || 'us-east-1',
-      credentials: {
-        accessKeyId: 'test',
-        secretAccessKey: 'test',
-      },
-    });
-  }
-
-  // Production: Use real AWS
-  return new DynamoDBClient({
-    region: process.env.AWS_REGION || 'us-east-1',
-  });
-}
-```
-
-**6. Running the Application Locally:**
-
-```bash
-# Terminal 1: Start LocalStack
-docker-compose up localstack -d
-npm run setup:localstack
-
-# Terminal 2: Start Next.js dev server
+npm install
 npm run dev
 ```
 
-**Application runs on:** http://localhost:3000
+The Next.js dev server hosts both frontend and backend on a single port.
 
-**LocalStack Dashboard:** http://localhost:4566
-
-**Early Staging Parity Check:**
-- Validate auth, image variants, and CloudFront behavior in a small staging stack
-- LocalStack does not fully emulate Cognito/CloudFront/Amplify behavior
-
-#### Local Development Benefits
-
-- **Cost:** $0 AWS charges during development
-- **Speed:** No network latency, instant responses
-- **Isolation:** Can reset/clean up test data easily
-- **Offline:** Works without internet connection
-- **Testing:** Easy to test edge cases and error scenarios
-- **Debugging:** Can inspect LocalStack logs and data directly
-
-#### Migration to AWS
-
-When ready to deploy:
-1. Code is already compatible (uses environment variables)
-2. Run Terraform to create real AWS resources
-3. Update environment variables to point to real AWS
-4. **No code changes needed!** The same code works in both environments
-
-**Workflow:**
-```
-Local Development -> LocalStack (Docker)
-     |
-Early Staging Parity Check
-     |
-Terraform Deploy -> Real AWS
-```
-
-#### Package.json Scripts
-
-```json
-{
-  "scripts": {
-    "dev": "next dev",
-    "setup:localstack": "tsx scripts/setup-localstack.ts",
-    "localstack:start": "docker-compose up localstack -d",
-    "localstack:stop": "docker-compose down",
-    "localstack:logs": "docker-compose logs -f localstack",
-    "localstack:reset": "docker-compose down -v && docker-compose up localstack -d && npm run setup:localstack"
-  }
-}
-```
-
-### Data Storage Strategy
-
-#### Recommended: DynamoDB + S3
-**Why DynamoDB:**
-- **Cost-Effective:** Pay only for what you use (read/write units)
-- **Serverless:** No server management, auto-scaling
-- **Fast:** Single-digit millisecond latency
-- **Simple Schema:** Perfect for portfolio data (photos, projects, pages, settings)
-
-**Data Structure:**
-```
-- Projects Table: project_id (PK), category (GSI1PK), order (GSI1SK), title, description, created_at
-- Photos Table: project_id (PK), order#photo_id (SK), s3_key, alt_text, created_at
-- Pages Table: page_id (PK), content (JSON), updated_at
-- Settings Table: setting_key (PK), setting_value (JSON)
-- Admin Users Table: user_id (PK), email, password_hash, created_at
-```
-
-**S3 Buckets:**
-- `sgoodie-photos-prod` - Production photos
-- `sgoodie-photos-thumbnails` - Optimized thumbnails
-- `sgoodie-admin-uploads` - Temporary uploads before processing
-
-**Cost Estimate (DynamoDB):**
-- Free tier: 25 GB storage, 25 read/write units
-- Estimated monthly: $5-15 (depending on traffic)
-- Much cheaper than RDS for this use case
+### Admin Login (Local)
+- Credentials are controlled by `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH`
+- Hash is a SHA-256 hex string of the password
+- The example config uses:
+  - Email: `admin@example.com`
+  - Password: `admin123`
 
 ---
 
-## 4. Terraform Infrastructure as Code
+## 6. Data and Storage (Current vs Planned)
 
-### Philosophy: Reusability First
-All Terraform modules will be designed for maximum reusability. We'll create modules that can be instantiated multiple times with different parameters (names, configurations, etc.).
+### Current (Local Prototype)
+- Data is stored in JSON files under `data/local`
+- Seeds live in `data/seed`
+- All CRUD operations read and write JSON files
 
-### Module Structure
-```
-terraform/
-├── modules/
-│   ├── amplify-app/
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   ├── outputs.tf
-│   │   └── README.md
-│   ├── s3-bucket/
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   ├── outputs.tf
-│   │   └── README.md
-│   ├── dynamodb-table/
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   ├── outputs.tf
-│   │   └── README.md
-│   ├── lambda-function/
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   ├── outputs.tf
-│   │   └── README.md
-│   ├── cognito-user-pool/
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   ├── outputs.tf
-│   │   └── README.md
-│   └── iam-role/
-│       ├── main.tf
-│       ├── variables.tf
-│       ├── outputs.tf
-│       └── README.md
-├── environments/
-│   ├── dev/
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── terraform.tfvars
-│   ├── staging/
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── terraform.tfvars
-│   └── prod/
-│       ├── main.tf
-│       ├── variables.tf
-│       └── terraform.tfvars
-├── main.tf (root module)
-├── variables.tf
-├── outputs.tf
-└── README.md
-```
-
-### Reusable Module Example: S3 Bucket
-```hcl
-# terraform/modules/s3-bucket/main.tf
-module "photo_storage" {
-  source = "../../modules/s3-bucket"
-  
-  bucket_name = "sgoodie-photos-prod"
-  environment = "prod"
-  enable_versioning = true
-  enable_encryption = true
-  lifecycle_rules = [
-    {
-      id = "delete-old-versions"
-      enabled = true
-      expiration_days = 90
-    }
-  ]
-}
-
-module "thumbnail_storage" {
-  source = "../../modules/s3-bucket"
-  
-  bucket_name = "sgoodie-photos-thumbnails-prod"
-  environment = "prod"
-  enable_versioning = false
-  enable_encryption = true
-}
-```
-
-### Module Principles
-1. **Parameterized:** All configurable values passed as variables
-2. **Documented:** Each module has README with usage examples
-3. **Idempotent:** Can be run multiple times safely
-4. **Environment-Aware:** Supports dev/staging/prod with different configs
-5. **Output-Driven:** Modules expose outputs for other modules to use
+### Planned (AWS)
+- S3 for photo storage
+- DynamoDB for structured content
+- CloudFront for image delivery
+- Terraform modules for infrastructure
+- LocalStack for local AWS emulation
 
 ---
 
-## 5. Feature Requirements
+## 7. Risks and Constraints
 
-### Public-Facing Features
-
-#### Home Page
-- Hero section with featured photography
-- Navigation menu: Work (Interiors, Travel, Brand Marketing), About, Contact
-- Clean, minimal design inspired by jennverrier.com
-- Fast loading with optimized images
-
-#### Portfolio Pages
-- **Interiors Portfolio:**
-  - Sub-categories: Home & Garden, Restaurant, Hotel
-  - Grid-based photo layout
-  - Click to view project details
-- **Travel Portfolio:**
-  - Grid-based photo layout
-  - Click to view project details
-- **Brand Marketing Portfolio:**
-  - Grid-based photo layout
-  - Click to view project details
-
-#### Project Detail Pages
-- Full-screen photo experience
-- Navigation between photos in project
-- Project information (title, description, location, etc.)
-- Similar to drewkelly.com project pages
-
-#### About Page
-- Owner photo (editable by admin)
-- Biography/content (editable by admin)
-- Professional information
-
-#### Personal Branding Page
-- Package offerings
-- Pricing information (if applicable)
-- Similar to allegraanderson.com personal branding packages
-
-### Admin Features (Authenticated)
-
-#### Authentication
-- Single admin user login (site owner)
-- Secure password-based authentication
-- Session management
-
-#### Photo Management
-- **Upload Photos:**
-  - Drag-and-drop interface
-  - Multiple file upload
-  - Automatic thumbnail generation
-  - Image optimization
-- **Organize Photos:**
-  - Drag-and-drop to reorder photos
-  - Assign photos to projects/categories
-  - Delete photos
-- **Photo Positioning:**
-  - Visual drag-and-drop interface
-  - Save position/order
-  - Preview changes before publishing
-
-#### Content Management
-- **Page Content Editing:**
-  - Edit text content on any page
-  - Rich text editor for formatting
-  - Save drafts vs. publish
-- **Project Management:**
-  - Create/edit/delete projects
-  - Assign photos to projects
-  - Set project metadata (title, description, category)
-  - Reorder projects within categories
-- **About Page Management:**
-  - Upload/edit owner photo
-  - Edit biography text
-  - Update contact information
-
-#### Admin Dashboard
-- Overview of site statistics
-- Quick access to common tasks
-- Recent uploads/edits
+- Local JSON storage is for prototyping only
+- AI features require a valid `OPENAI_API_KEY`
+- Analytics are mocked locally and must migrate to a real database later
 
 ---
 
-## 6. Development Workflow
+## 8. Next Steps
 
-**Local-first development, plus an early staging parity check before production.**
-
-### Phase 1: Local Development Setup (Week 1)
-1. **Docker & LocalStack Setup**
-   - Create `docker-compose.yml` with LocalStack configuration
-   - Set up LocalStack for S3 and DynamoDB emulation
-   - Create setup scripts for initializing LocalStack resources
-   - Test LocalStack connectivity and functionality
-
-2. **Next.js Project Initialization**
-   - Initialize Next.js 14+ with App Router
-   - Configure TypeScript
-   - Set up Tailwind CSS
-   - Configure ESLint/Prettier
-   - Set up project structure
-
-3. **AWS SDK Integration (LocalStack)**
-   - Create environment-aware AWS SDK clients (S3, DynamoDB)
-   - Configure clients to automatically use LocalStack in development
-   - Create utility functions for S3 and DynamoDB operations
-   - Test file uploads and database operations locally
-
-4. **Local Environment Configuration**
-   - Create `.env.local` with LocalStack configuration
-   - Set up npm scripts for LocalStack management
-   - Document local development workflow
-   - Verify everything works locally before proceeding
-
-### Phase 1.5: Terraform Modules (Week 1-2) - For Future AWS Deployment
-**Note: Terraform modules will be created early, but applied after local validation and staging parity check.**
-
-1. **Terraform Modules Creation**
-   - Create reusable modules for all AWS resources
-   - S3 bucket module
-   - DynamoDB table module
-   - Amplify app module
-   - Cognito user pool module (if needed)
-   - Lambda function module (if needed)
-   - IAM roles module
-
-2. **Environment Configuration**
-   - Set up dev environment configuration
-   - Set up staging environment configuration
-   - Set up prod environment configuration
-   - Configure Terraform state management (S3 backend)
-
-**These modules will be ready for deployment once local development is complete.**
-
-### Phase 2: Application Structure & Core Setup (Week 1-2)
-1. **Project Structure**
-   ```
-   sgoodie-platform/
-   ├── app/                    # Next.js App Router
-   │   ├── (public)/           # Public routes
-   │   │   ├── page.tsx       # Home page
-   │   │   ├── about/
-   │   │   ├── work/
-   │   │   │   ├── interiors/
-   │   │   │   ├── travel/
-   │   │   │   └── brand-marketing/
-   │   │   └── projects/[id]/
-   │   ├── (admin)/            # Admin route group (protected)
-   │   │   └── admin/           # Admin URL prefix to avoid public route collisions
-   │   │       ├── login/
-   │   │       ├── dashboard/
-   │   │       ├── photos/
-   │   │       ├── projects/
-   │   │       └── pages/
-   │   └── api/                # API routes
-   │       ├── auth/
-   │       ├── photos/
-   │       ├── projects/
-   │       └── pages/
-   ├── components/
-   │   ├── ui/                 # Reusable UI components
-   │   ├── layout/             # Layout components
-   │   ├── portfolio/         # Portfolio-specific components
-   │   └── admin/              # Admin components
-   ├── lib/
-   │   ├── aws/                # AWS SDK clients
-   │   ├── db/                 # Database utilities
-   │   ├── auth/               # Authentication utilities
-   │   └── utils/              # General utilities
-   ├── types/                  # TypeScript types
-   ├── terraform/              # Infrastructure as Code (for future AWS deployment)
-   └── public/                 # Static assets
-   ```
-
-2. **Local Development Verification**
-   - Verify LocalStack is working correctly
-   - Test S3 uploads/downloads locally
-   - Test DynamoDB operations locally
-   - Ensure all AWS SDK clients work with LocalStack
-   - Document any issues and solutions
-
-### Phase 3: Core Features Development (Week 2-4) - LOCAL ONLY
-1. **Public Pages**
-   - Home page with hero and navigation
-   - Portfolio category pages
-   - Project detail pages
-   - About page
-   - Personal branding page
-
-2. **Image Optimization**
-   - Next.js Image component integration
-   - CloudFront CDN setup
-   - Thumbnail generation pipeline
-   - Lazy loading implementation
-
-3. **Database Schema**
-   - DynamoDB table creation
-   - Data access layer (DAOs)
-   - Type definitions
-
-### Phase 4: Admin Features (Week 4-6)
-1. **Authentication**
-   - Login page
-   - Session management
-   - Protected routes middleware
-
-2. **Photo Management**
-   - Upload interface
-   - Photo gallery view
-   - Drag-and-drop reordering
-   - Delete functionality
-
-3. **Content Management**
-   - Page content editor
-   - Project management interface
-   - About page editor
-
-4. **Admin Dashboard**
-   - Overview page
-   - Navigation
-   - Quick actions
-
-### Phase 5: Design & Polish (Week 6-7)
-1. **Design Implementation**
-   - Implement design inspired by reference sites
-   - Responsive design (mobile, tablet, desktop)
-   - Animation and transitions
-   - Image loading states
-
-2. **Performance Optimization**
-   - Image optimization
-   - Code splitting
-   - Caching strategies
-   - CDN configuration
-
-3. **SEO Optimization**
-   - Meta tags
-   - Open Graph tags
-   - Sitemap generation
-   - Structured data
-
-### Phase 6: Local Testing & Validation (Week 7-8)
-**Local-first testing, plus a staging parity check for auth and image delivery.**
-
-1. **Local Testing**
-   - Unit tests (run locally)
-   - Integration tests (with LocalStack)
-   - E2E tests (critical flows, local environment)
-   - Performance testing (local benchmarks)
-   - User acceptance testing (local environment)
-
-2. **Local Validation Checklist**
-   - ✅ All features working correctly locally
-   - ✅ Photo upload/download working with LocalStack S3
-   - ✅ Database operations working with LocalStack DynamoDB
-   - ✅ Admin authentication working
-   - ✅ Photo positioning/drag-and-drop working
-   - ✅ Content editing working
-   - ✅ All pages rendering correctly
-   - ✅ Responsive design working on all devices
-   - ✅ Performance meets requirements
-   - ✅ No errors in console/logs
-
-3. **Client Review (Local Environment)**
-   - Share local development URL (localhost:3000)
-   - Gather client feedback
-   - Make necessary adjustments
-   - Re-test everything locally
-
-### Phase 7: AWS Deployment (ONLY AFTER LOCAL VALIDATION)
-**This phase only begins after Phase 6 is 100% complete and validated locally.**
-
-1. **Terraform Deployment**
-   - Deploy Terraform modules to create AWS resources
-   - Verify all resources created correctly
-   - Test connectivity and permissions
-
-2. **Staging Deployment**
-   - Deploy to AWS Amplify staging environment
-   - Verify everything works in AWS (should be identical to local)
-   - Final testing in staging environment
-   - Client review on staging URL
-
-3. **Production Deployment**
-   - Deploy to AWS Amplify production environment
-   - DNS configuration
-   - SSL certificate setup (automatic with Amplify)
-   - Monitoring setup
-   - Final production verification
-
-4. **Migration**
-   - Export content from WordPress (if needed)
-   - Import to new system
-   - Redirect old URLs to new site
-   - Monitor for any issues
+1. Confirm UX details from `docs/JENN_VERRIER_UX_REFERENCE.md`
+2. Implement the new public layout to match the reference
+3. Replace local JSON storage with DynamoDB and S3
+4. Add image optimization pipeline and CDN configuration
+5. Wire real analytics persistence and reporting
 
 ---
 
-## 7. Cost Optimization Strategy
-
-### Current Costs (Bluehost)
-- Estimated: $10-20/month for hosting
-- Additional costs for plugins, themes, etc.
-
-### AWS Cost Breakdown (Estimated)
-
-#### AWS Amplify
-- **Free Tier:** 1,000 build minutes/month, 15 GB storage, 5 GB served/month
-- **Paid:** ~$0.01 per build minute, $0.15/GB storage, $0.15/GB served
-- **Estimated Monthly:** $5-10 (for low-medium traffic)
-
-#### S3 Storage
-- **Free Tier:** 5 GB storage, 20,000 GET requests, 2,000 PUT requests
-- **Paid:** $0.023/GB storage, $0.0004/1,000 GET requests
-- **Estimated Monthly:** $2-5 (for ~50-100 GB of photos)
-
-#### DynamoDB
-- **Free Tier:** 25 GB storage, 25 read/write units
-- **Paid:** $0.25/GB storage, $0.00025/read unit, $0.00125/write unit
-- **Estimated Monthly:** $5-10 (for low-medium traffic)
-
-#### CloudFront CDN
-- **Free Tier:** 1 TB data transfer out, 10,000,000 HTTP/HTTPS requests
-- **Paid:** $0.085/GB after free tier
-- **Estimated Monthly:** $0-5 (likely within free tier for small-medium sites)
-
-#### Lambda (if used)
-- **Free Tier:** 1M requests, 400,000 GB-seconds
-- **Paid:** $0.20 per 1M requests, $0.0000166667/GB-second
-- **Estimated Monthly:** $0-2 (if used minimally)
-
-#### Cognito
-- **Free Tier:** 50,000 MAUs (Monthly Active Users)
-- **Paid:** $0.0055/MAU after free tier
-- **Estimated Monthly:** $0 (single admin user)
-
-### Total Estimated Monthly Cost
-- **Low Traffic:** $12-22/month
-- **Medium Traffic:** $20-35/month
-- **High Traffic:** $40-60/month
-
-### Cost Savings
-- **Compared to Bluehost:** Similar or lower cost with much better performance
-- **Scalability:** Pay only for what you use
-- **No Lock-in:** Easy to optimize costs as traffic grows
-
-### Cost Optimization Tips
-1. Use S3 Intelligent-Tiering for photos (automatic cost optimization)
-2. Enable CloudFront caching (reduce origin requests)
-3. Use DynamoDB On-Demand pricing (pay per request, no capacity planning)
-4. Optimize images before upload (reduce storage costs)
-5. Use AWS Free Tier wherever possible
-6. Monitor costs with AWS Cost Explorer
-
----
-
-## 8. Technical Decisions & Rationale
-
-### Why Next.js with SSG + ISR (Static Site Generation + Revalidation)?
-- **Best SEO:** Pre-rendered HTML at build time - search engines see full content immediately
-- **NOT SPA:** Public pages are not SPA - SPAs have poor SEO (empty HTML, requires JavaScript)
-- **Performance:** Fastest possible page loads, CDN-served static files
-- **Freshness:** On-demand revalidation updates only affected pages
-- **Social Sharing:** Perfect Open Graph tags, rich previews on social media
-- **Built-in Backend:** Route Handlers for admin operations
-- **Image Pipeline:** Pre-generated variants + CDN for image-heavy pages
-- **React Ecosystem:** Large community and resources
-- **AWS Amplify Support:** Next.js SSG/ISR support on Amplify Hosting
-
-### Why AWS Amplify?
-- **Easy Deployment:** Automatic deployments from GitHub
-- **Built-in CDN:** CloudFront integration
-- **SSL Certificates:** Automatic SSL management
-- **Environment Management:** Dev/staging/prod environments
-- **Cost-Effective:** Pay only for what you use
-
-### Why DynamoDB over RDS?
-- **Cost:** Much cheaper for this use case
-- **Simplicity:** No server management
-- **Performance:** Fast, consistent performance
-- **Scalability:** Auto-scaling
-- **Schema Flexibility:** Easy to evolve schema
-
-### Why Terraform?
-- **Infrastructure as Code:** Version control for infrastructure
-- **Reusability:** Create modules once, use everywhere
-- **Consistency:** Same infrastructure across environments
-- **Documentation:** Self-documenting infrastructure
-- **Collaboration:** Team can review infrastructure changes
-
-### Why S3 for Photos?
-- **Cost-Effective:** Very cheap storage
-- **Scalability:** Unlimited storage
-- **CDN Integration:** Works seamlessly with CloudFront
-- **Durability:** 99.999999999% (11 9's) durability
-- **Versioning:** Can enable versioning for backups
-
----
-
-## 9. Security Considerations
-
-### Authentication
-- Secure password hashing (bcrypt)
-- JWT tokens for session management
-- HTTPS only (enforced by Amplify)
-- Rate limiting on login endpoints
-
-### Data Protection
-- S3 bucket encryption at rest
-- DynamoDB encryption at rest
-- Secure API endpoints (authentication required)
-- Input validation and sanitization
-
-### Access Control
-- IAM roles with least privilege
-- S3 bucket policies (admin-only write access)
-- DynamoDB access via IAM roles
-- Admin routes protected by authentication middleware
-
----
-
-## 10. Monitoring & Maintenance
-
-### Monitoring
-- AWS CloudWatch for logs and metrics
-- Amplify build notifications
-- Error tracking (consider Sentry)
-- Performance monitoring
-
-### Maintenance Tasks
-- Regular backups (S3 versioning, DynamoDB backups)
-- Security updates (dependencies, AWS services)
-- Cost monitoring (AWS Cost Explorer)
-- Performance optimization (image optimization, caching)
-
----
-
-## 11. Success Criteria
-
-### Performance
-- ✅ Page load time < 2 seconds
-- ✅ Lighthouse score > 90
-- ✅ Image optimization (WebP format, lazy loading)
-- ✅ CDN caching working correctly
-
-### Cost
-- ✅ Monthly costs < $30 (for low-medium traffic)
-- ✅ Cost monitoring in place
-- ✅ Cost optimization strategies implemented
-
-### Functionality
-- ✅ All public pages working correctly
-- ✅ Admin can upload/manage photos
-- ✅ Admin can edit content
-- ✅ Photo positioning/drag-and-drop working
-- ✅ Responsive design on all devices
-
-### User Experience
-- ✅ Modern, clean design
-- ✅ Fast, smooth navigation
-- ✅ Professional presentation
-- ✅ Easy content management for admin
-
----
-
-## 12. Next Steps
-
-**Local-First + Staging Parity Check Before Production**
-
-1. **Review all documentation** in `docs/` folder
-2. **Set up Docker and LocalStack** for local AWS service emulation
-3. **Initialize Next.js project** with proper monorepo structure
-4. **Set up React Query** for admin dashboard data fetching
-5. **Configure AWS SDK clients** to work with LocalStack
-6. **Create LocalStack setup scripts** (S3 buckets, DynamoDB tables)
-7. **Set up GitHub Actions workflows** for CI/CD
-8. **Begin Phase 1 development** (local development setup)
-9. **Develop and test everything locally** before considering AWS deployment
-10. **Create Terraform modules** (for future AWS deployment, but don't deploy yet)
-11. **Only deploy to AWS** after all local testing is complete and validated
-
-**See [TECHNICAL_ARCHITECTURE.md](./TECHNICAL_ARCHITECTURE.md) for complete architecture details.**  
-**See [CI_CD_WORKFLOW.md](./CI_CD_WORKFLOW.md) for deployment workflows.**
-
----
-
-## 13. References
-
-### Design Inspiration
-- [Jenn Verrier Photography](https://www.jennverrier.com/) - Home page and menu structure
-- [Jenn Verrier - Architectural Portfolio](https://www.jennverrier.com/architectural-photography-portfolio) - Portfolio page layout
-- [Allegra Anderson - Personal Branding](https://allegraanderson.com/personal-branding-packages) - Personal branding page
-- [Drew Kelly - Project Detail](https://drewkelly.com/#/tenakeetime/) - Project detail page experience
-
-### Technical Documentation
-- [Next.js Documentation](https://nextjs.org/docs)
-- [AWS Amplify Documentation](https://docs.amplify.aws/)
-- [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
-- [DynamoDB Best Practices](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/best-practices.html)
-
----
-
-**Document Version:** 1.1  
-**Last Updated:** 2026-02-03  
-**Author:** Development Team
+**Document Version:** 2.0
+**Last Updated:** 2026-02-03
