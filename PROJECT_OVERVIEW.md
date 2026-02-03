@@ -84,6 +84,214 @@ The new design will be inspired by modern photography portfolio sites:
 - **Infrastructure as Code:** Terraform (reusable modules)
 - **CI/CD:** AWS Amplify (automatic deployments from GitHub)
 
+### Local Development Strategy
+
+**CRITICAL: All development will happen locally using Docker and LocalStack before deploying to AWS.**
+
+This approach ensures:
+- **Zero AWS costs** during development
+- **Faster iteration** (no network latency)
+- **Offline development** capability
+- **Easy testing** and debugging
+- **Same code works** in both local and AWS environments
+
+#### Docker & LocalStack Setup
+
+**LocalStack** is a cloud service emulator that runs in Docker and provides local versions of AWS services. We'll use it to emulate:
+- **S3** (photo storage)
+- **DynamoDB** (database)
+- **Lambda** (serverless functions, if needed)
+- **Cognito** (authentication, if needed)
+
+**Docker Compose Configuration:**
+```yaml
+version: '3.8'
+services:
+  localstack:
+    image: localstack/localstack:latest
+    container_name: sgoodie-localstack
+    environment:
+      SERVICES: s3,dynamodb,lambda
+      DEBUG: 1
+      DATA_DIR: /var/lib/localstack/data
+      PERSISTENCE: 1
+    ports:
+      - "4566:4566"
+    volumes:
+      - localstack_data:/var/lib/localstack
+    tmpfs:
+      - /tmp
+
+volumes:
+  localstack_data:
+```
+
+#### Local Development Workflow
+
+**1. Prerequisites:**
+- Node.js 20+
+- Docker Desktop (for LocalStack)
+- npm 10+
+
+**2. Start LocalStack:**
+```bash
+# Start LocalStack in Docker
+docker-compose up localstack -d
+
+# Wait a few seconds, then setup resources
+npm run setup:localstack
+```
+
+**3. Environment Configuration:**
+
+Create `.env.local` in project root:
+```bash
+# Local Development (LocalStack)
+NODE_ENV=development
+USE_LOCALSTACK=true
+AWS_REGION=us-east-1
+
+# S3 Buckets (LocalStack)
+S3_BUCKET_PHOTOS=sgoodie-photos-dev
+S3_BUCKET_THUMBNAILS=sgoodie-photos-thumbnails-dev
+S3_BUCKET_UPLOADS=sgoodie-admin-uploads-dev
+
+# DynamoDB Tables (LocalStack)
+DYNAMODB_TABLE_PROJECTS=sgoodie-projects-dev
+DYNAMODB_TABLE_PHOTOS=sgoodie-photos-dev
+DYNAMODB_TABLE_PAGES=sgoodie-pages-dev
+DYNAMODB_TABLE_SETTINGS=sgoodie-settings-dev
+DYNAMODB_TABLE_ADMINS=sgoodie-admins-dev
+
+# Authentication (local)
+JWT_SECRET=local-dev-secret-key-change-in-production
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=local-nextauth-secret-change-in-production
+
+# Next.js
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3000/api
+```
+
+**4. Setup Scripts:**
+
+Create `scripts/setup-localstack.ts` to initialize:
+- S3 buckets
+- DynamoDB tables
+- Any other required resources
+
+**5. AWS SDK Configuration Pattern:**
+
+All AWS SDK clients will automatically detect the environment and use LocalStack when `USE_LOCALSTACK=true`:
+
+```typescript
+// lib/aws/s3.ts
+import { S3Client } from '@aws-sdk/client-s3';
+
+function getS3Client(): S3Client {
+  const isLocal = process.env.NODE_ENV === 'development' || 
+                  process.env.USE_LOCALSTACK === 'true';
+
+  if (isLocal) {
+    return new S3Client({
+      endpoint: 'http://localhost:4566',
+      region: process.env.AWS_REGION || 'us-east-1',
+      credentials: {
+        accessKeyId: 'test',
+        secretAccessKey: 'test',
+      },
+      forcePathStyle: true, // Required for LocalStack
+    });
+  }
+
+  // Production: Use real AWS
+  return new S3Client({
+    region: process.env.AWS_REGION || 'us-east-1',
+  });
+}
+```
+
+```typescript
+// lib/aws/dynamodb.ts
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+
+function getDynamoDBClient(): DynamoDBClient {
+  const isLocal = process.env.NODE_ENV === 'development' || 
+                  process.env.USE_LOCALSTACK === 'true';
+
+  if (isLocal) {
+    return new DynamoDBClient({
+      endpoint: 'http://localhost:4566',
+      region: process.env.AWS_REGION || 'us-east-1',
+      credentials: {
+        accessKeyId: 'test',
+        secretAccessKey: 'test',
+      },
+    });
+  }
+
+  // Production: Use real AWS
+  return new DynamoDBClient({
+    region: process.env.AWS_REGION || 'us-east-1',
+  });
+}
+```
+
+**6. Running the Application Locally:**
+
+```bash
+# Terminal 1: Start LocalStack
+docker-compose up localstack -d
+npm run setup:localstack
+
+# Terminal 2: Start Next.js dev server
+npm run dev
+```
+
+**Application runs on:** http://localhost:3000
+
+**LocalStack Dashboard:** http://localhost:4566
+
+#### Local Development Benefits
+
+- **Cost:** $0 AWS charges during development
+- **Speed:** No network latency, instant responses
+- **Isolation:** Can reset/clean up test data easily
+- **Offline:** Works without internet connection
+- **Testing:** Easy to test edge cases and error scenarios
+- **Debugging:** Can inspect LocalStack logs and data directly
+
+#### Migration to AWS
+
+When ready to deploy:
+1. Code is already compatible (uses environment variables)
+2. Run Terraform to create real AWS resources
+3. Update environment variables to point to real AWS
+4. **No code changes needed!** The same code works in both environments
+
+**Workflow:**
+```
+Local Development → LocalStack (Docker)
+     ↓
+Test & Perfect Code
+     ↓
+Terraform Deploy → Real AWS
+```
+
+#### Package.json Scripts
+
+```json
+{
+  "scripts": {
+    "dev": "next dev",
+    "setup:localstack": "tsx scripts/setup-localstack.ts",
+    "localstack:start": "docker-compose up localstack -d",
+    "localstack:stop": "docker-compose down",
+    "localstack:logs": "docker-compose logs -f localstack",
+    "localstack:reset": "docker-compose down -v && docker-compose up localstack -d && npm run setup:localstack"
+  }
+}
+```
+
 ### Data Storage Strategy
 
 #### Recommended: DynamoDB + S3
@@ -294,35 +502,56 @@ module "thumbnail_storage" {
 
 ## 6. Development Workflow
 
-### Phase 1: Infrastructure Setup (Week 1)
+**CRITICAL: All development happens locally first. We will NOT deploy to AWS until everything is working perfectly locally.**
+
+### Phase 1: Local Development Setup (Week 1)
+1. **Docker & LocalStack Setup**
+   - Create `docker-compose.yml` with LocalStack configuration
+   - Set up LocalStack for S3 and DynamoDB emulation
+   - Create setup scripts for initializing LocalStack resources
+   - Test LocalStack connectivity and functionality
+
+2. **Next.js Project Initialization**
+   - Initialize Next.js 14+ with App Router
+   - Configure TypeScript
+   - Set up Tailwind CSS
+   - Configure ESLint/Prettier
+   - Set up project structure
+
+3. **AWS SDK Integration (LocalStack)**
+   - Create environment-aware AWS SDK clients (S3, DynamoDB)
+   - Configure clients to automatically use LocalStack in development
+   - Create utility functions for S3 and DynamoDB operations
+   - Test file uploads and database operations locally
+
+4. **Local Environment Configuration**
+   - Create `.env.local` with LocalStack configuration
+   - Set up npm scripts for LocalStack management
+   - Document local development workflow
+   - Verify everything works locally before proceeding
+
+### Phase 1.5: Terraform Modules (Week 1-2) - For Future AWS Deployment
+**Note: Terraform modules will be created but NOT deployed until local development is complete.**
+
 1. **Terraform Modules Creation**
    - Create reusable modules for all AWS resources
    - S3 bucket module
    - DynamoDB table module
    - Amplify app module
-   - Cognito user pool module
+   - Cognito user pool module (if needed)
    - Lambda function module (if needed)
    - IAM roles module
 
 2. **Environment Configuration**
-   - Set up dev environment
-   - Set up staging environment
-   - Set up prod environment
+   - Set up dev environment configuration
+   - Set up staging environment configuration
+   - Set up prod environment configuration
    - Configure Terraform state management (S3 backend)
 
-3. **Initial Infrastructure Deployment**
-   - Deploy dev environment
-   - Verify all resources created correctly
-   - Test connectivity and permissions
+**These modules will be ready for deployment once local development is complete.**
 
-### Phase 2: Next.js Application Setup (Week 1-2)
-1. **Project Initialization**
-   - Initialize Next.js 14+ with App Router
-   - Configure TypeScript
-   - Set up Tailwind CSS
-   - Configure ESLint/Prettier
-
-2. **Project Structure**
+### Phase 2: Application Structure & Core Setup (Week 1-2)
+1. **Project Structure**
    ```
    sgoodie-platform/
    ├── app/                    # Next.js App Router
@@ -356,17 +585,18 @@ module "thumbnail_storage" {
    │   ├── auth/               # Authentication utilities
    │   └── utils/              # General utilities
    ├── types/                  # TypeScript types
-   ├── terraform/              # Infrastructure as Code
+   ├── terraform/              # Infrastructure as Code (for future AWS deployment)
    └── public/                 # Static assets
    ```
 
-3. **AWS Integration**
-   - Set up AWS SDK clients
-   - Configure S3 upload/download
-   - Set up DynamoDB client
-   - Configure Cognito authentication
+2. **Local Development Verification**
+   - Verify LocalStack is working correctly
+   - Test S3 uploads/downloads locally
+   - Test DynamoDB operations locally
+   - Ensure all AWS SDK clients work with LocalStack
+   - Document any issues and solutions
 
-### Phase 3: Core Features Development (Week 2-4)
+### Phase 3: Core Features Development (Week 2-4) - LOCAL ONLY
 1. **Public Pages**
    - Home page with hero and navigation
    - Portfolio category pages
@@ -426,28 +656,60 @@ module "thumbnail_storage" {
    - Sitemap generation
    - Structured data
 
-### Phase 6: Testing & Deployment (Week 7-8)
-1. **Testing**
-   - Unit tests
-   - Integration tests
-   - E2E tests (critical flows)
-   - Performance testing
+### Phase 6: Local Testing & Validation (Week 7-8)
+**CRITICAL: All testing happens locally. Do NOT deploy to AWS until everything is perfect.**
+
+1. **Local Testing**
+   - Unit tests (run locally)
+   - Integration tests (with LocalStack)
+   - E2E tests (critical flows, local environment)
+   - Performance testing (local benchmarks)
+   - User acceptance testing (local environment)
+
+2. **Local Validation Checklist**
+   - ✅ All features working correctly locally
+   - ✅ Photo upload/download working with LocalStack S3
+   - ✅ Database operations working with LocalStack DynamoDB
+   - ✅ Admin authentication working
+   - ✅ Photo positioning/drag-and-drop working
+   - ✅ Content editing working
+   - ✅ All pages rendering correctly
+   - ✅ Responsive design working on all devices
+   - ✅ Performance meets requirements
+   - ✅ No errors in console/logs
+
+3. **Client Review (Local Environment)**
+   - Share local development URL (localhost:3000)
+   - Gather client feedback
+   - Make necessary adjustments
+   - Re-test everything locally
+
+### Phase 7: AWS Deployment (ONLY AFTER LOCAL VALIDATION)
+**This phase only begins after Phase 6 is 100% complete and validated locally.**
+
+1. **Terraform Deployment**
+   - Deploy Terraform modules to create AWS resources
+   - Verify all resources created correctly
+   - Test connectivity and permissions
 
 2. **Staging Deployment**
-   - Deploy to staging environment
-   - Client review and feedback
-   - Bug fixes
+   - Deploy to AWS Amplify staging environment
+   - Verify everything works in AWS (should be identical to local)
+   - Final testing in staging environment
+   - Client review on staging URL
 
 3. **Production Deployment**
-   - Final production deployment
+   - Deploy to AWS Amplify production environment
    - DNS configuration
-   - SSL certificate setup
+   - SSL certificate setup (automatic with Amplify)
    - Monitoring setup
+   - Final production verification
 
 4. **Migration**
    - Export content from WordPress (if needed)
    - Import to new system
    - Redirect old URLs to new site
+   - Monitor for any issues
 
 ---
 
@@ -616,11 +878,17 @@ module "thumbnail_storage" {
 
 ## 12. Next Steps
 
+**Local Development First - No AWS Deployment Until Everything Works Locally**
+
 1. **Review this document** with stakeholders
-2. **Set up Terraform modules** (start with S3 and DynamoDB)
+2. **Set up Docker and LocalStack** for local AWS service emulation
 3. **Initialize Next.js project** with proper structure
-4. **Create development environment** using Terraform
-5. **Begin Phase 1 development** (public pages)
+4. **Configure AWS SDK clients** to work with LocalStack
+5. **Create LocalStack setup scripts** (S3 buckets, DynamoDB tables)
+6. **Begin Phase 1 development** (local development setup)
+7. **Develop and test everything locally** before considering AWS deployment
+8. **Create Terraform modules** (for future AWS deployment, but don't deploy yet)
+9. **Only deploy to AWS** after all local testing is complete and validated
 
 ---
 
