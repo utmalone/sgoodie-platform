@@ -63,10 +63,17 @@ The new design will be inspired by modern photography portfolio sites:
 
 ### Frontend Stack
 - **Framework:** Next.js 14+ (App Router)
+- **Rendering Strategy:** **Static Site Generation (SSG)** for all public pages
+  - **Why SSG?** Best SEO performance - pre-rendered HTML, perfect for search engines
+  - **SEO Benefits:** Full HTML content, meta tags, structured data, social sharing
+  - **Performance:** Fastest possible page loads, CDN-served static files
+  - **Note:** We are NOT using SPA (Single Page App) - SPAs have poor SEO
 - **UI Library:** React 18+
 - **Styling:** Tailwind CSS (for rapid, responsive design)
 - **Image Optimization:** Next.js Image component with AWS CloudFront CDN
 - **State Management:** React Context API or Zustand (for admin state)
+
+**See [SEO_STRATEGY.md](./SEO_STRATEGY.md) for detailed explanation of why SSG is better than SPA for SEO.**
 
 ### Backend Stack
 - **API:** Next.js API Routes (for simple operations)
@@ -773,12 +780,15 @@ module "thumbnail_storage" {
 
 ## 8. Technical Decisions & Rationale
 
-### Why Next.js?
-- **SSR/SSG:** Better SEO and performance
-- **API Routes:** Built-in backend capabilities
-- **Image Optimization:** Built-in image optimization
+### Why Next.js with SSG (Static Site Generation)?
+- **Best SEO:** Pre-rendered HTML at build time - search engines see full content immediately
+- **NOT SPA:** We are using SSG, not SPA - SPAs have poor SEO (empty HTML, requires JavaScript)
+- **Performance:** Fastest possible page loads, CDN-served static files
+- **Social Sharing:** Perfect Open Graph tags, rich previews on social media
+- **API Routes:** Built-in backend capabilities for admin operations
+- **Image Optimization:** Built-in image optimization with Next.js Image
 - **React Ecosystem:** Large community and resources
-- **AWS Amplify Support:** Native Next.js support
+- **AWS Amplify Support:** Native Next.js SSG support, automatic rebuilds on content changes
 
 ### Why AWS Amplify?
 - **Easy Deployment:** Automatic deployments from GitHub
