@@ -62,18 +62,24 @@ The new design will be inspired by modern photography portfolio sites:
 ## 3. Technical Architecture
 
 ### Frontend Stack
-- **Framework:** Next.js 14+ (App Router)
+- **Framework:** Next.js 14+ (Latest Stable) - App Router
 - **Rendering Strategy:** **Static Site Generation (SSG)** for all public pages
   - **Why SSG?** Best SEO performance - pre-rendered HTML, perfect for search engines
   - **SEO Benefits:** Full HTML content, meta tags, structured data, social sharing
   - **Performance:** Fastest possible page loads, CDN-served static files
   - **Note:** We are NOT using SPA (Single Page App) - SPAs have poor SEO
-- **UI Library:** React 18+
-- **Styling:** Tailwind CSS (for rapid, responsive design)
+- **UI Library:** React 18+ (Latest Stable)
+- **Data Fetching:** TanStack Query (React Query) v5+ (Latest Stable)
+  - Server state management
+  - Caching and synchronization
+  - Optimistic updates
+- **Styling:** Tailwind CSS (Latest Stable)
 - **Image Optimization:** Next.js Image component with AWS CloudFront CDN
 - **State Management:** React Context API or Zustand (for admin state)
+- **Language:** TypeScript 5+ (Latest Stable)
 
-**See [SEO_STRATEGY.md](./SEO_STRATEGY.md) for detailed explanation of why SSG is better than SPA for SEO.**
+**See [SEO_STRATEGY.md](./SEO_STRATEGY.md) for detailed explanation of why SSG is better than SPA for SEO.**  
+**See [TECHNICAL_ARCHITECTURE.md](./TECHNICAL_ARCHITECTURE.md) for complete technical architecture details.**
 
 ### Backend Stack
 - **API:** Next.js API Routes (for simple operations)
@@ -890,15 +896,20 @@ module "thumbnail_storage" {
 
 **Local Development First - No AWS Deployment Until Everything Works Locally**
 
-1. **Review this document** with stakeholders
+1. **Review all documentation** in `docs/` folder
 2. **Set up Docker and LocalStack** for local AWS service emulation
-3. **Initialize Next.js project** with proper structure
-4. **Configure AWS SDK clients** to work with LocalStack
-5. **Create LocalStack setup scripts** (S3 buckets, DynamoDB tables)
-6. **Begin Phase 1 development** (local development setup)
-7. **Develop and test everything locally** before considering AWS deployment
-8. **Create Terraform modules** (for future AWS deployment, but don't deploy yet)
-9. **Only deploy to AWS** after all local testing is complete and validated
+3. **Initialize Next.js project** with proper monorepo structure
+4. **Set up React Query** for data fetching
+5. **Configure AWS SDK clients** to work with LocalStack
+6. **Create LocalStack setup scripts** (S3 buckets, DynamoDB tables)
+7. **Set up GitHub Actions workflows** for CI/CD
+8. **Begin Phase 1 development** (local development setup)
+9. **Develop and test everything locally** before considering AWS deployment
+10. **Create Terraform modules** (for future AWS deployment, but don't deploy yet)
+11. **Only deploy to AWS** after all local testing is complete and validated
+
+**See [TECHNICAL_ARCHITECTURE.md](./TECHNICAL_ARCHITECTURE.md) for complete architecture details.**  
+**See [CI_CD_WORKFLOW.md](./CI_CD_WORKFLOW.md) for deployment workflows.**
 
 ---
 

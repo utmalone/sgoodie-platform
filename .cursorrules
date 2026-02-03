@@ -1,0 +1,301 @@
+# Cursor AI Development Rules for S.Goodie Photography Platform
+
+**CRITICAL: Before starting ANY task, read and understand ALL documentation in the `docs/` folder.**
+
+---
+
+## Required Reading Before Any Task
+
+**ALWAYS read these documents in order before starting work:**
+
+1. **`docs/PROJECT_OVERVIEW.md`** - Project purpose, goals, and high-level overview
+2. **`docs/TECHNICAL_ARCHITECTURE.md`** - Complete technical architecture, stack, and structure
+3. **`docs/SEO_STRATEGY.md`** - SEO approach (SSG, not SPA)
+4. **`docs/CI_CD_WORKFLOW.md`** - CI/CD processes and deployment workflows
+
+**These documents contain critical information about:**
+- Technology stack and versions (latest stable)
+- Project structure (monorepo with frontend/backend separation)
+- Rendering strategy (SSG for SEO)
+- Deployment architecture (separate build processes)
+- Branch strategy (main/develop)
+- Local development (Docker + LocalStack)
+
+---
+
+## Technology Stack & Versions
+
+**ALWAYS use the latest stable versions:**
+
+- **Next.js:** 14+ (Latest Stable) - App Router, NOT Pages Router
+- **React:** 18+ (Latest Stable)
+- **TanStack Query (React Query):** v5+ (Latest Stable)
+- **TypeScript:** 5+ (Latest Stable)
+- **Tailwind CSS:** Latest Stable
+- **Node.js:** 20+ (Latest LTS)
+- **Terraform:** Latest Stable
+- **Serverless Framework:** Latest Stable
+
+**Check current versions before installing dependencies.**
+
+---
+
+## Project Structure Rules
+
+### Monorepo Structure
+
+```
+sgoodie-platform/
+├── apps/
+│   └── frontend/          # Next.js frontend (SSG)
+├── services/
+│   └── backend/           # Lambda backend
+├── terraform/              # Infrastructure as Code
+└── docs/                   # Documentation
+```
+
+### Critical Separation Rules
+
+1. **Frontend (`apps/frontend/`):**
+   - Next.js with App Router
+   - Static Site Generation (SSG) for all public pages
+   - React Query for data fetching
+   - Changes here trigger ONLY Amplify rebuild
+
+2. **Backend (`services/backend/`):**
+   - AWS Lambda functions
+   - Serverless Framework
+   - Changes here trigger ONLY Lambda deployment
+
+3. **Terraform (`terraform/`):**
+   - Infrastructure as Code
+   - Changes here trigger ONLY infrastructure updates
+
+**NEVER mix concerns - keep frontend and backend completely separate.**
+
+---
+
+## Rendering Strategy
+
+**CRITICAL: Use Static Site Generation (SSG), NOT SPA**
+
+- ✅ **SSG:** Pre-render at build time, perfect SEO
+- ❌ **SPA:** Client-side only, poor SEO
+
+**All public pages MUST use SSG:**
+```typescript
+// ✅ CORRECT - SSG
+export default async function Page() {
+  const data = await getData(); // Build time
+  return <Content data={data} />;
+}
+
+// ❌ WRONG - SPA
+'use client';
+export default function Page() {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    fetch('/api/data').then(setData); // Client-side only
+  }, []);
+}
+```
+
+**See `docs/SEO_STRATEGY.md` for detailed explanation.**
+
+---
+
+## React Query Integration
+
+**ALWAYS use React Query for data fetching:**
+
+```typescript
+import { useQuery, useMutation } from '@tanstack/react-query';
+
+// ✅ CORRECT
+export function useProjects() {
+  return useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => {
+      const res = await fetch('/api/projects');
+      return res.json();
+    },
+  });
+}
+```
+
+**Setup React Query provider in `app/providers.tsx`**
+
+---
+
+## Local Development
+
+**ALWAYS develop locally first using Docker + LocalStack:**
+
+1. Start LocalStack: `docker-compose up localstack -d`
+2. Setup resources: `npm run setup:localstack`
+3. Configure environment: `.env.local` with `USE_LOCALSTACK=true`
+4. Run locally: `npm run dev`
+
+**NEVER deploy to AWS until everything works perfectly locally.**
+
+**See `docs/PROJECT_OVERVIEW.md` for local development details.**
+
+---
+
+## Branch Strategy
+
+**ALWAYS follow this workflow:**
+
+1. **Development:** Work on `develop` branch
+2. **Save Work:** Push to `develop` frequently
+3. **Production:** Create PR `develop` → `main`
+4. **Deploy:** Merge PR triggers automatic deployment
+
+**Branch Rules:**
+- ✅ Work on `develop` branch
+- ✅ Push to `develop` to save work
+- ✅ Create PR for production releases
+- ❌ Never push directly to `main`
+- ❌ Never merge without PR
+
+---
+
+## CI/CD Workflow
+
+**On merge to `main` branch:**
+
+1. **Terraform runs first** (if terraform changed)
+   - Ensures AWS resources exist
+   - Creates/updates infrastructure
+
+2. **Backend deploys** (if `services/backend/` changed)
+   - Deploys Lambda functions
+   - Updates API Gateway
+
+3. **Frontend deploys** (if `apps/frontend/` changed)
+   - Amplify auto-detects changes
+   - Rebuilds and deploys to CDN
+
+**Each process is independent - changes to one don't trigger others.**
+
+**See `docs/CI_CD_WORKFLOW.md` for detailed workflow.**
+
+---
+
+## Code Quality Standards
+
+### File Size Limits
+- **NEVER** create files longer than 300 lines
+- Break into smaller modules if needed
+
+### Function Size
+- **Maximum function length:** 50 lines
+- Break into smaller functions if needed
+
+### TypeScript
+- **ALWAYS** use explicit types
+- **NEVER** use `any` type
+- Use interfaces for object shapes
+
+### Testing
+- Write tests for all handlers and utilities
+- Place tests in `__tests__` directory structure
+- Test files mirror source structure
+
+### Formatting & Linting
+- **ALWAYS** run Prettier before committing
+- **ALWAYS** fix linting errors
+- **ALWAYS** run type-check
+- **ALWAYS** run tests
+
+---
+
+## Documentation Requirements
+
+### Code Comments
+- Comment complex logic
+- Reference feature documentation
+- Explain "why", not "what"
+
+### Function Documentation
+- Use JSDoc for public functions
+- Include parameter types and return types
+- Include usage examples
+
+### Feature Documentation
+- Document all new features
+- Update architecture docs when structure changes
+- Keep CI/CD docs current
+
+---
+
+## AWS & Infrastructure
+
+### Local Development
+- **ALWAYS** use LocalStack for local development
+- **NEVER** use real AWS services locally
+- Configure AWS SDK clients to detect environment
+
+### Infrastructure as Code
+- **ALL** AWS resources defined in Terraform
+- Use reusable modules
+- Document all infrastructure changes
+
+### Deployment
+- **NEVER** deploy until local testing is complete
+- Verify Terraform resources exist before deploying
+- Monitor deployments after merge
+
+---
+
+## Common Mistakes to Avoid
+
+1. ❌ **Using SPA instead of SSG** - Hurts SEO
+2. ❌ **Mixing frontend and backend code** - Keep separate
+3. ❌ **Deploying without local testing** - Test locally first
+4. ❌ **Pushing directly to main** - Use PR workflow
+5. ❌ **Using old package versions** - Use latest stable
+6. ❌ **Ignoring documentation** - Read docs first
+7. ❌ **Not using React Query** - Required for data fetching
+8. ❌ **Breaking file size limits** - Keep files small
+
+---
+
+## Quick Reference
+
+**Before starting ANY task:**
+1. ✅ Read `docs/PROJECT_OVERVIEW.md`
+2. ✅ Read `docs/TECHNICAL_ARCHITECTURE.md`
+3. ✅ Read `docs/SEO_STRATEGY.md`
+4. ✅ Read `docs/CI_CD_WORKFLOW.md`
+
+**When writing code:**
+1. ✅ Use latest stable versions
+2. ✅ Use SSG for public pages
+3. ✅ Use React Query for data fetching
+4. ✅ Keep frontend/backend separate
+5. ✅ Test locally with LocalStack
+6. ✅ Follow file/function size limits
+7. ✅ Use TypeScript with explicit types
+
+**When deploying:**
+1. ✅ Work on `develop` branch
+2. ✅ Create PR to `main`
+3. ✅ Review and merge PR
+4. ✅ Monitor deployment
+5. ✅ Verify everything works
+
+---
+
+## Questions?
+
+**If unsure about anything:**
+1. Check the documentation in `docs/` folder
+2. Review `docs/TECHNICAL_ARCHITECTURE.md` for structure
+3. Review `docs/CI_CD_WORKFLOW.md` for deployment
+4. Ask before making architectural decisions
+
+---
+
+**Last Updated:** 2025-01-16  
+**Version:** 1.0
