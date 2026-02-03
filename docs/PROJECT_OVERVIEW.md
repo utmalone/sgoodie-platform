@@ -579,12 +579,13 @@ module "thumbnail_storage" {
    │   │   │   ├── travel/
    │   │   │   └── brand-marketing/
    │   │   └── projects/[id]/
-   │   ├── (admin)/            # Admin routes (protected)
-   │   │   ├── login/
-   │   │   ├── dashboard/
-   │   │   ├── photos/
-   │   │   ├── projects/
-   │   │   └── pages/
+   │   ├── (admin)/            # Admin route group (protected)
+   │   │   └── admin/           # Admin URL prefix to avoid public route collisions
+   │   │       ├── login/
+   │   │       ├── dashboard/
+   │   │       ├── photos/
+   │   │       ├── projects/
+   │   │       └── pages/
    │   └── api/                # API routes
    │       ├── auth/
    │       ├── photos/

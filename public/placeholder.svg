@@ -1,0 +1,10 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="800" fill="#f0ebe5"/>
+  <rect x="80" y="80" width="1040" height="640" fill="none" stroke="#b08a5b" stroke-width="6"/>
+  <text x="600" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" fill="#111111">
+    S.Goodie Photography
+  </text>
+  <text x="600" y="470" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#6f5b43">
+    Placeholder Image
+  </text>
+</svg>

@@ -249,49 +249,33 @@ sgoodie-platform/
 **Note:** In the recommended single-app structure, the App Router lives at `app/` in the repo root. The tree below is illustrative.
 
 ```
-apps/frontend/
-├── app/
-│   ├── (public)/                 # Public route group
-│   │   ├── page.tsx              # Home page (SSG)
-│   │   ├── about/
-│   │   │   └── page.tsx          # About page (SSG)
-│   │   ├── work/
-│   │   │   ├── interiors/
-│   │   │   │   └── page.tsx      # Interiors portfolio (SSG)
-│   │   │   ├── travel/
-│   │   │   │   └── page.tsx      # Travel portfolio (SSG)
-│   │   │   └── brand-marketing/
-│   │   │       └── page.tsx      # Brand marketing (SSG)
-│   │   └── projects/
-│   │       └── [id]/
-│   │           └── page.tsx      # Project detail (SSG)
-│   ├── (admin)/                  # Admin route group (protected)
-│   │   ├── login/
-│   │   │   └── page.tsx          # Login page
-│   │   ├── dashboard/
-│   │   │   └── page.tsx          # Admin dashboard
-│   │   ├── photos/
-│   │   │   └── page.tsx          # Photo management
-│   │   └── projects/
-│   │       └── page.tsx          # Project management
-│   ├── api/                      # API routes (Next.js)
-│   │   ├── auth/
-│   │   ├── photos/
-│   │   └── projects/
-│   ├── layout.tsx                # Root layout
-│   └── providers.tsx             # React Query provider
-├── components/
-│   ├── ui/                       # Reusable UI components
-│   ├── layout/                   # Layout components
-│   ├── portfolio/               # Portfolio-specific components
-│   └── admin/                    # Admin components
-├── lib/
-│   ├── api/                      # API client (React Query)
-│   ├── aws/                       # AWS SDK clients
-│   ├── utils/                     # Utility functions
-│   └── constants/                # Constants
-└── types/                        # TypeScript types
+app/
+  (public)/                 # Public route group
+    page.tsx                # Home page (SSG + ISR)
+    about/
+    work/
+      interiors/
+      travel/
+      brand-marketing/
+    projects/[id]/          # Project detail (SSG)
+  (admin)/                  # Admin route group (protected)
+    admin/                  # Admin URL prefix to avoid public route collisions
+      login/
+      dashboard/
+      photos/
+      projects/
+  api/                      # Route Handlers
+    auth/
+    projects/
+    photos/
+    admin/revalidate/
+  layout.tsx
+  providers.tsx
+components/
+lib/
+types/
 ```
+
 
 ### React Query Integration
 

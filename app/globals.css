@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --font-display: "Cormorant Garamond", "Times New Roman", serif;
+  --font-body: "Work Sans", "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+  @apply bg-parchment text-ink antialiased;
+  font-family: var(--font-body);
+}
+
+.display-font {
+  font-family: var(--font-display);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+}
+
+.container-page {
+  @apply mx-auto w-full max-w-6xl px-6;
+}
