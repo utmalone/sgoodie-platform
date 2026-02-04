@@ -1,0 +1,38 @@
+.grid {
+  display: grid;
+  gap: 5rem;
+  padding-top: 3rem;
+  padding-inline: clamp(1.5rem, 6vw, 6rem);
+}
+
+.item {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  background: var(--fog);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.image {
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.item:hover .image {
+  transform: scale(1.02);
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-top: 4rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

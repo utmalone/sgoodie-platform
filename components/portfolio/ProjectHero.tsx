@@ -1,27 +1,36 @@
 import Image from 'next/image';
-import type { Project } from '@/types';
+import type { PhotoAsset } from '@/types';
+import styles from '@/styles/public/ProjectHero.module.css';
 
 type ProjectHeroProps = {
-  project: Project;
+  title: string;
+  subtitle?: string;
+  intro?: string;
+  photo: PhotoAsset;
 };
 
-export function ProjectHero({ project }: ProjectHeroProps) {
+/**
+ * Full-bleed hero with title/subtitle/intro overlaid centered on the image.
+ * Used on portfolio detail pages.
+ */
+export function ProjectHero({ title, subtitle, intro, photo }: ProjectHeroProps) {
   return (
-    <section className="grid gap-8 lg:grid-cols-[1.3fr_0.7fr]">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-white shadow-lg">
+    <section className={styles.wrapper}>
+      <div className={styles.imageContainer}>
         <Image
-          src={project.coverPhoto.src}
-          alt={project.coverPhoto.alt}
+          src={photo.src}
+          alt={photo.alt}
           fill
-          sizes="(max-width: 1024px) 100vw, 60vw"
-          className="object-cover"
           priority
+          sizes="100vw"
+          className={styles.image}
         />
-      </div>
-      <div className="flex flex-col justify-center gap-4">
-        <p className="text-xs uppercase tracking-[0.4em] text-black/50">{project.category}</p>
-        <h1 className="text-4xl font-semibold">{project.title}</h1>
-        <p className="text-base text-black/70">{project.description}</p>
+        <div className={styles.overlay} />
+        <div className={styles.textBlock}>
+          {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+          <h1 className={styles.title}>{title}</h1>
+          {/* {intro && <p className={styles.intro}>{intro}</p>} */}
+        </div>
       </div>
     </section>
   );

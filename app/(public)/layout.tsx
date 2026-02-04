@@ -1,11 +1,14 @@
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteHeader } from '@/components/layout/SiteHeader';
+import layoutStyles from '@/styles/public/layout.module.css';
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-parchment">
+    <div className={layoutStyles.page}>
       <SiteHeader />
-      <main className="container-page py-12">{children}</main>
+      <main id="main-content" className={`${layoutStyles.container} ${layoutStyles.main}`}>
+        {children}
+      </main>
       <SiteFooter />
     </div>
   );

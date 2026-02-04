@@ -9,9 +9,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: '#111111',
-        parchment: '#f7f3ee',
-        brass: '#b08a5b'
+        ink: '#2b2b2b',
+        paper: '#ffffff',
+        muted: '#3c3c3c',
+        line: '#e6e6e6',
+        fog: '#f7f7f7'
       }
     }
   },

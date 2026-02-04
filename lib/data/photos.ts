@@ -5,8 +5,6 @@ import { removePhotoFromPages } from './pages';
 
 const PHOTOS_FILE = 'photos.json';
 
-const fallbackPhotos: PhotoAsset[] = [];
-
 function assertMockMode() {
   if (process.env.USE_MOCK_DATA === 'true') return;
   throw new Error(
@@ -16,7 +14,7 @@ function assertMockMode() {
 
 export async function getAllPhotos(): Promise<PhotoAsset[]> {
   assertMockMode();
-  const photos = await readJson<PhotoAsset[]>(PHOTOS_FILE, fallbackPhotos);
+  const photos = await readJson<PhotoAsset[]>(PHOTOS_FILE);
   return photos.map((photo) => ({
     ...photo,
     metaTitle: photo.metaTitle ?? '',
@@ -29,6 +27,11 @@ export async function getPhotosByIds(ids: string[]): Promise<PhotoAsset[]> {
   const photos = await getAllPhotos();
   const map = new Map(photos.map((photo) => [photo.id, photo]));
   return ids.map((id) => map.get(id)).filter(Boolean) as PhotoAsset[];
+}
+
+export async function getPhotoById(id: string): Promise<PhotoAsset | null> {
+  const photos = await getAllPhotos();
+  return photos.find((photo) => photo.id === id) ?? null;
 }
 
 export async function createPhoto(input: Omit<PhotoAsset, 'id' | 'createdAt'>) {

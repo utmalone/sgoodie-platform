@@ -1,0 +1,62 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.closeButton {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(43, 43, 43, 0.3);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+}
+
+.navButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2rem;
+  color: rgba(43, 43, 43, 0.7);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.navButton:hover {
+  color: var(--ink);
+}
+
+.navButtonLeft {
+  left: 1.5rem;
+}
+
+.navButtonRight {
+  right: 1.5rem;
+}
+
+.imageWrap {
+  position: relative;
+  max-height: 80vh;
+  width: 80vw;
+  max-width: 80vw;
+}
+
+.image {
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
+  object-fit: contain;
+}

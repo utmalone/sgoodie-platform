@@ -1,55 +1,59 @@
 import type { Metadata } from 'next';
-import { ProjectGrid } from '@/components/portfolio/ProjectGrid';
-import { PhotoGrid } from '@/components/portfolio/PhotoGrid';
-import { SectionHeader } from '@/components/layout/SectionHeader';
-import { getFeaturedProjects } from '@/lib/data/projects';
+import { FullBleedHero } from '@/components/portfolio/FullBleedHero';
+import { HomeGalleryGrid } from '@/components/portfolio/HomeGalleryGrid';
+import { getHomeLayout } from '@/lib/data/home';
 import { getPageBySlug } from '@/lib/data/pages';
 import { getPhotosByIds } from '@/lib/data/photos';
+import styles from '@/styles/public/HomePage.module.css';
 
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getPageBySlug('home');
   return {
     title: page.metaTitle || page.title,
-    description: page.metaDescription || page.intro,
+    description: page.metaDescription || page.body,
     keywords: page.metaKeywords || undefined
   };
 }
 
 export default async function HomePage() {
-  const projects = await getFeaturedProjects();
   const page = await getPageBySlug('home');
-  const galleryPhotos = await getPhotosByIds(page.gallery);
+  const layout = await getHomeLayout();
+  const [heroPhoto] = await getPhotosByIds([layout.heroPhotoId]);
+  const featurePhotos = await getPhotosByIds(layout.featurePhotoIds);
 
   return (
-    <div className="space-y-12">
-      <section className="rounded-3xl border border-black/10 bg-white p-10 shadow-sm">
-        <p className="text-xs uppercase tracking-[0.4em] text-black/50">S.Goodie Photography</p>
-        <h1 className="mt-4 text-4xl font-semibold leading-tight">{page.title}</h1>
-        <p className="mt-4 max-w-2xl text-base text-black/70">{page.intro}</p>
-        {page.body && <p className="mt-4 max-w-2xl text-base text-black/70">{page.body}</p>}
-        {page.ctaLabel && page.ctaUrl && (
-          <a
-            href={page.ctaUrl}
-            className="mt-6 inline-flex rounded-full border border-black/20 px-6 py-2 text-xs uppercase tracking-[0.35em] text-black/70 hover:text-black"
-          >
-            {page.ctaLabel}
-          </a>
-        )}
-      </section>
-
-      {galleryPhotos.length > 0 && (
-        <section>
-          <SectionHeader title="Gallery" subtitle="Curated imagery selected for the home page." />
-          <PhotoGrid photos={galleryPhotos} />
-        </section>
+    <div className={styles.wrapper}>
+      {heroPhoto && (
+        <FullBleedHero photo={heroPhoto} minHeight="screen">
+          <div className={styles.heroContent}>
+            <p className={styles.heroEyebrow}>S.Goodie Photography</p>
+            <h1 className={styles.heroTitle}>{page.title}</h1>
+            <p className={styles.heroSubtitle}>{page.intro}</p>
+            {/* {page.body && <p className={styles.heroBody}>{page.body}</p>} */}
+          </div>
+        </FullBleedHero>
       )}
 
-      <section>
-        <SectionHeader
-          title="Featured Work"
-          subtitle="A short selection of recent interior, travel, and brand marketing projects."
-        />
-        <ProjectGrid projects={projects} />
+      <section className={styles.introSection}>
+        <div className={styles.introWrapper}>
+          <div className={styles.introMark}>
+            <svg viewBox="0 0 48 24" aria-hidden="true">
+              <path
+                d="M8 16 L24 6 L24 18 L40 8"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <p className={styles.introText}>
+            Creating photographs that not only document spaces, but celebrate the artistry,
+            vision, and craft behind them.
+          </p>
+        </div>
+        <HomeGalleryGrid photos={featurePhotos} />
       </section>
     </div>
   );

@@ -1,0 +1,100 @@
+.grid {
+  display: grid;
+  gap: 2.5rem;
+  padding-top: 2rem;
+  padding-inline: clamp(1.5rem, 6vw, 6rem);
+}
+
+.itemLink,
+.itemStatic {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.itemLink {
+  cursor: pointer;
+}
+
+.itemStatic {
+  cursor: default;
+}
+
+.card {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: var(--fog);
+}
+
+.image {
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 15, 15, 0.35);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.overlayText {
+  font-size: 11px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--paper);
+}
+
+.status {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--paper);
+  opacity: 0.85;
+}
+
+.itemLink:hover .image,
+.itemLink:focus-visible .image,
+.itemStatic:hover .image {
+  transform: scale(1.02);
+}
+
+.itemLink:hover .overlay,
+.itemLink:focus-visible .overlay,
+.itemStatic:hover .overlay {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .overlay {
+    opacity: 1;
+  }
+
+  .itemLink .image,
+  .itemStatic .image {
+    transform: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3rem;
+    padding-top: 3rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4rem;
+  }
+}

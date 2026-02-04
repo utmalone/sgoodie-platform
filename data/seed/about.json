@@ -1,0 +1,62 @@
+{
+  "heroPhotoId": "about-hero",
+  "heroTitle": "About",
+  "heroSubtitle": "Cohesive Collaboration",
+  "introParagraphs": [
+    "A building is more than a structure...it's a place that becomes a home, an inspiring workspace, or a peaceful retreat. The magic lies in the incredible attention to detail, the skilled craftsmanship, and the beautiful design that transforms a space into something memorable. It takes months, even years, of dedicated work to bring it all to life, and only a lucky few get to experience it in person.",
+    "That's where I come in. I capture spaces in a way that brings the creative vision to life. It's not just about what the camera sees; it's about creating a visual connection that tells the story of a space through composition, lighting, and a refined technique.",
+    "I want to deliver images that have a natural aesthetic and convey the essence of a project. Working collaboratively, alongside my clients, and often a stylist, we bring out the best in every shot.",
+    "Throughout the project, I keep my client's goals in mind, from start to finish. Whether it's showcasing their work in a portfolio or reaching a wider audience through editorial placements, I make sure every step is guided by those objectives. Above all, a successful photoshoot should be an enjoyable experience. Ideally, one that involves indulging in an abundance of snacks and skillfully maneuvering heavy furniture. It should be both fun and productive for all who are involved!"
+  ],
+  "approachTitle": "Approach & Results",
+  "approachItems": [
+    {
+      "id": "approach-1",
+      "title": "Natural Light",
+      "description": "Shaping light to capture the natural mood and feel of a space, as it was meant to be experienced.",
+      "photoId": "about-approach-1"
+    },
+    {
+      "id": "approach-2",
+      "title": "Seamless Spaces",
+      "description": "Interiors, exteriors and everything in between are all captured with attention to every detail.",
+      "photoId": "about-approach-2"
+    },
+    {
+      "id": "approach-3",
+      "title": "Sense of Life",
+      "description": "Working closely with stylists during production to bring a sense of life to a space.",
+      "photoId": "about-approach-3"
+    },
+    {
+      "id": "approach-4",
+      "title": "Craftsmanship",
+      "description": "Highlighting the craft of my clients...the result of their years of mastery, technique & vision.",
+      "photoId": "about-approach-4"
+    }
+  ],
+  "featuredTitle": "Featured In",
+  "featuredPublications": [
+    "Architectural Digest",
+    "House Beautiful",
+    "Arlington Magazine",
+    "The Wall Street Journal",
+    "American Farmhouse Style",
+    "Real Simple",
+    "The Cottage Journal",
+    "Cottages and Bungalows",
+    "The New York Times",
+    "Good Housekeeping",
+    "Annapolis Home Magazine",
+    "Washingtonian Magazine"
+  ],
+  "bio": {
+    "name": "S.Goodie",
+    "photoId": "about-bio",
+    "paragraphs": [
+      "I am an architecture and interiors photographer, with an education in fine-art photography. This background and unique perspective to photography is something I bring to every shoot. I love the blend of making art with something practical.",
+      "I cover the Mid-Atlantic region from Virginia to New York and in between. Upstate New York, the Hamptons and the Northeast region are also within an easy commute. I'm also available to travel world-wide for the right project!",
+      "Quality over quantity is something I strive for, and I love being able to create a mood with everything from the early morning sunrise, to golden hour and even dreary rainy days. If you think we could be a good fit, I'd love to hear from you!"
+    ]
+  }
+}

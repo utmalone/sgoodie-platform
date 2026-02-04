@@ -42,36 +42,29 @@
 
 ## Project Structure Rules
 
-### Monorepo Structure
+### Current Repo Structure (Single Next.js App)
 
 ```
 sgoodie-platform/
-├── apps/
-│   └── frontend/          # Next.js frontend (SSG)
-├── services/
-│   └── backend/           # Lambda backend
-├── terraform/              # Infrastructure as Code
-└── docs/                   # Documentation
+??? app/                 # App Router (public + admin route groups)
+??? components/          # Shared UI components
+??? lib/                 # Data access + helpers
+??? styles/              # CSS Modules (public UI)
+??? data/                # seed + local JSON stores
+??? docs/                # Documentation
 ```
 
-### Critical Separation Rules
+### Separation Rules
 
-1. **Frontend (`apps/frontend/`):**
-   - Next.js with App Router
-   - Static Site Generation (SSG) for all public pages
-   - React Query for data fetching
-   - Changes here trigger ONLY Amplify rebuild
+1. **Public UI (`app/(public)` + `components/portfolio` + `components/layout`):**
+   - Server components where possible (SSG-friendly)
+   - Styled with CSS Modules under `styles/public`
 
-2. **Backend (`services/backend/`):**
-   - AWS Lambda functions
-   - Serverless Framework
-   - Changes here trigger ONLY Lambda deployment
+2. **Admin UI (`app/(admin)` + `components/admin`):**
+   - Client components and admin-specific flows
+   - Admin styling stays separate from public UI
 
-3. **Terraform (`terraform/`):**
-   - Infrastructure as Code
-   - Changes here trigger ONLY infrastructure updates
-
-**NEVER mix concerns - keep frontend and backend completely separate.**
+**Keep public and admin concerns separate.**
 
 ---
 
@@ -208,6 +201,12 @@ export function useProjects() {
 - **ALWAYS** run type-check
 - **ALWAYS** run tests
 
+### Styling Rules (Required)
+- **NEVER** use inline styles in components (no `style={{ ... }}`).
+- **NEVER** use inline string utility classes for styling (no Tailwind className strings).
+- **ALWAYS** check existing styles first (`styles/`, `styles/public`, and component CSS modules) and reuse where possible.
+- If needed, **create or update** CSS module files under `styles/` and import them into components.
+
 ---
 
 ## Documentation Requirements
@@ -297,5 +296,5 @@ export function useProjects() {
 
 ---
 
-**Last Updated:** 2025-01-16  
-**Version:** 1.0
+**Last Updated:** 2026-02-04  
+**Version:** 1.1

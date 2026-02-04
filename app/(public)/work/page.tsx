@@ -1,26 +1,11 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { PhotoGrid } from '@/components/portfolio/PhotoGrid';
+import type { PhotoAsset, Project } from '@/types';
+import { getAllProjects } from '@/lib/data/projects';
 import { getPageBySlug } from '@/lib/data/pages';
 import { getPhotosByIds } from '@/lib/data/photos';
-
-const categories = [
-  {
-    title: 'Interiors',
-    description: 'Home, garden, hospitality, and architectural storytelling.',
-    href: '/work/interiors'
-  },
-  {
-    title: 'Travel',
-    description: 'Places, textures, and light from around the world.',
-    href: '/work/travel'
-  },
-  {
-    title: 'Brand Marketing',
-    description: 'Visual identity for personal and commercial brands.',
-    href: '/work/brand-marketing'
-  }
-];
+import { getWorkIndex } from '@/lib/data/work';
+import { WorkGalleryGrid } from '@/components/portfolio/WorkGalleryGrid';
+import styles from '@/styles/public/WorkPage.module.css';
 
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getPageBySlug('work');
@@ -32,39 +17,31 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function WorkPage() {
-  const page = await getPageBySlug('work');
-  const galleryPhotos = await getPhotosByIds(page.gallery);
+  const [projects, workIndex] = await Promise.all([getAllProjects(), getWorkIndex()]);
+  const projectMap = new Map(projects.map((project) => [project.id, project]));
+
+  const orderedProjects = workIndex.projectIds
+    .map((id) => projectMap.get(id))
+    .filter(Boolean);
+  const remainingProjects = projects.filter((project) => !workIndex.projectIds.includes(project.id));
+  const list = [...orderedProjects, ...remainingProjects];
+
+  const heroPhotoIds = list
+    .map((project) => project?.heroPhotoId)
+    .filter((id): id is string => Boolean(id));
+  const photos = await getPhotosByIds(heroPhotoIds);
+  const photosById = new Map(photos.map((photo) => [photo.id, photo]));
+  const items = list.reduce<Array<{ project: Project; photo: PhotoAsset }>>((acc, project) => {
+    if (!project) return acc;
+    const photo = photosById.get(project.heroPhotoId);
+    if (!photo) return acc;
+    acc.push({ project, photo });
+    return acc;
+  }, []);
 
   return (
-    <div className="space-y-10">
-      <div>
-        <p className="text-xs uppercase tracking-[0.4em] text-black/50">Work</p>
-        <h1 className="mt-4 text-4xl font-semibold">{page.title}</h1>
-        <p className="mt-4 max-w-2xl text-base text-black/70">{page.intro}</p>
-        {page.body && <p className="mt-4 max-w-2xl text-base text-black/70">{page.body}</p>}
-        {page.ctaLabel && page.ctaUrl && (
-          <a
-            href={page.ctaUrl}
-            className="mt-6 inline-flex rounded-full border border-black/20 px-6 py-2 text-xs uppercase tracking-[0.35em] text-black/70 hover:text-black"
-          >
-            {page.ctaLabel}
-          </a>
-        )}
-      </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {categories.map((category) => (
-          <Link
-            key={category.title}
-            href={category.href}
-            className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-          >
-            <h2 className="text-2xl font-semibold">{category.title}</h2>
-            <p className="mt-3 text-sm text-black/60">{category.description}</p>
-          </Link>
-        ))}
-      </div>
-
-      <PhotoGrid photos={galleryPhotos} />
+    <div className={styles.wrapper}>
+      <WorkGalleryGrid items={items} />
     </div>
   );
 }

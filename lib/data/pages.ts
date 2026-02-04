@@ -3,21 +3,6 @@ import { readJson, writeJson } from './local-store';
 
 const PAGES_FILE = 'pages.json';
 
-const fallbackPages: PageContent[] = [
-  {
-    slug: 'home',
-    title: 'S.Goodie Photography',
-    intro: 'Modern photography for interiors, travel, and brand storytelling.',
-    body: 'Curated visuals designed to highlight space, light, and identity.',
-    ctaLabel: 'View Portfolio',
-    ctaUrl: '/work',
-    gallery: [],
-    metaTitle: '',
-    metaDescription: '',
-    metaKeywords: ''
-  }
-];
-
 function assertMockMode() {
   if (process.env.USE_MOCK_DATA === 'true') return;
   throw new Error(
@@ -27,7 +12,7 @@ function assertMockMode() {
 
 export async function getAllPages(): Promise<PageContent[]> {
   assertMockMode();
-  const pages = await readJson<PageContent[]>(PAGES_FILE, fallbackPages);
+  const pages = await readJson<PageContent[]>(PAGES_FILE);
   return pages.map((page) => ({
     ...page,
     metaTitle: page.metaTitle ?? '',

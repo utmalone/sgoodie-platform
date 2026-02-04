@@ -1,0 +1,44 @@
+.grid {
+  display: grid;
+  gap: 2.5rem;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.imageWrap {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--fog);
+}
+
+.image {
+  object-fit: cover;
+}
+
+.button {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.35em;
+  color: var(--ink-soft);
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0;
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+
+.button:hover {
+  color: var(--ink);
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

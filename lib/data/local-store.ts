@@ -13,7 +13,7 @@ async function fileExists(filePath: string) {
   }
 }
 
-async function ensureDataFile<T>(fileName: string, fallbackData: T) {
+async function ensureDataFile(fileName: string) {
   await fs.mkdir(dataDir, { recursive: true });
   const targetPath = path.join(dataDir, fileName);
 
@@ -27,12 +27,11 @@ async function ensureDataFile<T>(fileName: string, fallbackData: T) {
     return targetPath;
   }
 
-  await fs.writeFile(targetPath, JSON.stringify(fallbackData, null, 2), 'utf8');
-  return targetPath;
+  throw new Error(`Missing seed data for ${fileName}. Add it to data/seed.`);
 }
 
-export async function readJson<T>(fileName: string, fallbackData: T): Promise<T> {
-  const filePath = await ensureDataFile(fileName, fallbackData);
+export async function readJson<T>(fileName: string): Promise<T> {
+  const filePath = await ensureDataFile(fileName);
   const raw = await fs.readFile(filePath, 'utf8');
   return JSON.parse(raw) as T;
 }

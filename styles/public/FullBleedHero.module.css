@@ -1,0 +1,51 @@
+.wrapper {
+  position: relative;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+.offsetHeader {
+  margin-top: -4rem;
+}
+
+.minScreen {
+  min-height: 100vh;
+}
+
+.minTall {
+  min-height: 80vh;
+}
+
+.image {
+  object-fit: cover;
+}
+
+.overlayDark {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.overlayLight {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.overlayNone {
+  background: transparent;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 6vw;
+  padding-bottom: 8vh;
+  text-align: center;
+}

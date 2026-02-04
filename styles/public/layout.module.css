@@ -1,0 +1,15 @@
+.page {
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+.container {
+  width: 100%;
+  max-width: 1760px;
+  margin: 0 auto;
+  padding: 0 3vw;
+}
+
+.main {
+  padding: 4rem 0 3rem;
+}

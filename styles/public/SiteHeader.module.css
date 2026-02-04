@@ -1,0 +1,184 @@
+.header {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.headerScrolled {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
+  border-color: var(--line);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(10px);
+}
+
+.headerHero {
+  background: transparent;
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.skipLink {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  z-index: 60;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+}
+
+.skipLink:focus {
+  left: 1.5rem;
+  top: 1rem;
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 4rem;
+}
+
+.logo {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+}
+
+.nav {
+  display: none;
+  align-items: center;
+  gap: 1.5rem;
+  font-size: .75rem;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+}
+
+.navLink {
+  transition: color 0.2s ease;
+}
+
+.navLinkScrolled {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.navLinkScrolled:hover {
+  color: var(--ink);
+}
+
+.navLinkHero {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.navLinkHero:hover {
+  color: #ffffff;
+}
+
+.iconRow {
+  display: none;
+  align-items: center;
+  gap: 1rem;
+}
+
+.iconLink {
+  transition: color 0.2s ease;
+}
+
+.iconLinkScrolled {
+  color: rgba(43, 43, 43, 0.7);
+}
+
+.iconLinkScrolled:hover {
+  color: var(--ink);
+}
+
+.iconLinkHero {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.iconLinkHero:hover {
+  color: #ffffff;
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.menuButton {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.menuButtonScrolled {
+  color: rgba(43, 43, 43, 0.8);
+}
+
+.menuButtonHero {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.mobilePanel {
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.mobilePanelInner {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem 0;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+}
+
+.mobileLink {
+  color: rgba(43, 43, 43, 0.8);
+}
+
+.mobileSocial {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 0.5rem;
+}
+
+.mobileSocialLink {
+  color: rgba(43, 43, 43, 0.7);
+  transition: color 0.2s ease;
+}
+
+.mobileSocialLink:hover {
+  color: var(--ink);
+}
+
+@media (min-width: 768px) {
+  .nav {
+    display: flex;
+  }
+
+  .iconRow {
+    display: flex;
+  }
+
+  .menuButton {
+    display: none;
+  }
+}

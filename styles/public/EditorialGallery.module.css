@@ -1,0 +1,155 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6rem;
+  padding-inline: clamp(1.5rem, 6vw, 6rem);
+  padding-block: 4rem;
+}
+
+.singleRow {
+  display: flex;
+  justify-content: center;
+}
+
+.singleImage {
+  position: relative;
+  width: 100%;
+  max-width: 60rem;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--fog);
+}
+
+.doubleRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+.flushSide {
+  display: flex;
+  flex-direction: column;
+}
+
+.offsetSide {
+  display: flex;
+  flex-direction: column;
+}
+
+.shortImage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--fog);
+}
+
+.tallImage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: var(--fog);
+}
+
+.imageButton {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.image {
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.imageButton:hover .image {
+  transform: scale(1.02);
+}
+
+.caption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  max-width: 24rem;
+}
+
+.captionTitle {
+  font-size: .85rem;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: black;
+}
+
+.captionBody {
+  font-size: 15px;
+  line-height: 1.75;
+  color: black;
+}
+
+@media (min-width: 768px) {
+  .wrapper {
+    gap: 8rem;
+  }
+
+  .singleImage {
+    max-width: 70rem;
+    aspect-ratio: 16 / 10;
+  }
+
+  .doubleRow {
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: start;
+  }
+
+  .doubleRowWithCaption .flushSide {
+    margin-top: 0;
+  }
+
+  .doubleRowWithCaption .offsetSide {
+    margin-top: 8rem;
+  }
+
+  .doubleRowNoCaption .flushSide {
+    margin-top: 0;
+    margin-bottom: 6rem;
+  }
+
+  .doubleRowNoCaption .offsetSide {
+    margin-top: 6rem;
+    margin-bottom: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .wrapper {
+    gap: 10rem;
+    padding-inline: clamp(4rem, 8vw, 8rem);
+  }
+
+  .singleImage {
+    max-width: 80rem;
+  }
+
+  .doubleRow {
+    gap: 5rem;
+  }
+
+  .doubleRowWithCaption .offsetSide {
+    margin-top: 10rem;
+  }
+
+  .doubleRowNoCaption .flushSide {
+    margin-bottom: 8rem;
+  }
+
+  .doubleRowNoCaption .offsetSide {
+    margin-top: 8rem;
+  }
+}

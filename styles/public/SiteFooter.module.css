@@ -1,0 +1,53 @@
+.footer {
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.inner {
+  display: grid;
+  gap: 2rem;
+  padding: 3rem 0;
+  font-size: 0.95rem;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.35em;
+  color: var(--ink-muted);
+}
+
+.text {
+  color: var(--ink);
+}
+
+.muted {
+  color: var(--ink-soft);
+}
+
+.bottom {
+  grid-column: 1 / -1;
+}
+
+.bottomRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: var(--ink-soft);
+}
+
+@media (min-width: 768px) {
+  .inner {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

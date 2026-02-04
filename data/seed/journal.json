@@ -1,0 +1,102 @@
+[
+  {
+    "id": "dewey-beach-home",
+    "slug": "dewey-beach-vacation-home",
+    "title": "Dewey Beach Vacation Home",
+    "category": "Project Feature",
+    "author": "S.Goodie Studio",
+    "date": "2026-01-15",
+    "excerpt": "Architecture and interior design come together to create a beautiful home on the beach.",
+    "body": "This modern beach home is designed to feel calm, grounded, and comfortable year-round. Warm wood ceilings and floors run throughout the house, balancing the coastal setting with a sense of softness and permanence. Large windows frame ocean and neighborhood views, keeping the connection to the outdoors front and center - even on a gray, rainy day like we had.\n\nThe interiors are clean and minimal, with thoughtful details that add warmth without distraction. Kitchens and living spaces are open and functional, while bedrooms and bathrooms feel quiet and restorative. Natural materials, soft textiles, and a restrained palette allow the architecture and light to take the lead.\n\nPhotographing the home for DC based Interior Designer, Jodi Macklin, in overcast weather highlighted its livability beyond sunny summer days. The rain softened the views and brought a sense of stillness to the spaces, emphasizing that this is a beach house meant not just for weekends and sunshine, but for everyday living in every season.",
+    "heroPhotoId": "home-1",
+    "galleryPhotoIds": ["home-2", "home-3", "home-4", "home-5", "home-6", "home-7", "home-8", "home-9"],
+    "credits": [
+      { "label": "Interior Designer", "value": "Jodi Macklin Interior Design" },
+      { "label": "Interiors Photographer", "value": "S.Goodie Photography" },
+      { "label": "Season", "value": "Summer 2025" }
+    ]
+  },
+  {
+    "id": "forest-hill-kitchen",
+    "slug": "forest-hill-kitchen",
+    "title": "Forest Hill Kitchen",
+    "category": "Project Feature",
+    "author": "S.Goodie Studio",
+    "date": "2026-01-10",
+    "excerpt": "Custom wood cabinetry bring warmth to this kitchen renovation in Washington, DC.",
+    "body": "The Forest Hill Kitchen renovation showcases the beauty of custom woodwork and modern functionality. Warm walnut cabinetry pairs with clean white tiles and copper accents to create a space that feels both timeless and contemporary.\n\nThe design prioritizes natural light and flow, with large windows overlooking the backyard garden. Every detail was considered - from the hand-selected hardware to the integrated appliances that maintain the clean aesthetic.\n\nWorking with the homeowners and their design team, we captured the kitchen at different times of day to show how the natural light transforms the space from morning to evening.",
+    "heroPhotoId": "home-7",
+    "galleryPhotoIds": ["home-4", "home-5", "home-6"],
+    "credits": [
+      { "label": "Designer", "value": "Forest Hill Design" },
+      { "label": "Contractor", "value": "DC Custom Builders" },
+      { "label": "Photographer", "value": "S.Goodie Photography" }
+    ]
+  },
+  {
+    "id": "deep-creek-lake",
+    "slug": "deep-creek-lake-project",
+    "title": "Deep Creek Lake Project",
+    "category": "Project Feature",
+    "author": "S.Goodie Studio",
+    "date": "2026-01-05",
+    "excerpt": "Serene and Family Friendly Deep Creek Lake House",
+    "body": "Nestled in the mountains of western Maryland, this lake house balances rustic charm with modern comfort. The interiors feature natural textures, cozy textiles, and large windows that frame views of the surrounding forest.\n\nEvery detail was designed with family gatherings in mind. The open floor plan allows for easy flow between cooking, dining, and relaxing, while private bedroom suites offer quiet retreats after long days on the water.\n\nThe photography focused on capturing the warmth and livability of the spaces, showing how the house embraces its natural setting while providing all the comforts of home.",
+    "heroPhotoId": "home-2",
+    "galleryPhotoIds": ["home-3", "home-9", "home-1"],
+    "credits": [
+      { "label": "Interior Designer", "value": "Lake House Living" },
+      { "label": "Photographer", "value": "S.Goodie Photography" },
+      { "label": "Location", "value": "Deep Creek Lake, MD" }
+    ]
+  },
+  {
+    "id": "modern-staircase",
+    "slug": "modern-staircase-renovation",
+    "title": "Modern Staircase Renovation",
+    "category": "Project Feature",
+    "author": "S.Goodie Studio",
+    "date": "2025-12-20",
+    "excerpt": "A dramatic staircase becomes the centerpiece of this historic home renovation.",
+    "body": "This renovation transformed a dated staircase into a stunning architectural feature. The clean lines of the new iron railing complement the original woodwork while adding a contemporary edge.\n\nThe result is a seamless blend of old and new that respects the home's history while bringing it firmly into the present. The staircase now serves as a sculptural element that draws the eye and invites exploration of the upper floors.",
+    "heroPhotoId": "about-approach-4",
+    "galleryPhotoIds": ["home-6", "home-5"],
+    "credits": [
+      { "label": "Architect", "value": "Heritage Modern Studio" },
+      { "label": "Photographer", "value": "S.Goodie Photography" }
+    ]
+  },
+  {
+    "id": "living-room-refresh",
+    "slug": "living-room-refresh",
+    "title": "Georgetown Living Room Refresh",
+    "category": "Project Feature",
+    "author": "S.Goodie Studio",
+    "date": "2025-12-15",
+    "excerpt": "Elegant updates bring new life to a classic Georgetown townhouse.",
+    "body": "This living room refresh focused on layering textures and introducing subtle color through art and accessories. The existing architectural details were preserved while furniture and lighting were updated to create a more contemporary feel.\n\nThe photography captured the room at golden hour, when the light streaming through the tall windows creates the warmest, most inviting atmosphere.",
+    "heroPhotoId": "home-4",
+    "galleryPhotoIds": ["home-9", "home-1"],
+    "credits": [
+      { "label": "Interior Designer", "value": "Georgetown Interiors" },
+      { "label": "Stylist", "value": "Style Studio DC" },
+      { "label": "Photographer", "value": "S.Goodie Photography" }
+    ]
+  },
+  {
+    "id": "grand-foyer",
+    "slug": "grand-foyer-transformation",
+    "title": "Grand Foyer Transformation",
+    "category": "Project Feature",
+    "author": "S.Goodie Studio",
+    "date": "2025-12-01",
+    "excerpt": "A statement chandelier and refined finishes elevate this entrance hall.",
+    "body": "The foyer sets the tone for the entire home, and this transformation delivers on that promise. A dramatic chandelier draws the eye upward while marble flooring and a sculptural console create a sense of arrival.\n\nEvery element was chosen to balance grandeur with warmth, ensuring guests feel welcomed rather than intimidated. The photography emphasized the interplay of light and materials that makes this space so special.",
+    "heroPhotoId": "home-5",
+    "galleryPhotoIds": ["home-6", "home-8"],
+    "credits": [
+      { "label": "Designer", "value": "Grand Spaces Design" },
+      { "label": "Photographer", "value": "S.Goodie Photography" }
+    ]
+  }
+]

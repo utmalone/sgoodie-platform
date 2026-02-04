@@ -4,16 +4,14 @@ export const pageOrder: PageSlug[] = [
   'home',
   'about',
   'work',
-  'interiors',
-  'travel',
-  'brand-marketing'
+  'journal',
+  'contact'
 ];
 
 export const pageLabels: Record<PageSlug, string> = {
   home: 'Home',
   about: 'About',
   work: 'Work',
-  interiors: 'Interiors',
-  travel: 'Travel',
-  'brand-marketing': 'Brand Marketing'
+  journal: 'Journal',
+  contact: 'Contact'
 };

@@ -1,15 +1,16 @@
 import { NextRequest } from 'next/server';
 import { getProjectsByCategory, getAllProjects } from '@/lib/data/projects';
+import type { ProjectCategory } from '@/types';
 
 export async function GET(request: NextRequest) {
   const category = request.nextUrl.searchParams.get('category');
 
   if (category) {
-    if (!['interiors', 'travel', 'brand-marketing'].includes(category)) {
+    if (!['interiors', 'travel', 'brand-marketing', 'architecture'].includes(category)) {
       return Response.json({ error: 'Invalid category' }, { status: 400 });
     }
 
-    const projects = await getProjectsByCategory(category as 'interiors' | 'travel' | 'brand-marketing');
+    const projects = await getProjectsByCategory(category as ProjectCategory);
     return Response.json(projects);
   }
 

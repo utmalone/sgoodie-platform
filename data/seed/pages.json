@@ -1,87 +1,76 @@
 [
-    {
-        "slug":  "home",
-        "title":  "S.Goodie Photography",
-        "intro":  "Modern photography for interiors, travel, and brand storytelling.",
-        "body":  "Curated visuals designed to highlight space, light, and identity. Build your next project with imagery that feels intentional and elevated.",
-        "ctaLabel":  "View Portfolio",
-        "ctaUrl":  "/work",
-        "gallery":  [
-                        "photo-1",
-                        "photo-2"
-                    ],
-        "metaTitle":  "",
-        "metaDescription":  "",
-        "metaKeywords":  ""
-    },
-    {
-        "slug":  "about",
-        "title":  "S.Goodie Photography",
-        "intro":  "S.Goodie is a photography studio specializing in interiors, travel, and brand marketing imagery.",
-        "body":  "We focus on light, spatial storytelling, and refined detail to bring every project to life. From boutique hotels to modern residences and personal brands, we craft visual narratives that feel elevated, authentic, and timeless.",
-        "ctaLabel":  "Start a Project",
-        "ctaUrl":  "mailto:hello@sgoodie.com",
-        "gallery":  [
-                        "photo-3"
-                    ],
-        "metaTitle":  "",
-        "metaDescription":  "",
-        "metaKeywords":  ""
-    },
-    {
-        "slug":  "work",
-        "title":  "Portfolio Collections",
-        "intro":  "Browse the portfolio by category. Each collection is curated to showcase light, composition, and story.",
-        "body":  "Explore interiors, travel, and brand marketing collections to see how each project is shaped by intent and atmosphere.",
-        "ctaLabel":  "View All Projects",
-        "ctaUrl":  "/work",
-        "gallery":  [
-
-                    ],
-        "metaTitle":  "",
-        "metaDescription":  "",
-        "metaKeywords":  ""
-    },
-    {
-        "slug":  "interiors",
-        "title":  "Interiors",
-        "intro":  "Architectural and interior photography for homes, hospitality, and commercial spaces.",
-        "body":  "From boutique hotels to modern residences, each set is captured with a focus on texture, light, and quiet detail.",
-        "ctaLabel":  "Request a Quote",
-        "ctaUrl":  "mailto:hello@sgoodie.com",
-        "gallery":  [
-                        "photo-1"
-                    ],
-        "metaTitle":  "",
-        "metaDescription":  "",
-        "metaKeywords":  ""
-    },
-    {
-        "slug":  "travel",
-        "title":  "Travel",
-        "intro":  "Light-driven, story-rich travel photography that captures place and atmosphere.",
-        "body":  "We document destinations with a calm, editorial eye, preserving the feeling of the place.",
-        "ctaLabel":  "Plan a Story",
-        "ctaUrl":  "mailto:hello@sgoodie.com",
-        "gallery":  [
-                        "photo-2"
-                    ],
-        "metaTitle":  "",
-        "metaDescription":  "",
-        "metaKeywords":  ""
-    },
-    {
-        "slug":  "brand-marketing",
-        "title":  "Brand Marketing",
-        "intro":  "Confident brand imagery for personal, editorial, and commercial clients.",
-        "body":  "Portraits, product details, and visual narratives designed to help brands feel bold and coherent.",
-        "ctaLabel":  "Collaborate",
-        "ctaUrl":  "mailto:hello@sgoodie.com",
-        "gallery":  [
-                        "photo-3"
-                    ],
-        "metaTitle":  "",
-        "metaDescription":  "",
-        "metaKeywords":  ""
-    }
+  {
+    "slug": "home",
+    "title": "Where Design Meets the Lens — Architecture + Interiors",
+    "intro": "Mid-Atlantic / Northeast",
+    "body": "Editorial imagery for architects, designers, and brands who care about light, detail, and atmosphere.",
+    "ctaLabel": "View Projects",
+    "ctaUrl": "/work",
+    "gallery": [],
+    "metaTitle": "",
+    "metaDescription": "",
+    "metaKeywords": ""
+  },
+  {
+    "slug": "about",
+    "title": "A quiet, editorial approach to spaces and stories.",
+    "intro": "S.Goodie is an architectural and interiors photographer focused on refined, narrative imagery.",
+    "body": "Working with designers, architects, and hospitality teams, we translate space into a calm, luminous visual story that feels timeless and intentional.",
+    "ctaLabel": "Get in Touch",
+    "ctaUrl": "/contact",
+    "gallery": [
+      "about-hero",
+      "home-2",
+      "home-3"
+    ],
+    "metaTitle": "",
+    "metaDescription": "",
+    "metaKeywords": ""
+  },
+  {
+    "slug": "work",
+    "title": "Selected Projects",
+    "intro": "A minimal index of completed and upcoming assignments.",
+    "body": "Each project is captured with a focus on light, craft, and the feeling of place.",
+    "ctaLabel": "Request Availability",
+    "ctaUrl": "/contact",
+    "gallery": [],
+    "metaTitle": "",
+    "metaDescription": "",
+    "metaKeywords": ""
+  },
+  {
+    "slug": "journal",
+    "title": "Latest shoot stories",
+    "intro": "Field notes, project features, and behind-the-scenes details.",
+    "body": "New stories share the process, collaborators, and design intent behind each shoot.",
+    "ctaLabel": "Subscribe",
+    "ctaUrl": "mailto:hello@sgoodie.com",
+    "gallery": [
+      "journal-hero-1",
+      "journal-hero-2"
+    ],
+    "metaTitle": "",
+    "metaDescription": "",
+    "metaKeywords": ""
+  },
+  {
+    "slug": "contact",
+    "title": "Discussion + booking",
+    "intro": "Tell us about the project scope, location, and timeline.",
+    "body": "We typically respond within two business days with availability and next steps.",
+    "ctaLabel": "Send an Email",
+    "ctaUrl": "mailto:hello@sgoodie.com",
+    "gallery": [
+      "home-4",
+      "home-5",
+      "home-6",
+      "home-7",
+      "home-8",
+      "home-9"
+    ],
+    "metaTitle": "",
+    "metaDescription": "",
+    "metaKeywords": ""
+  }
 ]

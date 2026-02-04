@@ -1,9 +1,9 @@
 # S.Goodie Photography Platform - Project Overview
 
-**Repository:** `sgoodie-platform`
-**Created:** 2025-01-16
-**Status:** Active development (local prototype with mock data)
-**Last Updated:** 2026-02-03
+**Repository:** `sgoodie-platform`  
+**Created:** 2025-01-16  
+**Status:** Active development (local prototype with mock data)  
+**Last Updated:** 2026-02-04  
 
 ---
 
@@ -35,11 +35,32 @@
 
 ## 2. Current Build Snapshot (What Is Implemented)
 
-### Public Site
-- Next.js App Router with server components for public pages
-- Pages: Home, About, Work, and category pages (Interiors, Travel, Brand Marketing)
-- Project grids and detail layouts driven by local JSON data
-- Page metadata support via `generateMetadata`
+### Public Site Pages
+
+| Page | Route | Features |
+|------|-------|----------|
+| Home | `/` | Full-screen hero with text overlay, editorial gallery grid with lightbox |
+| Work | `/work` | Photo grid with hover effects, links to portfolio detail pages |
+| Work Detail | `/work/[slug]` | Full-bleed hero with title overlay, editorial gallery (alternating double/single rows with captions), lightbox |
+| About | `/about` | Hero with title, multi-paragraph intro, 4-column approach grid, featured publications, bio section |
+| Journal | `/journal` | 3/4 height hero, 3-column post grid with pagination (21 posts per page) |
+| Journal Detail | `/journal/[slug]` | Centered title, 3-column photo grid, body paragraphs with credits sidebar |
+| Contact | `/contact` | 3/4 height hero, two-column layout (info + form), Instagram feed section |
+
+### Key UI Components
+
+- **EditorialGallery**: Alternating double/single photo rows with vertical offsets and optional captions
+- **WorkGalleryGrid**: Hover-to-reveal project titles, click to navigate
+- **JournalGrid**: Photo cards with category, title, excerpt, and "Read More" link
+- **JournalPhotoGrid**: 3-column grid with larger side padding for journal posts
+- **ContactForm**: Styled form with first/last name, email, message fields
+- **InstagramFeed**: 6-photo grid pulling from Instagram API (with placeholder fallback)
+- **GalleryLightbox**: Full-screen image viewer with prev/next navigation
+
+### Header Behavior
+- Transparent over hero images on: Home, About, Work Detail, Journal, Contact
+- Solid white on: Work index, Journal detail pages
+- Transitions to solid on scroll
 
 ### Admin (Authenticated)
 - NextAuth credentials login (single admin)
@@ -51,9 +72,7 @@
 ### AI Features
 - AI Fix buttons on page text and metadata fields
 - AI Fix buttons on photo metadata fields
-- Dashboard batch AI optimize:
-  - SEO metadata for pages and photos
-  - Text copy for pages
+- Dashboard batch AI optimize for SEO metadata and text copy
 - AI model dropdown with curated top models
 - OpenAI integration via the Responses API
 
@@ -65,23 +84,40 @@
 
 ---
 
-## 3. UX and Design Direction
+## 3. Data Architecture
 
-The visual direction is based on a clean, editorial photography portfolio style.
-Use `docs/JENN_VERRIER_UX_REFERENCE.md` for a detailed UI and UX breakdown of the reference site.
+### Backend Data (Mock)
+All content comes from JSON files in `data/local/` (seeded from `data/seed/`):
+
+| File | Content |
+|------|---------|
+| `pages.json` | Basic page content (home, about, work, journal, contact) |
+| `about.json` | Structured about page content (hero, intro, approach, publications, bio) |
+| `contact.json` | Structured contact page content (hero, form fields, social links) |
+| `photos.json` | All photo assets with metadata |
+| `projects.json` | Portfolio projects with gallery configurations |
+| `journal.json` | Journal posts with body text and credits |
+| `home.json` | Home page layout configuration |
+| `work.json` | Work page project ordering |
+
+### Frontend Data Flow
+1. Data fetching functions in `lib/data/` read from local JSON (or future API)
+2. Page components call these functions at build/request time
+3. Data is passed to presentational components as props
+4. All content is dynamic - frontend is a template that renders backend data
 
 ---
 
-## 4. Technical Architecture Summary (Current)
+## 4. Technical Stack
 
-- Framework: Next.js 14 (App Router)
-- Language: TypeScript 5
-- Styling: Tailwind CSS
-- Auth: NextAuth (Credentials)
-- Data: Local JSON store under `data/local` seeded from `data/seed`
-- API: Next.js Route Handlers in `app/api`
-- Analytics: Client provider + API storage
-- AI: OpenAI Responses API via server routes
+- **Framework:** Next.js 14 (App Router)
+- **Language:** TypeScript 5
+- **Styling:** CSS Modules under `styles/public/`
+- **Auth:** NextAuth (Credentials)
+- **Data:** Local JSON store under `data/local/` seeded from `data/seed/`
+- **API:** Next.js Route Handlers in `app/api/`
+- **Analytics:** Client provider + API storage
+- **AI:** OpenAI Responses API via server routes
 
 ---
 
@@ -103,25 +139,14 @@ npm install
 npm run dev
 ```
 
-The Next.js dev server hosts both frontend and backend on a single port.
-
 ### Admin Login (Local)
-- Credentials are controlled by `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH`
-- Hash is a SHA-256 hex string of the password
-- The example config uses:
-  - Email: `admin@example.com`
-  - Password: `admin123`
+- Email: `admin@example.com`
+- Password: `admin123`
 
 ---
 
-## 6. Data and Storage (Current vs Planned)
+## 6. Future AWS Architecture (Planned)
 
-### Current (Local Prototype)
-- Data is stored in JSON files under `data/local`
-- Seeds live in `data/seed`
-- All CRUD operations read and write JSON files
-
-### Planned (AWS)
 - S3 for photo storage
 - DynamoDB for structured content
 - CloudFront for image delivery
@@ -130,23 +155,5 @@ The Next.js dev server hosts both frontend and backend on a single port.
 
 ---
 
-## 7. Risks and Constraints
-
-- Local JSON storage is for prototyping only
-- AI features require a valid `OPENAI_API_KEY`
-- Analytics are mocked locally and must migrate to a real database later
-
----
-
-## 8. Next Steps
-
-1. Confirm UX details from `docs/JENN_VERRIER_UX_REFERENCE.md`
-2. Implement the new public layout to match the reference
-3. Replace local JSON storage with DynamoDB and S3
-4. Add image optimization pipeline and CDN configuration
-5. Wire real analytics persistence and reporting
-
----
-
-**Document Version:** 2.0
-**Last Updated:** 2026-02-03
+**Document Version:** 3.0  
+**Last Updated:** 2026-02-04

@@ -7,6 +7,7 @@ if (imageHost) {
 }
 
 domains.push('sgoodie-photos-prod.s3.amazonaws.com');
+domains.push('images.unsplash.com');
 
 const nextConfig = {
   output: 'standalone',

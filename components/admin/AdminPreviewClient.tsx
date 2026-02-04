@@ -2,11 +2,20 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import type { PageContent, PhotoAsset, Project } from '@/types';
+import type {
+  HomeLayout,
+  JournalPost,
+  PageContent,
+  PhotoAsset,
+  Project,
+  WorkIndex
+} from '@/types';
 import { loadDraftPages } from '@/lib/admin/draft-store';
+import { FullBleedHero } from '@/components/portfolio/FullBleedHero';
+import { HeroImage } from '@/components/portfolio/HeroImage';
+import { HomeGalleryGrid } from '@/components/portfolio/HomeGalleryGrid';
 import { PhotoGrid } from '@/components/portfolio/PhotoGrid';
-import { ProjectGrid } from '@/components/portfolio/ProjectGrid';
-import { SectionHeader } from '@/components/layout/SectionHeader';
+import { ProjectHero } from '@/components/portfolio/ProjectHero';
 
 type NavLink = {
   label: string;
@@ -15,38 +24,26 @@ type NavLink = {
 
 const navLinks: NavLink[] = [
   { label: 'Home', path: '/' },
-  { label: 'Interiors', path: '/work/interiors' },
-  { label: 'Travel', path: '/work/travel' },
-  { label: 'Brand Marketing', path: '/work/brand-marketing' },
-  { label: 'About', path: '/about' }
+  { label: 'Work', path: '/work' },
+  { label: 'About', path: '/about' },
+  { label: 'Journal', path: '/journal' },
+  { label: 'Contact', path: '/contact' }
 ];
-
-const workCards = [
-  {
-    title: 'Interiors',
-    description: 'Home, garden, hospitality, and architectural storytelling.'
-  },
-  {
-    title: 'Travel',
-    description: 'Places, textures, and light from around the world.'
-  },
-  {
-    title: 'Brand Marketing',
-    description: 'Visual identity for personal and commercial brands.'
-  }
-];
-
-function getPage(pages: PageContent[], slug: string) {
-  return pages.find((page) => page.slug === slug);
-}
 
 function mapPathToSlug(path: string) {
   if (path === '/about') return 'about';
   if (path === '/work') return 'work';
-  if (path === '/work/interiors') return 'interiors';
-  if (path === '/work/travel') return 'travel';
-  if (path === '/work/brand-marketing') return 'brand-marketing';
+  if (path === '/journal') return 'journal';
+  if (path === '/contact') return 'contact';
   return 'home';
+}
+
+function formatDate(date: string) {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 }
 
 export function AdminPreviewClient() {
@@ -58,6 +55,9 @@ export function AdminPreviewClient() {
   const [pages, setPages] = useState<PageContent[]>([]);
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [homeLayout, setHomeLayout] = useState<HomeLayout | null>(null);
+  const [workIndex, setWorkIndex] = useState<WorkIndex | null>(null);
+  const [journalPosts, setJournalPosts] = useState<JournalPost[]>([]);
   const [status, setStatus] = useState('Loading preview...');
 
   useEffect(() => {
@@ -69,13 +69,24 @@ export function AdminPreviewClient() {
 
   useEffect(() => {
     async function load() {
-      const [pagesRes, photosRes, projectsRes] = await Promise.all([
-        fetch('/api/admin/pages'),
-        fetch('/api/admin/photos'),
-        fetch('/api/projects')
-      ]);
+      const [pagesRes, photosRes, projectsRes, homeRes, workRes, journalRes] =
+        await Promise.all([
+          fetch('/api/admin/pages'),
+          fetch('/api/admin/photos'),
+          fetch('/api/projects'),
+          fetch('/api/admin/layout/home'),
+          fetch('/api/admin/layout/work'),
+          fetch('/api/journal')
+        ]);
 
-      if (!pagesRes.ok || !photosRes.ok || !projectsRes.ok) {
+      if (
+        !pagesRes.ok ||
+        !photosRes.ok ||
+        !projectsRes.ok ||
+        !homeRes.ok ||
+        !workRes.ok ||
+        !journalRes.ok
+      ) {
         setStatus('Unable to load preview data.');
         return;
       }
@@ -83,11 +94,17 @@ export function AdminPreviewClient() {
       const pagesData = (await pagesRes.json()) as PageContent[];
       const photosData = (await photosRes.json()) as PhotoAsset[];
       const projectsData = (await projectsRes.json()) as Project[];
+      const homeData = (await homeRes.json()) as HomeLayout;
+      const workData = (await workRes.json()) as WorkIndex;
+      const journalData = (await journalRes.json()) as JournalPost[];
 
       const draft = loadDraftPages();
       setPages(draft ?? pagesData);
       setPhotos(photosData);
       setProjects(projectsData);
+      setHomeLayout(homeData);
+      setWorkIndex(workData);
+      setJournalPosts(journalData);
       setStatus('');
     }
 
@@ -99,7 +116,7 @@ export function AdminPreviewClient() {
   }, [photos]);
 
   function getGallery(slug: string) {
-    const page = getPage(pages, slug);
+    const page = pages.find((item) => item.slug === slug);
     if (!page) return [];
     return page.gallery
       .map((id) => photosById.get(id))
@@ -113,43 +130,53 @@ export function AdminPreviewClient() {
     router.replace(`/admin/preview?${params.toString()}`);
   }
 
-  const featuredProjects = useMemo(
-    () => projects.filter((project) => project.featured),
-    [projects]
-  );
-
   const slug = mapPathToSlug(activePath);
-  const currentPage = getPage(pages, slug);
+  const currentPage = pages.find((page) => page.slug === slug);
+
+  const projectSlug = activePath.startsWith('/work/') ? activePath.split('/')[2] : null;
+  const activeProject = projectSlug
+    ? projects.find((project) => project.slug === projectSlug)
+    : null;
+
+  const orderedProjects = useMemo(() => {
+    if (!workIndex) return projects;
+    const projectMap = new Map(projects.map((project) => [project.id, project]));
+    const ordered = workIndex.projectIds
+      .map((id) => projectMap.get(id))
+      .filter(Boolean) as Project[];
+    const remaining = projects.filter((project) => !workIndex.projectIds.includes(project.id));
+    return [...ordered, ...remaining];
+  }, [projects, workIndex]);
 
   if (status) {
-    return <p className="text-sm text-black/60">{status}</p>;
+    return <p className="text-sm text-ink/60">{status}</p>;
   }
 
   return (
-    <div className="min-h-screen bg-parchment">
-      <div className="border-b border-black/10 bg-white/70">
-        <div className="container-page flex items-center justify-between py-3 text-xs uppercase tracking-[0.3em] text-black/50">
+    <div className="min-h-screen bg-paper">
+      <div className="border-b border-line bg-white/80">
+        <div className="container-page flex items-center justify-between py-3 text-xs uppercase tracking-[0.3em] text-ink/50">
           <span>Preview Mode (Draft)</span>
         </div>
       </div>
 
-      <header className="border-b border-black/10 bg-parchment">
-        <div className="container-page flex flex-wrap items-center justify-between gap-4 py-6">
+      <header className="border-b border-line bg-paper">
+        <div className="container-page flex flex-wrap items-center justify-between gap-4 py-8">
           <button
             type="button"
             onClick={() => handleNav('/')}
-            className="text-lg font-semibold tracking-wide"
+            className="text-sm font-semibold uppercase tracking-[0.35em]"
           >
-            S.Goodie Photography
+            S.Goodie
           </button>
-          <nav className="flex flex-wrap items-center gap-6 text-sm uppercase tracking-[0.2em]">
+          <nav className="flex flex-wrap items-center gap-6 text-[11px] uppercase tracking-[0.35em]">
             {navLinks.map((link) => (
               <button
                 key={link.path}
                 type="button"
                 onClick={() => handleNav(link.path)}
-                className={`transition hover:text-brass ${
-                  activePath === link.path ? 'text-brass' : 'text-black/80'
+                className={`transition hover:text-ink/60 ${
+                  activePath === link.path ? 'text-ink/70' : 'text-ink/40'
                 }`}
               >
                 {link.label}
@@ -161,134 +188,209 @@ export function AdminPreviewClient() {
 
       <main className="container-page py-12">
         {activePath === '/' && (
-          <div className="space-y-12">
-            <section className="rounded-3xl border border-black/10 bg-white p-10 shadow-sm">
-              <p className="text-xs uppercase tracking-[0.4em] text-black/50">S.Goodie Photography</p>
-              <h1 className="mt-4 text-4xl font-semibold leading-tight">{currentPage?.title}</h1>
-              <p className="mt-4 max-w-2xl text-base text-black/70">{currentPage?.intro}</p>
-              {currentPage?.body && (
-                <p className="mt-4 max-w-2xl text-base text-black/70">{currentPage.body}</p>
-              )}
-              {currentPage?.ctaLabel && currentPage?.ctaUrl && (
-                <a
-                  href={currentPage.ctaUrl}
-                  className="mt-6 inline-flex rounded-full border border-black/20 px-6 py-2 text-xs uppercase tracking-[0.35em] text-black/70 hover:text-black"
-                >
-                  {currentPage.ctaLabel}
-                </a>
-              )}
-            </section>
+          <div className="space-y-24">
+            {homeLayout?.heroPhotoId && photosById.get(homeLayout.heroPhotoId) && (
+              <FullBleedHero photo={photosById.get(homeLayout.heroPhotoId)!} minHeight="screen">
+                <div className="space-y-4 text-white">
+                  <p className="text-[11px] uppercase tracking-[0.5em] text-white/80">
+                    S.Goodie Photography
+                  </p>
+                  <h1 className="text-4xl font-semibold tracking-[0.15em] md:text-5xl">
+                    {currentPage?.title}
+                  </h1>
+                  <p className="text-[12px] uppercase tracking-[0.35em] text-white/80">
+                    {currentPage?.intro}
+                  </p>
+                  {currentPage?.body && (
+                    <p className="mx-auto max-w-2xl text-sm text-white/80">
+                      {currentPage.body}
+                    </p>
+                  )}
+                </div>
+              </FullBleedHero>
+            )}
 
-            <PhotoGrid photos={getGallery('home')} />
-
-            {featuredProjects.length > 0 && (
-              <section>
-                <SectionHeader
-                  title="Featured Work"
-                  subtitle="A short selection of recent interior, travel, and brand marketing projects."
+            {homeLayout && (
+              <section className="space-y-16 pt-6 pb-10">
+                <div className="mx-auto max-w-3xl space-y-6 text-center">
+                  <div className="mx-auto w-10 text-ink/60">
+                    <svg viewBox="0 0 48 24" className="h-auto w-full" aria-hidden="true">
+                      <path
+                        d="M8 16 L24 6 L24 18 L40 8"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-[11px] uppercase tracking-[0.4em] text-ink/60">
+                    Creating photographs that not only document spaces, but celebrate the
+                    artistry, vision, and craft behind them.
+                  </p>
+                </div>
+                <HomeGalleryGrid
+                  photos={homeLayout.featurePhotoIds
+                    .map((id) => photosById.get(id))
+                    .filter(Boolean) as PhotoAsset[]}
                 />
-                <ProjectGrid projects={featuredProjects} />
               </section>
             )}
           </div>
         )}
 
-        {activePath === '/about' && (
+        {activePath === '/work' && (
           <div className="space-y-12">
-            <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-              <div>
-                <p className="text-xs uppercase tracking-[0.4em] text-black/50">About</p>
-                <h1 className="mt-4 text-4xl font-semibold">{currentPage?.title}</h1>
-                <p className="mt-4 text-base text-black/70">{currentPage?.intro}</p>
-                {currentPage?.body && (
-                  <p className="mt-4 text-base text-black/70">{currentPage.body}</p>
-                )}
-              </div>
-              <div className="relative aspect-[3/4] overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm">
-                <img
-                  src={getGallery('about')[0]?.src || '/placeholder.svg'}
-                  alt={getGallery('about')[0]?.alt || 'About preview'}
-                  className="h-full w-full object-cover"
-                />
-              </div>
+            <div className="max-w-2xl space-y-4">
+              <p className="eyebrow">Work</p>
+              <h1 className="text-4xl font-semibold md:text-5xl">{currentPage?.title}</h1>
+              <p className="text-base text-ink/70">{currentPage?.intro}</p>
             </div>
-            <PhotoGrid photos={getGallery('about').slice(1)} />
+            <div className="divide-y divide-line">
+              {orderedProjects.map((project) => (
+                <button
+                  key={project.id}
+                  type="button"
+                  onClick={() => handleNav(`/work/${project.slug}`)}
+                  className="flex w-full flex-wrap items-center justify-between gap-4 py-6 text-left text-2xl font-semibold transition hover:opacity-60"
+                >
+                  <span>{project.title}</span>
+                  <span className="text-[11px] uppercase tracking-[0.35em] text-ink/50">
+                    {project.status === 'draft' ? 'Coming Soon' : 'View'}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
-        {activePath === '/work' && (
-          <div className="space-y-10">
-            <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-black/50">Work</p>
-              <h1 className="mt-4 text-4xl font-semibold">{currentPage?.title}</h1>
-              <p className="mt-4 max-w-2xl text-base text-black/70">{currentPage?.intro}</p>
-              {currentPage?.body && (
-                <p className="mt-4 max-w-2xl text-base text-black/70">{currentPage.body}</p>
+        {activeProject && (
+          <div className="space-y-14">
+            {photosById.get(activeProject.heroPhotoId) && (
+              <ProjectHero
+                title={activeProject.title}
+                subtitle={activeProject.subtitle}
+                intro={activeProject.intro}
+                photo={photosById.get(activeProject.heroPhotoId)!}
+              />
+            )}
+
+            {activeProject.sections && activeProject.sections.length > 0 && (
+              <section className="space-y-12">
+                {activeProject.sections.map((section, index) => {
+                  if (section.type === 'text') {
+                    return (
+                      <div key={`${section.heading}-${index}`} className="max-w-2xl space-y-3">
+                        <h2 className="text-2xl font-semibold">{section.heading}</h2>
+                        <p className="text-base text-ink/70">{section.body}</p>
+                      </div>
+                    );
+                  }
+
+                  const photo = photosById.get(section.photoId);
+                  if (!photo) return null;
+                  return <HeroImage key={`${section.photoId}-${index}`} photo={photo} />;
+                })}
+              </section>
+            )}
+
+            {activeProject.galleryPhotoIds.length > 0 && (
+              <PhotoGrid
+                photos={activeProject.galleryPhotoIds
+                  .map((id) => photosById.get(id))
+                  .filter(Boolean) as PhotoAsset[]}
+              />
+            )}
+          </div>
+        )}
+
+        {activePath === '/about' && (
+          <div className="space-y-16">
+            <section className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="space-y-6">
+                <p className="eyebrow">About</p>
+                <h1 className="text-4xl font-semibold md:text-5xl">{currentPage?.title}</h1>
+                <p className="text-base text-ink/70">{currentPage?.intro}</p>
+                {currentPage?.body && <p className="text-base text-ink/60">{currentPage.body}</p>}
+              </div>
+              {getGallery('about')[0] && (
+                <FullBleedHero photo={getGallery('about')[0]} minHeight="screen" overlay="light" />
               )}
+            </section>
+            {getGallery('about').length > 1 && <PhotoGrid photos={getGallery('about').slice(1)} />}
+          </div>
+        )}
+
+        {activePath === '/journal' && (
+          <div className="space-y-12">
+            <div className="max-w-2xl space-y-4">
+              <p className="eyebrow">Journal</p>
+              <h1 className="text-4xl font-semibold md:text-5xl">{currentPage?.title}</h1>
+              <p className="text-base text-ink/70">{currentPage?.intro}</p>
             </div>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {workCards.map((card) => (
-                <div
-                  key={card.title}
-                  className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm"
-                >
-                  <h2 className="text-2xl font-semibold">{card.title}</h2>
-                  <p className="mt-3 text-sm text-black/60">{card.description}</p>
+            <div className="space-y-10">
+              {journalPosts.map((post) => (
+                <div key={post.id} className="border-b border-line pb-8">
+                  <p className="text-[11px] uppercase tracking-[0.35em] text-ink/50">
+                    {post.category} · {post.author} · {formatDate(post.date)}
+                  </p>
+                  <h2 className="mt-3 text-3xl font-semibold">{post.title}</h2>
+                  <p className="mt-3 max-w-2xl text-sm text-ink/60">{post.excerpt}</p>
                 </div>
               ))}
             </div>
-            <PhotoGrid photos={getGallery('work')} />
           </div>
         )}
 
-        {activePath === '/work/interiors' && (
-          <section className="space-y-10">
-            <SectionHeader title={currentPage?.title || 'Interiors'} subtitle={currentPage?.intro} />
-            {currentPage?.body && (
-              <p className="max-w-2xl text-sm text-black/60">{currentPage.body}</p>
+        {activePath === '/contact' && (
+          <div className="space-y-16">
+            <section className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="space-y-6">
+                <p className="eyebrow">Contact</p>
+                <h1 className="text-4xl font-semibold md:text-5xl">{currentPage?.title}</h1>
+                <p className="text-base text-ink/70">{currentPage?.intro}</p>
+                {currentPage?.body && <p className="text-base text-ink/60">{currentPage.body}</p>}
+                <div className="space-y-2 text-sm text-ink/70">
+                  <p>S.Goodie Photography</p>
+                  <p>hello@sgoodie.com</p>
+                  <p>(202) 555-0194</p>
+                </div>
+              </div>
+              {photosById.get('contact-hero') && (
+                <FullBleedHero photo={photosById.get('contact-hero')!} minHeight="screen" overlay="light" />
+              )}
+            </section>
+            {getGallery('contact').length > 0 && (
+              <div className="grid gap-4 md:grid-cols-3">
+                {getGallery('contact').map((photo) => (
+                  <div key={photo.id} className="relative aspect-[4/3] overflow-hidden bg-fog">
+                    <img src={photo.src} alt={photo.alt} className="h-full w-full object-cover" />
+                  </div>
+                ))}
+              </div>
             )}
-            <ProjectGrid projects={projects.filter((project) => project.category === 'interiors')} />
-            <PhotoGrid photos={getGallery('interiors')} />
-          </section>
-        )}
-
-        {activePath === '/work/travel' && (
-          <section className="space-y-10">
-            <SectionHeader title={currentPage?.title || 'Travel'} subtitle={currentPage?.intro} />
-            {currentPage?.body && (
-              <p className="max-w-2xl text-sm text-black/60">{currentPage.body}</p>
-            )}
-            <ProjectGrid projects={projects.filter((project) => project.category === 'travel')} />
-            <PhotoGrid photos={getGallery('travel')} />
-          </section>
-        )}
-
-        {activePath === '/work/brand-marketing' && (
-          <section className="space-y-10">
-            <SectionHeader
-              title={currentPage?.title || 'Brand Marketing'}
-              subtitle={currentPage?.intro}
-            />
-            {currentPage?.body && (
-              <p className="max-w-2xl text-sm text-black/60">{currentPage.body}</p>
-            )}
-            <ProjectGrid
-              projects={projects.filter((project) => project.category === 'brand-marketing')}
-            />
-            <PhotoGrid photos={getGallery('brand-marketing')} />
-          </section>
+          </div>
         )}
       </main>
 
-      <footer className="border-t border-black/10 bg-parchment">
-        <div className="container-page flex flex-col gap-4 py-8 text-sm">
-          <div className="flex w-full flex-wrap items-center justify-between gap-2">
-            <p className="text-black/70">
-              S.Goodie Photography - Interiors, Travel, Brand Marketing
-            </p>
-            <span className="text-[10px] uppercase tracking-[0.35em] text-black/30">Studio</span>
+      <footer className="border-t border-line bg-paper">
+        <div className="container-page grid gap-8 py-12 text-sm md:grid-cols-3">
+          <div className="space-y-3">
+            <p className="eyebrow">Contact</p>
+            <p className="text-ink">hello@sgoodie.com</p>
+            <p className="text-ink">(202) 555-0194</p>
           </div>
-          <p className="text-black/50">Based in Seattle. Available worldwide.</p>
+          <div className="space-y-3">
+            <p className="eyebrow">Social</p>
+            <p className="text-ink">Instagram: @sgoodiephoto</p>
+            <p className="text-ink">LinkedIn: S.Goodie Studio</p>
+          </div>
+          <div className="space-y-3">
+            <p className="eyebrow">Availability</p>
+            <p className="text-ink">DC, MD, VA, PA, NY</p>
+            <p className="text-ink/60">Available for travel and select commissions.</p>
+          </div>
         </div>
       </footer>
     </div>

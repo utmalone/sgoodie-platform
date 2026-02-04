@@ -1,0 +1,197 @@
+[
+  {
+    "id": "lanvale-midcentury",
+    "slug": "lanvale-midcentury-interiors",
+    "title": "Lanvale Midcentury Interiors",
+    "subtitle": "Architectural Photography",
+    "intro": "A warm, midcentury residence styled for layered texture and gentle light.",
+    "body": "We focused on the rhythm of the rooms, moving from wide framing to tactile closeups that highlight material choices.",
+    "category": "interiors",
+    "heroPhotoId": "project-lanvale-hero",
+    "galleryPhotoIds": [
+      "home-1",
+      "home-2",
+      "home-3",
+      "home-7",
+      "home-8",
+      "home-4"
+    ],
+    "editorialCaptions": [
+      {
+        "title": "Richly Layered Design",
+        "body": "This home strikes a perfect balance, incorporating rich and moody tones without veering into overly vibrant territory. Textured textiles, colored stone, accent walls, patterned wallpaper, and green cabinetry combine to create depth and character."
+      },
+      {
+        "title": "Stairway Spotlight",
+        "body": "This staircase deserved a photoshoot all to itself. The clean lines of the handcrafted handrail and smooth balcony curves are beautifully complemented by the texture in the limewashed walls."
+      }
+    ],
+    "credits": [
+      { "label": "Location", "value": "Baltimore, MD" },
+      { "label": "Designer", "value": "Lanvale Studio" },
+      { "label": "Stylist", "value": "Rowan & Finch" },
+      { "label": "Photographer", "value": "S.Goodie" },
+      { "label": "Year", "value": "2025" }
+    ],
+    "status": "published",
+    "sortOrder": 1,
+    "featured": true,
+    "hoverTitle": "Lanvale Midcentury",
+    "metaTitle": "",
+    "metaDescription": "",
+    "metaKeywords": "",
+    "createdAt": "2025-10-12T12:00:00Z",
+    "updatedAt": "2025-12-02T18:00:00Z"
+  },
+  {
+    "id": "riverstone-residence",
+    "slug": "riverstone-residence",
+    "title": "Riverstone Residence",
+    "subtitle": "Interior + Architecture",
+    "intro": "A contemporary home shaped by light, stone, and open flow.",
+    "body": "We highlighted the transition between interior and exterior spaces, keeping the framing clean and understated.",
+    "category": "interiors",
+    "heroPhotoId": "project-riverstone-hero",
+    "galleryPhotoIds": [
+      "home-4",
+      "home-5",
+      "home-8"
+    ],
+    "editorialCaptions": [
+      {
+        "title": "Material Rhythm",
+        "body": "Warm plaster, wide oak planks, and stone accents define the project and create a grounded visual story that photographs beautifully across the day."
+      }
+    ],
+    "credits": [
+      { "label": "Location", "value": "Bethesda, MD" },
+      { "label": "Architect", "value": "Riverstone Atelier" },
+      { "label": "Stylist", "value": "Harbor House" },
+      { "label": "Photographer", "value": "S.Goodie" },
+      { "label": "Year", "value": "2025" }
+    ],
+    "status": "published",
+    "sortOrder": 2,
+    "featured": true,
+    "hoverTitle": "Riverstone Residence",
+    "metaTitle": "",
+    "metaDescription": "",
+    "metaKeywords": "",
+    "createdAt": "2025-09-01T12:00:00Z",
+    "updatedAt": "2025-12-05T18:00:00Z"
+  },
+  {
+    "id": "shoreline-modern",
+    "slug": "shoreline-modern",
+    "title": "Shoreline Modern",
+    "subtitle": "Architecture",
+    "intro": "A coastal build defined by strong verticals and expansive glazing.",
+    "body": "This project is currently in edit and will be published soon.",
+    "category": "architecture",
+    "heroPhotoId": "project-shoreline-hero",
+    "galleryPhotoIds": [
+      "home-6",
+      "about-approach-2",
+      "about-approach-3"
+    ],
+    "editorialCaptions": [
+      {
+        "title": "Coming Soon",
+        "body": "Final sequencing is underway. Check back for the full story and project notes."
+      }
+    ],
+    "credits": [
+      { "label": "Location", "value": "Rehoboth Beach, DE" },
+      { "label": "Architect", "value": "Shoreline Studio" },
+      { "label": "Year", "value": "2025" }
+    ],
+    "status": "draft",
+    "sortOrder": 3,
+    "featured": false,
+    "hoverTitle": "Shoreline Modern",
+    "metaTitle": "",
+    "metaDescription": "",
+    "metaKeywords": "",
+    "createdAt": "2025-08-14T12:00:00Z",
+    "updatedAt": "2025-12-18T18:00:00Z"
+  },
+  {
+    "id": "atelier-collective",
+    "slug": "atelier-collective",
+    "title": "Atelier Collective",
+    "subtitle": "Brand Marketing",
+    "intro": "An editorial branding shoot for a design-forward studio.",
+    "body": "We focused on process, tactile moments, and light that feels both fresh and grounded.",
+    "category": "brand-marketing",
+    "heroPhotoId": "project-atelier-hero",
+    "galleryPhotoIds": [
+      "brand-1",
+      "brand-2",
+      "brand-3"
+    ],
+    "editorialCaptions": [
+      {
+        "title": "Studio Energy",
+        "body": "A blend of product detail, material study, and portrait moments that support the brand voice and connect with the audience."
+      }
+    ],
+    "credits": [
+      { "label": "Client", "value": "Atelier Collective" },
+      { "label": "Location", "value": "Washington, DC" },
+      { "label": "Photographer", "value": "S.Goodie" },
+      { "label": "Year", "value": "2025" }
+    ],
+    "status": "published",
+    "sortOrder": 4,
+    "featured": true,
+    "hoverTitle": "Atelier Collective",
+    "metaTitle": "",
+    "metaDescription": "",
+    "metaKeywords": "",
+    "createdAt": "2025-07-10T12:00:00Z",
+    "updatedAt": "2025-11-21T18:00:00Z"
+  },
+  {
+    "id": "norfolk-light",
+    "slug": "norfolk-light",
+    "title": "Norfolk Light",
+    "subtitle": "Travel Story",
+    "intro": "A coastal travel assignment focused on atmosphere and rhythm.",
+    "body": "Soft horizons, layered skies, and quiet morning scenes shaped the visual narrative.",
+    "category": "travel",
+    "heroPhotoId": "project-norfolk-hero",
+    "galleryPhotoIds": [
+      "travel-1",
+      "travel-2",
+      "travel-3",
+      "journal-hero-1",
+      "journal-hero-2",
+      "about-hero"
+    ],
+    "editorialCaptions": [
+      {
+        "title": "On Location",
+        "body": "We photographed over two days, moving between the shoreline and nearby villages to capture contrast and the quiet rhythm of coastal life."
+      },
+      {
+        "title": "Golden Hour",
+        "body": "The soft morning light created perfect conditions for capturing the atmospheric quality we were after, with subtle tonal shifts across the landscape."
+      }
+    ],
+    "credits": [
+      { "label": "Location", "value": "Norfolk, VA" },
+      { "label": "Client", "value": "Visit Norfolk" },
+      { "label": "Photographer", "value": "S.Goodie" },
+      { "label": "Year", "value": "2025" }
+    ],
+    "status": "published",
+    "sortOrder": 5,
+    "featured": true,
+    "hoverTitle": "Norfolk Light",
+    "metaTitle": "",
+    "metaDescription": "",
+    "metaKeywords": "",
+    "createdAt": "2025-06-02T12:00:00Z",
+    "updatedAt": "2025-10-30T18:00:00Z"
+  }
+]

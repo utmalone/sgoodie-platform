@@ -1,0 +1,112 @@
+.wrapper > * + * {
+  margin-top: 6rem;
+}
+
+.heroContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  color: #ffffff;
+  text-align: center;
+}
+
+.heroEyebrow {
+  font-size: 1rem;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.heroTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-family: var(--font-display), sans-serif;
+}
+
+.heroSubtitle {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.heroBody {
+  max-width: 42rem;
+  margin: 0 auto;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+
+.introSection {
+  padding-top: 1.5rem;
+  padding-bottom: 2.5rem;
+}
+
+.introSection > * + * {
+  margin-top: 4rem;
+}
+
+.introWrapper {
+  max-width: 48rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.introWrapper > * + * {
+  margin-top: 1.5rem;
+}
+
+.introMark {
+  width: 2.5rem;
+  margin: 0 auto;
+  color: black;
+}
+
+.introMark svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.introText {
+  font-size: .75rem;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0.4em;
+  color: black;
+}
+
+@media (min-width: 768px) {
+  .heroTitle {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .heroContent {
+    gap: 0.5rem;
+  }
+
+  .heroEyebrow {
+    font-size: 1rem;
+    letter-spacing: 0.24em;
+  }
+
+  .heroTitle {
+    font-size: 1.2rem;
+    letter-spacing: 0.05em;
+  }
+
+  .heroSubtitle {
+    font-size: 8px;
+    letter-spacing: 0.18em;
+  }
+
+  .heroBody {
+    font-size: 0.74rem;
+  }
+
+}

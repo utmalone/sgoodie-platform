@@ -101,10 +101,9 @@ export function AdminDashboardClient() {
     () => ({
       '/': 'Home',
       '/about': 'About',
-      '/work': 'Work Overview',
-      '/work/interiors': 'Interiors',
-      '/work/travel': 'Travel',
-      '/work/brand-marketing': 'Brand Marketing'
+      '/work': 'Work',
+      '/journal': 'Journal',
+      '/contact': 'Contact'
     }),
     []
   );
@@ -212,7 +211,7 @@ export function AdminDashboardClient() {
         <p className="text-xs uppercase tracking-[0.4em] text-black/50">Welcome</p>
         <h1 className="mt-3 text-3xl font-semibold">Good to see you back.</h1>
         <p className="mt-2 text-sm text-black/60">
-          Here's a quick pulse check on your traffic, plus tools to optimize copy and SEO.
+          Here&apos;s a quick pulse check on your traffic, plus tools to optimize copy and SEO.
         </p>
       </div>
 
