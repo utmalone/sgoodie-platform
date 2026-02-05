@@ -6,6 +6,8 @@ import { useState } from 'react';
 import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const baseUrl =
+    typeof window === 'undefined' ? undefined : window.location.origin;
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -19,7 +21,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <SessionProvider>
+    <SessionProvider baseUrl={baseUrl}>
       <QueryClientProvider client={queryClient}>
         <AnalyticsProvider>{children}</AnalyticsProvider>
       </QueryClientProvider>

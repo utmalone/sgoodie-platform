@@ -1,12 +1,14 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { useState, Suspense } from 'react';
 import styles from '@/styles/admin/AdminShared.module.css';
 
 function LoginForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -22,7 +24,7 @@ function LoginForm() {
 
     try {
       const result = await signIn('credentials', {
-        redirect: true,
+        redirect: false,
         callbackUrl,
         email,
         password
@@ -31,7 +33,17 @@ function LoginForm() {
       if (result?.error) {
         setError('Invalid credentials. Please try again.');
         setIsLoading(false);
+        return;
       }
+
+      if (result?.ok) {
+        router.push(callbackUrl);
+        router.refresh();
+        return;
+      }
+
+      setError('Unable to sign in. Please try again.');
+      setIsLoading(false);
     } catch {
       setError('An error occurred. Please try again.');
       setIsLoading(false);

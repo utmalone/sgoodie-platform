@@ -1,4 +1,5 @@
 import NextAuth from 'next-auth';
+import type { NextRequest } from 'next/server';
 import { authOptions } from '@/lib/auth/options';
 
 // Debug: Log environment variables on initialization (remove in production)
@@ -12,6 +13,44 @@ if (process.env.NODE_ENV !== 'development') {
   });
 }
 
+function resolveNextAuthUrl(request: NextRequest) {
+  if (process.env.NEXTAUTH_URL) {
+    return process.env.NEXTAUTH_URL;
+  }
+
+  const publicSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (publicSiteUrl) {
+    return publicSiteUrl;
+  }
+
+  const host =
+    request.headers.get('x-forwarded-host') ?? request.headers.get('host');
+  if (!host) {
+    return undefined;
+  }
+
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  const defaultProtocol =
+    process.env.NODE_ENV === 'development' ? 'http' : 'https';
+  const protocol = forwardedProto?.split(',')[0]?.trim() || defaultProtocol;
+  return `${protocol === 'http' ? 'http' : 'https'}://${host}`;
+}
+
+function ensureNextAuthUrl(request: NextRequest) {
+  const resolvedUrl = resolveNextAuthUrl(request);
+  if (resolvedUrl && process.env.NEXTAUTH_URL !== resolvedUrl) {
+    process.env.NEXTAUTH_URL = resolvedUrl;
+  }
+}
+
 const handler = NextAuth(authOptions);
 
-export { handler as GET, handler as POST };
+export async function GET(request: NextRequest) {
+  ensureNextAuthUrl(request);
+  return handler(request);
+}
+
+export async function POST(request: NextRequest) {
+  ensureNextAuthUrl(request);
+  return handler(request);
+}
