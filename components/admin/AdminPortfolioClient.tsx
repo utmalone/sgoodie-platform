@@ -276,6 +276,7 @@ export function AdminPortfolioClient() {
                 {/* Thumbnail */}
                 <div className={styles.projectThumbnail}>
                   {heroPhoto ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={heroPhoto.src} alt={heroPhoto.alt} />
                   ) : (
                     <div className={styles.projectThumbnailEmpty}>No image</div>

@@ -121,6 +121,7 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId]);
 
   async function loadData() {
@@ -378,6 +379,7 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
         {heroPhoto && (
           <div className="mt-4">
             <div className="relative aspect-[16/9] max-w-2xl overflow-hidden rounded-2xl bg-black/5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={heroPhoto.src}
                 alt={heroPhoto.alt}
@@ -420,6 +422,7 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
                   draggedPhotoId === photo.id ? 'opacity-50' : ''
                 }`}
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={photo.src}
                   alt={photo.alt}

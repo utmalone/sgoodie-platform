@@ -373,6 +373,7 @@ export function AdminPreviewClient() {
                   .filter(Boolean)
                   .map((photo) => (
                     <div key={photo!.id} className="relative aspect-[4/3] overflow-hidden bg-fog">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={photo!.src} alt={photo!.alt} className="h-full w-full object-cover" />
                     </div>
                   ))}
@@ -437,6 +438,7 @@ export function AdminPreviewClient() {
               <div className="grid gap-4 md:grid-cols-3">
                 {getGallery('contact').map((photo) => (
                   <div key={photo.id} className="relative aspect-[4/3] overflow-hidden bg-fog">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={photo.src} alt={photo.alt} className="h-full w-full object-cover" />
                   </div>
                 ))}

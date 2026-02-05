@@ -124,6 +124,7 @@ export function AdminPhotoSelector({
                         : 'border-transparent hover:border-black/30'
                     }`}
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={photo.src}
                       alt={photo.alt}

@@ -237,6 +237,7 @@ export function AdminWorkClient() {
                 {/* Thumbnail */}
                 <div className="h-16 w-24 overflow-hidden rounded-xl bg-black/5">
                   {heroPhoto ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={heroPhoto.src}
                       alt={heroPhoto.alt}

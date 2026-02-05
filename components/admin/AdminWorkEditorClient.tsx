@@ -69,6 +69,7 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   async function loadData() {
@@ -428,6 +429,7 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
         {heroPhoto && (
           <div className="mt-4">
             <div className="relative aspect-[16/9] max-w-2xl overflow-hidden rounded-2xl bg-black/5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={heroPhoto.src}
                 alt={heroPhoto.alt}
@@ -470,6 +472,7 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
                   draggedPhotoId === photo.id ? 'opacity-50' : ''
                 }`}
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={photo.src}
                   alt={photo.alt}

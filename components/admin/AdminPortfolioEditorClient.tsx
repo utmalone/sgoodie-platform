@@ -146,6 +146,7 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   async function loadData() {
@@ -509,6 +510,7 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
         {heroPhoto && (
           <div className={styles.formGrid}>
             <div className={styles.heroPreviewLarge}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={heroPhoto.src} alt={heroPhoto.alt} />
             </div>
             <p className={styles.mutedText}>{heroPhoto.alt || 'No alt text'}</p>
@@ -545,6 +547,7 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
                 onDrop={() => handleGalleryDrop(photo.id)}
                 className={`${styles.galleryItem} ${draggedPhotoId === photo.id ? styles.galleryItemDragging : ''}`}
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={photo.src} alt={photo.alt} />
                 <button
                   type="button"
