@@ -24,7 +24,7 @@ terraform {
     bucket         = "sgoodie-terraform-state-667516054009"
     key            = "prod/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "sgoodie-terraform-locks"
+    use_lockfile   = true
     encrypt        = true
   }
 }
