@@ -17,6 +17,7 @@ export function AdminProfileClient() {
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [status, setStatus] = useState('');
+  const [emailError, setEmailError] = useState('');
   
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -29,6 +30,11 @@ export function AdminProfileClient() {
     if (!profile || !savedProfile) return false;
     return JSON.stringify(profile) !== JSON.stringify(savedProfile);
   }, [profile, savedProfile]);
+
+  const isEmailValid = useMemo(() => {
+    if (!profile?.email) return true;
+    return profile.email.includes('@');
+  }, [profile?.email]);
 
   const saveProfile = useCallback(async (): Promise<boolean> => {
     if (!profile) return false;
@@ -98,6 +104,12 @@ export function AdminProfileClient() {
   async function handleSave() {
     if (!profile) return;
     
+    if (!isEmailValid) {
+      setEmailError('Please enter a valid email address.');
+      setStatus('Please fix the email address before saving.');
+      return;
+    }
+
     setStatus('Saving...');
     const success = await saveProfile();
     
@@ -160,6 +172,20 @@ export function AdminProfileClient() {
     
     current[keys[keys.length - 1]] = value;
     setProfile(updated as SiteProfile);
+  }
+
+  function formatPhone(value: string) {
+    const digits = value.replace(/\D/g, '');
+    if (!digits) return '';
+
+    const normalized = digits.startsWith('1') && digits.length > 10 ? digits.slice(1, 11) : digits.slice(0, 10);
+    const part1 = normalized.slice(0, 3);
+    const part2 = normalized.slice(3, 6);
+    const part3 = normalized.slice(6, 10);
+
+    if (normalized.length <= 3) return `(${part1}`;
+    if (normalized.length <= 6) return `(${part1}) ${part2}`;
+    return `(${part1}) ${part2}-${part3}`;
   }
 
   const selectedPhoto = photos.find(p => p.id === profile?.photoId);
@@ -266,16 +292,25 @@ export function AdminProfileClient() {
             <input
               type="email"
               value={profile.email}
-              onChange={(e) => updateField('email', e.target.value)}
+              onChange={(e) => {
+                setEmailError('');
+                updateField('email', e.target.value);
+              }}
+              onBlur={() => {
+                if (profile.email && !profile.email.includes('@')) {
+                  setEmailError('Email must include an "@" symbol.');
+                }
+              }}
               className={styles.formInput}
             />
+            {emailError && <p className={styles.statusMessage}>{emailError}</p>}
           </label>
           <label className={styles.formLabel}>
             <span className={styles.labelText}>Phone</span>
             <input
               type="tel"
               value={profile.phone}
-              onChange={(e) => updateField('phone', e.target.value)}
+              onChange={(e) => updateField('phone', formatPhone(e.target.value))}
               className={styles.formInput}
             />
           </label>

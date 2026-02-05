@@ -36,6 +36,7 @@ export function SiteHeader({ socialLinks }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [portfolioOpen, setPortfolioOpen] = useState(false);
   const [mobilePortfolioOpen, setMobilePortfolioOpen] = useState(false);
+  const [hasHeroMedia, setHasHeroMedia] = useState(false);
   const portfolioRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
@@ -51,10 +52,28 @@ export function SiteHeader({ socialLinks }: SiteHeaderProps) {
     return false;
   }, [pathname]);
 
-  const [isScrolled, setIsScrolled] = useState(!isHeroPage);
-
   useEffect(() => {
     if (!isHeroPage) {
+      setHasHeroMedia(false);
+      return;
+    }
+
+    const checkHero = () => {
+      const heroEl = document.querySelector('[data-hero="true"]');
+      setHasHeroMedia(Boolean(heroEl));
+    };
+
+    checkHero();
+    const timeout = window.setTimeout(checkHero, 100);
+
+    return () => window.clearTimeout(timeout);
+  }, [isHeroPage, pathname]);
+
+  const heroMode = isHeroPage && hasHeroMedia;
+  const [isScrolled, setIsScrolled] = useState(!heroMode);
+
+  useEffect(() => {
+    if (!heroMode) {
       setIsScrolled(true);
       return;
     }
@@ -66,7 +85,7 @@ export function SiteHeader({ socialLinks }: SiteHeaderProps) {
     handleScroll();
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [isHeroPage]);
+  }, [heroMode]);
 
   // Close portfolio dropdown when clicking outside
   useEffect(() => {

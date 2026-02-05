@@ -26,7 +26,10 @@ export function FullBleedHero({
   const offsetClass = offset ? styles.offsetHeader : '';
 
   return (
-    <section className={`${styles.wrapper} ${minHeightClass} ${offsetClass}`}>
+    <section
+      className={`${styles.wrapper} ${minHeightClass} ${offsetClass}`}
+      data-hero="true"
+    >
       <Image
         src={photo.src}
         alt={photo.alt}

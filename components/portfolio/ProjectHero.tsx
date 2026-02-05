@@ -15,7 +15,7 @@ type ProjectHeroProps = {
  */
 export function ProjectHero({ title, subtitle, intro, photo }: ProjectHeroProps) {
   return (
-    <section className={styles.wrapper}>
+    <section className={styles.wrapper} data-hero="true">
       <div className={styles.imageContainer}>
         <Image
           src={photo.src}

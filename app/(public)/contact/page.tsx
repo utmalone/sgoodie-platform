@@ -27,7 +27,7 @@ export default async function ContactPage() {
     <div className={styles.wrapper}>
       {/* Hero Section */}
       {heroPhoto && (
-        <section className={styles.heroSection}>
+        <section className={styles.heroSection} data-hero="true">
           <div className={styles.heroImage}>
             <Image
               src={heroPhoto.src}
