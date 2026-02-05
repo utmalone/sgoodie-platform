@@ -1,14 +1,10 @@
 import type { SiteProfile } from '@/types';
 import { readJson, writeJson } from './local-store';
+import { useMockData, getItem, putItem } from './db';
 
 const PROFILE_FILE = 'profile.json';
-
-function assertMockMode() {
-  if (process.env.USE_MOCK_DATA === 'true') return;
-  throw new Error(
-    'Profile management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.'
-  );
-}
+const TABLE_NAME = 'pages'; // Store profile in pages table with slug 'profile'
+const PROFILE_SLUG = 'site-profile';
 
 const defaultProfile: SiteProfile = {
   name: 'S.Goodie',
@@ -35,18 +31,33 @@ const defaultProfile: SiteProfile = {
 };
 
 export async function getProfile(): Promise<SiteProfile> {
-  try {
-    const profile = await readJson<SiteProfile>(PROFILE_FILE);
-    return { ...defaultProfile, ...profile };
-  } catch {
-    return defaultProfile;
+  if (useMockData()) {
+    try {
+      const profile = await readJson<SiteProfile>(PROFILE_FILE);
+      return { ...defaultProfile, ...profile };
+    } catch {
+      return defaultProfile;
+    }
   }
+
+  // DynamoDB mode - return default if not found
+  const profile = await getItem<SiteProfile & { slug: string }>(TABLE_NAME, { slug: PROFILE_SLUG });
+  if (profile) {
+    return { ...defaultProfile, ...profile };
+  }
+  return defaultProfile;
 }
 
 export async function updateProfile(updates: Partial<SiteProfile>): Promise<SiteProfile> {
-  assertMockMode();
   const current = await getProfile();
   const updated = { ...current, ...updates };
-  await writeJson(PROFILE_FILE, updated);
+
+  if (useMockData()) {
+    await writeJson(PROFILE_FILE, updated);
+    return updated;
+  }
+
+  // DynamoDB mode - store with slug for key
+  await putItem(TABLE_NAME, { ...updated, slug: PROFILE_SLUG });
   return updated;
 }

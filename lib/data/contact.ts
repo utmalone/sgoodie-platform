@@ -1,30 +1,47 @@
 import type { ContactPageContent } from '@/types';
 import { readJson, writeJson } from './local-store';
+import { useMockData, getItem, putItem } from './db';
 
-const USE_MOCK_DATA = process.env.USE_MOCK_DATA === 'true';
+const TABLE_NAME = 'pages';
+const CONTACT_SLUG = 'contact-page';
+
+const defaultContactContent: ContactPageContent = {
+  headline: 'Get in Touch',
+  intro: '',
+  formFields: ['name', 'email', 'message'],
+  successMessage: 'Thank you for your message. We will get back to you soon.'
+};
 
 /**
  * Fetch the structured Contact page content.
  */
 export async function getContactContent(): Promise<ContactPageContent> {
-  if (USE_MOCK_DATA) {
-    return readJson<ContactPageContent>('contact.json');
+  if (useMockData()) {
+    try {
+      return await readJson<ContactPageContent>('contact.json');
+    } catch {
+      return defaultContactContent;
+    }
   }
 
-  // TODO: Fetch from real backend API
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/contact`);
-  if (!res.ok) {
-    throw new Error('Failed to fetch contact content');
-  }
-  return res.json();
+  // DynamoDB mode - return default if not found
+  const content = await getItem<ContactPageContent & { slug: string }>(TABLE_NAME, { slug: CONTACT_SLUG });
+  return content || defaultContactContent;
 }
 
 /**
  * Update the Contact page content.
  */
 export async function updateContactContent(updates: Partial<ContactPageContent>): Promise<ContactPageContent> {
-  const current = await readJson<ContactPageContent>('contact.json');
+  const current = await getContactContent();
   const updated = { ...current, ...updates };
-  await writeJson('contact.json', updated);
+
+  if (useMockData()) {
+    await writeJson('contact.json', updated);
+    return updated;
+  }
+
+  // DynamoDB mode
+  await putItem(TABLE_NAME, { ...updated, slug: CONTACT_SLUG });
   return updated;
 }

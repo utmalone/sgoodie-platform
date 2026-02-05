@@ -1,18 +1,18 @@
 import { randomUUID } from 'crypto';
 import type { JournalPost } from '@/types';
 import { readJson, writeJson } from './local-store';
+import { useMockData, getAllItems, getItem, putItem, deleteItem } from './db';
 
 const JOURNAL_FILE = 'journal.json';
-
-function assertMockMode() {
-  if (process.env.USE_MOCK_DATA === 'true') return;
-  throw new Error(
-    'Journal management is only implemented for local mock data. Set USE_MOCK_DATA=true.'
-  );
-}
+const TABLE_NAME = 'journal';
 
 export async function getAllJournalPosts(): Promise<JournalPost[]> {
-  return readJson<JournalPost[]>(JOURNAL_FILE);
+  if (useMockData()) {
+    return readJson<JournalPost[]>(JOURNAL_FILE);
+  }
+
+  // DynamoDB mode - return empty array if no data
+  return getAllItems<JournalPost>(TABLE_NAME);
 }
 
 export async function getJournalPostBySlug(slug: string): Promise<JournalPost | null> {
@@ -21,14 +21,18 @@ export async function getJournalPostBySlug(slug: string): Promise<JournalPost | 
 }
 
 export async function getJournalPostById(id: string): Promise<JournalPost | null> {
-  const posts = await getAllJournalPosts();
-  return posts.find((post) => post.id === id) || null;
+  if (useMockData()) {
+    const posts = await getAllJournalPosts();
+    return posts.find((post) => post.id === id) || null;
+  }
+
+  // DynamoDB mode
+  return getItem<JournalPost>(TABLE_NAME, { id });
 }
 
 export async function createJournalPost(
   input: Omit<JournalPost, 'id'>
 ): Promise<JournalPost> {
-  assertMockMode();
   const posts = await getAllJournalPosts();
 
   // Ensure unique slug
@@ -42,25 +46,29 @@ export async function createJournalPost(
     id: randomUUID()
   };
 
-  posts.push(post);
-  await writeJson(JOURNAL_FILE, posts);
-  return post;
+  if (useMockData()) {
+    posts.push(post);
+    await writeJson(JOURNAL_FILE, posts);
+    return post;
+  }
+
+  // DynamoDB mode
+  return putItem(TABLE_NAME, post);
 }
 
 export async function updateJournalPost(
   id: string,
   updates: Partial<Omit<JournalPost, 'id'>>
 ): Promise<JournalPost> {
-  assertMockMode();
   const posts = await getAllJournalPosts();
-  const index = posts.findIndex((p) => p.id === id);
+  const existing = posts.find((p) => p.id === id);
 
-  if (index < 0) {
+  if (!existing) {
     throw new Error(`Journal post with id "${id}" not found`);
   }
 
   // Check slug uniqueness if changing
-  if (updates.slug && updates.slug !== posts[index].slug) {
+  if (updates.slug && updates.slug !== existing.slug) {
     const existingSlug = posts.find((p) => p.slug === updates.slug);
     if (existingSlug) {
       throw new Error(`Journal post with slug "${updates.slug}" already exists`);
@@ -68,23 +76,34 @@ export async function updateJournalPost(
   }
 
   const updated: JournalPost = {
-    ...posts[index],
+    ...existing,
     ...updates
   };
 
-  posts[index] = updated;
-  await writeJson(JOURNAL_FILE, posts);
-  return updated;
+  if (useMockData()) {
+    const index = posts.findIndex((p) => p.id === id);
+    posts[index] = updated;
+    await writeJson(JOURNAL_FILE, posts);
+    return updated;
+  }
+
+  // DynamoDB mode
+  return putItem(TABLE_NAME, updated);
 }
 
 export async function deleteJournalPost(id: string): Promise<void> {
-  assertMockMode();
-  const posts = await getAllJournalPosts();
-  const filtered = posts.filter((p) => p.id !== id);
+  if (useMockData()) {
+    const posts = await getAllJournalPosts();
+    const filtered = posts.filter((p) => p.id !== id);
 
-  if (filtered.length === posts.length) {
-    throw new Error(`Journal post with id "${id}" not found`);
+    if (filtered.length === posts.length) {
+      throw new Error(`Journal post with id "${id}" not found`);
+    }
+
+    await writeJson(JOURNAL_FILE, filtered);
+    return;
   }
 
-  await writeJson(JOURNAL_FILE, filtered);
+  // DynamoDB mode
+  await deleteItem(TABLE_NAME, { id });
 }

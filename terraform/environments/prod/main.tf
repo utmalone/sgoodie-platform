@@ -151,9 +151,10 @@ module "amplify" {
     INSTAGRAM_ACCESS_TOKEN = var.instagram_access_token
 
     # S3/CloudFront Resources (using non-AWS prefix for Amplify compatibility)
-    S3_PHOTOS_BUCKET  = module.storage.photos_bucket_name
-    S3_UPLOADS_BUCKET = module.storage.uploads_bucket_name
-    CLOUDFRONT_URL    = module.cdn.distribution_domain
-    DYNAMODB_REGION   = var.aws_region
+    S3_PHOTOS_BUCKET       = module.storage.photos_bucket_name
+    S3_UPLOADS_BUCKET      = module.storage.uploads_bucket_name
+    CLOUDFRONT_URL         = module.cdn.distribution_domain
+    DYNAMODB_REGION        = var.aws_region
+    DYNAMODB_TABLE_PREFIX  = local.project_name
   }
 }
