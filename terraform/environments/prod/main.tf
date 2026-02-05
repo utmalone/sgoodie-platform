@@ -234,9 +234,15 @@ resource "null_resource" "amplify_waf" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      AWS_BIN="aws"
-      if [ -x /usr/local/bin/aws ]; then AWS_BIN="/usr/local/bin/aws"; fi
-      "$AWS_BIN" amplify update-app --app-id ${module.amplify.app_id} --waf-configuration webAclArn=${module.waf[0].web_acl_arn}
+      python - <<'PY'
+import boto3
+
+app_id = "${module.amplify.app_id}"
+web_acl_arn = "${module.waf[0].web_acl_arn}"
+
+client = boto3.client("amplify", region_name="us-east-1")
+client.update_app(appId=app_id, wafConfiguration={"webAclArn": web_acl_arn})
+PY
     EOT
   }
 }

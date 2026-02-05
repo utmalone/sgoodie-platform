@@ -51,6 +51,9 @@ jobs:
           sudo ./aws/install --update
           aws --version
 
+      - name: Install Boto3 (for Amplify WAF update)
+        run: python -m pip install --upgrade pip boto3
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
