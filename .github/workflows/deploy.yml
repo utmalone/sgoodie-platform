@@ -63,6 +63,7 @@ jobs:
         run: |
           terraform plan \
             -var="github_access_token=${{ secrets.GH_ACCESS_TOKEN }}" \
+            -var="nextauth_url=${{ secrets.NEXTAUTH_URL }}" \
             -var="nextauth_secret=${{ secrets.NEXTAUTH_SECRET }}" \
             -var="admin_email=${{ secrets.ADMIN_EMAIL }}" \
             -var="admin_password_hash=${{ secrets.ADMIN_PASSWORD_HASH }}" \

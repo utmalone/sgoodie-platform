@@ -78,3 +78,9 @@ variable "instagram_access_token" {
   sensitive   = true
   default     = ""
 }
+
+variable "nextauth_url" {
+  description = "NextAuth.js callback URL (e.g., https://main.xxx.amplifyapp.com)"
+  type        = string
+  default     = ""
+}

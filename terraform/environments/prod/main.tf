@@ -143,7 +143,7 @@ module "amplify" {
   # Note: AWS_ prefix is reserved by Amplify, so we use different names
   environment_variables = {
     USE_MOCK_DATA          = "false"
-    NEXTAUTH_URL           = var.domain_name != "" ? "https://${var.domain_name}" : ""
+    NEXTAUTH_URL           = var.nextauth_url
     NEXTAUTH_SECRET        = var.nextauth_secret
     ADMIN_EMAIL            = var.admin_email
     ADMIN_PASSWORD_HASH    = var.admin_password_hash
