@@ -1,6 +1,6 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { createHash, timingSafeEqual } from 'crypto';
+import { verifyAdminCredentials } from './admin-store';
 
 // Session timeout: 30 minutes of inactivity
 const SESSION_MAX_AGE = 30 * 60; // 30 minutes in seconds
@@ -29,28 +29,15 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        const adminEmail = process.env.ADMIN_EMAIL?.trim();
-        const adminHash = process.env.ADMIN_PASSWORD_HASH?.trim()?.toLowerCase();
-
-        if (!adminEmail || !adminHash) {
-          console.error('ADMIN_EMAIL or ADMIN_PASSWORD_HASH is not set.');
-          return null;
-        }
-
-        const email = credentials?.email?.trim().toLowerCase() || '';
+        const email = credentials?.email?.trim() || '';
         const password = credentials?.password || '';
 
-        if (email !== adminEmail.toLowerCase()) return null;
-        const inputHash = createHash('sha256').update(password).digest('hex');
-        const isValid =
-          adminHash.length === inputHash.length &&
-          timingSafeEqual(Buffer.from(adminHash), Buffer.from(inputHash));
+        if (!email || !password) return null;
 
-        if (!isValid) {
-          return null;
-        }
+        const admin = await verifyAdminCredentials(email, password);
+        if (!admin) return null;
 
-        return { id: 'admin', email: adminEmail };
+        return { id: admin.id, email: admin.email };
       }
     })
   ],

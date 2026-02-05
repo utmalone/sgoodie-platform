@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getProfile, updateProfile } from '@/lib/data/profile';
 import { requireAdminApi } from '@/lib/auth/require-admin-api';
+import { updateAdminEmail } from '@/lib/auth/admin-store';
 
 export async function GET() {
   const session = await requireAdminApi();
@@ -26,6 +27,15 @@ export async function PUT(request: Request) {
   try {
     const updates = await request.json();
     const updated = await updateProfile(updates);
+
+    if (typeof updates?.email === 'string' && updates.email.trim()) {
+      try {
+        await updateAdminEmail(updates.email);
+      } catch (error) {
+        console.error('Error updating admin email:', error);
+      }
+    }
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error('Error updating profile:', error);

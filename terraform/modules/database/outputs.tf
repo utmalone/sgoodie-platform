@@ -51,3 +51,13 @@ output "analytics_table_arn" {
   description = "ARN of the analytics DynamoDB table"
   value       = aws_dynamodb_table.analytics.arn
 }
+
+output "admins_table_name" {
+  description = "Name of the admins DynamoDB table"
+  value       = aws_dynamodb_table.admins.name
+}
+
+output "admins_table_arn" {
+  description = "ARN of the admins DynamoDB table"
+  value       = aws_dynamodb_table.admins.arn
+}

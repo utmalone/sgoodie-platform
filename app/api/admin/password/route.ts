@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAdminApi } from '@/lib/auth/require-admin-api';
-import crypto from 'crypto';
+import { updateAdminPassword } from '@/lib/auth/admin-store';
 
 export async function PUT(request: Request) {
   const session = await requireAdminApi();
@@ -25,33 +25,14 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Verify current password
-    const currentHash = crypto
-      .createHash('sha256')
-      .update(currentPassword)
-      .digest('hex');
-
-    const storedHash = process.env.ADMIN_PASSWORD_HASH;
-
-    if (currentHash !== storedHash) {
-      return NextResponse.json(
-        { error: 'Current password is incorrect' },
-        { status: 400 }
-      );
+    const result = await updateAdminPassword(currentPassword, newPassword);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
-    // Generate new hash
-    const newHash = crypto
-      .createHash('sha256')
-      .update(newPassword)
-      .digest('hex');
-
-    // Note: In production, you would update this in a secure way
-    // For now, we'll just return the new hash for the user to update .env.local
     return NextResponse.json({
       success: true,
-      message: 'Password validated. Update ADMIN_PASSWORD_HASH in your .env.local file with the new hash.',
-      newHash
+      message: 'Password changed successfully.'
     });
   } catch (error) {
     console.error('Error changing password:', error);

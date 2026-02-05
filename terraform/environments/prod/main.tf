@@ -82,7 +82,8 @@ module "github_oidc" {
     module.database.photos_table_arn,
     module.database.projects_table_arn,
     module.database.journal_table_arn,
-    module.database.analytics_table_arn
+    module.database.analytics_table_arn,
+    module.database.admins_table_arn
   ]
   amplify_app_arn = module.amplify.app_arn
 }

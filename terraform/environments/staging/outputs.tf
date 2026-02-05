@@ -20,5 +20,6 @@ output "dynamodb_tables" {
     projects  = module.database.projects_table_name
     journal   = module.database.journal_table_name
     analytics = module.database.analytics_table_name
+    admins    = module.database.admins_table_name
   }
 }
