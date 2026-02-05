@@ -5,8 +5,14 @@ import { createHash, timingSafeEqual } from 'crypto';
 // Session timeout: 30 minutes of inactivity
 const SESSION_MAX_AGE = 30 * 60; // 30 minutes in seconds
 
+// Ensure NEXTAUTH_SECRET is set
+const secret = process.env.NEXTAUTH_SECRET;
+if (!secret && process.env.NODE_ENV === 'production') {
+  console.error('NEXTAUTH_SECRET is not set in production!');
+}
+
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: secret || 'dev-secret-not-for-production',
   session: {
     strategy: 'jwt',
     maxAge: SESSION_MAX_AGE,

@@ -8,7 +8,10 @@ const protectedPaths = [
   '/admin/pages',
   '/admin/portfolio',
   '/admin/journal',
-  '/admin/photos'
+  '/admin/photos',
+  '/admin/work',
+  '/admin/profile',
+  '/admin/preview'
 ];
 
 // Paths that should redirect to dashboard if already authenticated
@@ -17,11 +20,22 @@ const authPaths = ['/admin/login'];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Skip middleware for API routes to let NextAuth handle them directly
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
   // Get the token from the request
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET
-  });
+  let token = null;
+  try {
+    token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET
+    });
+  } catch (error) {
+    console.error('Error getting token in middleware:', error);
+    // Continue without token - protected routes will redirect to login
+  }
 
   const isAuthenticated = !!token;
 
@@ -52,5 +66,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*']
+  matcher: [
+    // Only run middleware on admin pages, not API routes
+    '/admin/:path*'
+  ]
 };
