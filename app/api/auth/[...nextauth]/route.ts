@@ -2,6 +2,8 @@ import NextAuth from 'next-auth';
 import type { NextRequest } from 'next/server';
 import { authOptions } from '@/lib/auth/options';
 
+export const runtime = 'nodejs';
+
 // Debug: Log environment variables on initialization (remove in production)
 if (process.env.NODE_ENV !== 'development') {
   console.log('[NextAuth] Initializing with config:', {
@@ -45,12 +47,18 @@ function ensureNextAuthUrl(request: NextRequest) {
 
 const handler = NextAuth(authOptions);
 
-export async function GET(request: NextRequest) {
+type RouteContext = {
+  params: {
+    nextauth?: string[];
+  };
+};
+
+export async function GET(request: NextRequest, context: RouteContext) {
   ensureNextAuthUrl(request);
-  return handler(request);
+  return handler(request, context);
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest, context: RouteContext) {
   ensureNextAuthUrl(request);
-  return handler(request);
+  return handler(request, context);
 }
