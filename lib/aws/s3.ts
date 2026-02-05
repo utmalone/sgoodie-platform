@@ -1,7 +1,6 @@
 import { S3Client } from '@aws-sdk/client-s3';
 
-const isLocal =
-  process.env.USE_LOCALSTACK === 'true' || process.env.NODE_ENV === 'development';
+const isLocal = process.env.USE_LOCALSTACK === 'true';
 
 const baseConfig = {
   region: process.env.AWS_REGION || 'us-east-1'

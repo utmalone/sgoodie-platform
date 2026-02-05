@@ -1,8 +1,7 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 
-const isLocal =
-  process.env.USE_LOCALSTACK === 'true' || process.env.NODE_ENV === 'development';
+const isLocal = process.env.USE_LOCALSTACK === 'true';
 
 const baseConfig = {
   region: process.env.AWS_REGION || 'us-east-1'
