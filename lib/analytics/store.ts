@@ -5,7 +5,11 @@ import { readJson, writeJson } from '@/lib/data/local-store';
 const ANALYTICS_FILE = 'analytics.json';
 
 export async function getAnalyticsEvents(): Promise<AnalyticsEvent[]> {
-  return readJson<AnalyticsEvent[]>(ANALYTICS_FILE, []);
+  try {
+    return await readJson<AnalyticsEvent[]>(ANALYTICS_FILE);
+  } catch {
+    return [];
+  }
 }
 
 export async function appendAnalyticsEvent(event: Omit<AnalyticsEvent, 'id'>) {

@@ -1,7 +1,7 @@
 # CI/CD Workflow Documentation
 
-**Last Updated:** 2026-02-04  
-**Version:** 3.0  
+**Last Updated:** 2026-02-05  
+**Version:** 4.0  
 
 ---
 
@@ -18,13 +18,41 @@ The codebase is a single Next.js app at the repo root.
 ```
 sgoodie-platform/
 ├── app/           # Next.js App Router pages
+│   ├── (public)/  # Public routes (home, portfolio, journal, about, contact)
+│   ├── (admin)/   # Admin routes (protected)
+│   └── api/       # API routes
 ├── components/    # React components
+│   ├── admin/     # Admin UI components
+│   ├── layout/    # Header, footer
+│   └── portfolio/ # Public portfolio components
 ├── lib/           # Data fetching and utilities
+│   ├── admin/     # Admin utilities (save context, preview context)
+│   ├── ai/        # OpenAI integration
+│   ├── auth/      # Authentication helpers
+│   └── data/      # Data access layer
 ├── styles/        # CSS Modules
-├── data/          # Mock data (seed + local)
+│   ├── public/    # Public site styles
+│   └── admin/     # Admin UI styles
+├── data/          # Mock data
+│   ├── seed/      # Source of truth (committed)
+│   └── local/     # Working copy (gitignored)
 ├── types/         # TypeScript types
 └── docs/          # Documentation
 ```
+
+### Data Files
+| File | Purpose |
+|------|---------|
+| `pages.json` | Static page content and SEO |
+| `projects.json` | Portfolio projects with categories |
+| `journal.json` | Journal posts |
+| `photos.json` | Photo assets and metadata |
+| `home.json` | Home page layout |
+| `about.json` | About page structure |
+| `contact.json` | Contact page structure |
+| `work.json` | Portfolio project ordering |
+| `profile.json` | Admin profile and social links |
+| `analytics.json` | Analytics events (local only) |
 
 ### Legacy Workflows
 The `.github/workflows/` folder contains legacy files from a previous monorepo structure:
@@ -50,6 +78,7 @@ on:
       - 'lib/**'
       - 'styles/**'
       - 'types/**'
+      - 'data/seed/**'
       - 'package*.json'
 ```
 
@@ -83,11 +112,40 @@ feature branch → develop → PR → main → deploy
 
 ---
 
+## Environment Variables
+
+### Required for Build
+```
+USE_MOCK_DATA=true
+NEXTAUTH_SECRET=<random-string>
+```
+
+### Required for AI Features
+```
+OPENAI_API_KEY=<your-key>
+```
+
+### Required for Instagram
+```
+INSTAGRAM_ACCESS_TOKEN=<token>
+```
+
+---
+
 ## Deployment (Planned)
 
 - **Hosting:** AWS Amplify
 - **Trigger:** Push/merge to `main`
 - **Infrastructure:** Terraform (when AWS resources are added)
+
+### Static Files
+- `data/seed/` is committed and deployed
+- `data/local/` is gitignored (runtime only)
+- Public images in `public/images/`
+
+### Environment
+- Set environment variables in Amplify console
+- Ensure `NEXTAUTH_URL` matches production URL
 
 ---
 
@@ -100,6 +158,10 @@ npm run dev
 
 Server runs at `http://localhost:3000`
 
+### Admin Access
+- Email: `admin@example.com`
+- Password: `admin123`
+
 ---
 
 ## Next Steps
@@ -107,8 +169,10 @@ Server runs at `http://localhost:3000`
 1. Replace legacy workflows with root-level workflow
 2. Configure Amplify auto-deploy from `main`
 3. Add staging environment when needed
+4. Set up AWS resources (S3, DynamoDB) via Terraform
+5. Migrate from local JSON to cloud storage
 
 ---
 
-**Document Version:** 3.0  
-**Last Updated:** 2026-02-04
+**Document Version:** 4.0  
+**Last Updated:** 2026-02-05

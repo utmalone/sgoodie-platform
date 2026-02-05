@@ -1,4 +1,4 @@
-import type { PageContent, PageSlug } from '@/types';
+import type { PageContent } from '@/types';
 import { readJson, writeJson } from './local-store';
 
 const PAGES_FILE = 'pages.json';
@@ -21,14 +21,23 @@ export async function getAllPages(): Promise<PageContent[]> {
   }));
 }
 
-export async function getPageBySlug(slug: PageSlug): Promise<PageContent> {
+/**
+ * Get a page by slug. Accepts any string slug to support dynamic portfolio category pages.
+ */
+export async function getPageBySlug(slug: string): Promise<PageContent> {
   const pages = await getAllPages();
   const page = pages.find((item) => item.slug === slug);
 
   if (!page) {
+    // Create a friendly title from the slug
+    const title = slug
+      .replace(/^portfolio-/, '')
+      .replace(/-/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+      
     return {
       slug,
-      title: slug.replace('-', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      title,
       intro: '',
       body: '',
       gallery: [],

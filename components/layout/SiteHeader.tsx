@@ -2,25 +2,51 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import layoutStyles from '@/styles/public/layout.module.css';
 import styles from '@/styles/public/SiteHeader.module.css';
+import {
+  portfolioCategories,
+  portfolioCategoryLabels,
+} from '@/lib/admin/portfolio-config';
+
+const portfolioItems = portfolioCategories.map((cat) => ({
+  href: `/portfolio/${cat}`,
+  label: portfolioCategoryLabels[cat]
+}));
 
 const navLinks = [
-  { href: '/work', label: 'Work' },
   { href: '/about', label: 'About' },
   { href: '/journal', label: 'Journal' },
   { href: '/contact', label: 'Contact' }
 ];
 
-export function SiteHeader() {
+interface SocialLinks {
+  instagram: string;
+  linkedin: string;
+  twitter: string;
+  facebook: string;
+}
+
+interface SiteHeaderProps {
+  socialLinks?: SocialLinks;
+}
+
+export function SiteHeader({ socialLinks }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [portfolioOpen, setPortfolioOpen] = useState(false);
+  const [mobilePortfolioOpen, setMobilePortfolioOpen] = useState(false);
+  const portfolioRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
   const isHeroPage = useMemo(() => {
     if (pathname === '/') return true;
-    if (pathname.startsWith('/work/')) return true;
-    if (pathname === '/journal') return true; // Only the main journal page has a hero
+    // Only individual project pages have heroes, not category listings
+    // e.g., /portfolio/hotels/project-slug (3 segments) has a hero
+    // but /portfolio/hotels (2 segments) is just a grid listing
+    const portfolioSegments = pathname.match(/^\/portfolio\/[^/]+\/[^/]+/);
+    if (portfolioSegments) return true;
+    if (pathname === '/journal') return true;
     if (pathname === '/about' || pathname === '/contact') return true;
     return false;
   }, [pathname]);
@@ -42,10 +68,22 @@ export function SiteHeader() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isHeroPage]);
 
+  // Close portfolio dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (portfolioRef.current && !portfolioRef.current.contains(event.target as Node)) {
+        setPortfolioOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const headerClass = isScrolled ? styles.headerScrolled : styles.headerHero;
   const linkClass = isScrolled ? styles.navLinkScrolled : styles.navLinkHero;
   const iconClass = isScrolled ? styles.iconLinkScrolled : styles.iconLinkHero;
   const menuButtonClass = isScrolled ? styles.menuButtonScrolled : styles.menuButtonHero;
+  const dropdownClass = isScrolled ? styles.dropdownScrolled : styles.dropdownHero;
 
   return (
     <header className={`${styles.header} ${headerClass}`}>
@@ -57,6 +95,48 @@ export function SiteHeader() {
           S.Goodie
         </Link>
         <nav className={styles.nav}>
+          {/* Portfolio dropdown */}
+          <div className={styles.dropdownWrapper} ref={portfolioRef}>
+            <button
+              type="button"
+              className={`${styles.navLink} ${linkClass} ${styles.dropdownTrigger}`}
+              onClick={() => setPortfolioOpen(!portfolioOpen)}
+              onMouseEnter={() => setPortfolioOpen(true)}
+              aria-expanded={portfolioOpen}
+              aria-haspopup="true"
+            >
+              Portfolio
+              <svg
+                className={`${styles.dropdownArrow} ${portfolioOpen ? styles.dropdownArrowOpen : ''}`}
+                width="10"
+                height="6"
+                viewBox="0 0 10 6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path d="M1 1l4 4 4-4" />
+              </svg>
+            </button>
+            {portfolioOpen && (
+              <div
+                className={`${styles.dropdown} ${dropdownClass}`}
+                onMouseLeave={() => setPortfolioOpen(false)}
+              >
+                {portfolioItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={styles.dropdownLink}
+                    onClick={() => setPortfolioOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
           {navLinks.map((link) => (
             <Link key={link.href} href={link.href} className={`${styles.navLink} ${linkClass}`}>
               {link.label}
@@ -64,38 +144,46 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className={styles.iconRow}>
-          <a
-            href="https://instagram.com"
-            aria-label="Instagram"
-            className={`${styles.iconLink} ${iconClass}`}
-          >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              className={styles.icon}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
+          {socialLinks?.instagram && (
+            <a
+              href={socialLinks.instagram}
+              aria-label="Instagram"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${styles.iconLink} ${iconClass}`}
             >
-              <rect x="3" y="3" width="18" height="18" rx="4" />
-              <circle cx="12" cy="12" r="4" />
-              <circle cx="17" cy="7" r="1" />
-            </svg>
-          </a>
-          <a
-            href="https://linkedin.com"
-            aria-label="LinkedIn"
-            className={`${styles.iconLink} ${iconClass}`}
-          >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              className={styles.icon}
-              fill="currentColor"
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className={styles.icon}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="4" />
+                <circle cx="12" cy="12" r="4" />
+                <circle cx="17" cy="7" r="1" />
+              </svg>
+            </a>
+          )}
+          {socialLinks?.linkedin && (
+            <a
+              href={socialLinks.linkedin}
+              aria-label="LinkedIn"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${styles.iconLink} ${iconClass}`}
             >
-              <path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 8.98h3.96V21H3zM9.45 8.98h3.8v1.64h.05c.53-.95 1.83-1.96 3.77-1.96 4.03 0 4.78 2.65 4.78 6.1V21h-3.96v-5.3c0-1.26-.02-2.88-1.75-2.88-1.75 0-2.02 1.37-2.02 2.79V21H9.45z" />
-            </svg>
-          </a>
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className={styles.icon}
+                fill="currentColor"
+              >
+                <path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 8.98h3.96V21H3zM9.45 8.98h3.8v1.64h.05c.53-.95 1.83-1.96 3.77-1.96 4.03 0 4.78 2.65 4.78 6.1V21h-3.96v-5.3c0-1.26-.02-2.88-1.75-2.88-1.75 0-2.02 1.37-2.02 2.79V21H9.45z" />
+              </svg>
+            </a>
+          )}
         </div>
         <button
           type="button"
@@ -108,6 +196,42 @@ export function SiteHeader() {
       {menuOpen && (
         <div className={styles.mobilePanel}>
           <div className={`${layoutStyles.container} ${styles.mobilePanelInner}`}>
+            {/* Mobile Portfolio accordion */}
+            <div className={styles.mobileAccordion}>
+              <button
+                type="button"
+                className={styles.mobileAccordionTrigger}
+                onClick={() => setMobilePortfolioOpen(!mobilePortfolioOpen)}
+              >
+                Portfolio
+                <svg
+                  className={`${styles.mobileAccordionArrow} ${mobilePortfolioOpen ? styles.mobileAccordionArrowOpen : ''}`}
+                  width="10"
+                  height="6"
+                  viewBox="0 0 10 6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <path d="M1 1l4 4 4-4" />
+                </svg>
+              </button>
+              {mobilePortfolioOpen && (
+                <div className={styles.mobileAccordionContent}>
+                  {portfolioItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={styles.mobileSubLink}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -119,20 +243,28 @@ export function SiteHeader() {
               </Link>
             ))}
             <div className={styles.mobileSocial}>
-              <a
-                href="https://instagram.com"
-                aria-label="Instagram"
-                className={styles.mobileSocialLink}
-              >
-                Instagram
-              </a>
-              <a
-                href="https://linkedin.com"
-                aria-label="LinkedIn"
-                className={styles.mobileSocialLink}
-              >
-                LinkedIn
-              </a>
+              {socialLinks?.instagram && (
+                <a
+                  href={socialLinks.instagram}
+                  aria-label="Instagram"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.mobileSocialLink}
+                >
+                  Instagram
+                </a>
+              )}
+              {socialLinks?.linkedin && (
+                <a
+                  href={socialLinks.linkedin}
+                  aria-label="LinkedIn"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.mobileSocialLink}
+                >
+                  LinkedIn
+                </a>
+              )}
             </div>
           </div>
         </div>

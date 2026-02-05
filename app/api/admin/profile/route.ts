@@ -1,0 +1,34 @@
+import { NextResponse } from 'next/server';
+import { getProfile, updateProfile } from '@/lib/data/profile';
+import { requireAdminApi } from '@/lib/auth/require-admin-api';
+
+export async function GET() {
+  const session = await requireAdminApi();
+  if (!session) {
+    return new NextResponse('Unauthorized', { status: 401 });
+  }
+
+  try {
+    const profile = await getProfile();
+    return NextResponse.json(profile);
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    return new NextResponse('Failed to fetch profile', { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  const session = await requireAdminApi();
+  if (!session) {
+    return new NextResponse('Unauthorized', { status: 401 });
+  }
+
+  try {
+    const updates = await request.json();
+    const updated = await updateProfile(updates);
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    return new NextResponse('Failed to update profile', { status: 500 });
+  }
+}

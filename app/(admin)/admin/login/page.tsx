@@ -1,62 +1,96 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import styles from '@/styles/admin/AdminShared.module.css';
 
-export default function AdminLoginPage() {
+function LoginForm() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const reason = searchParams.get('reason');
+  const callbackUrl = searchParams.get('callbackUrl') || '/admin/dashboard';
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    const result = await signIn('credentials', {
-      redirect: true,
-      callbackUrl: '/admin/dashboard',
-      email,
-      password
-    });
+    try {
+      const result = await signIn('credentials', {
+        redirect: true,
+        callbackUrl,
+        email,
+        password
+      });
 
-    if (result?.error) {
-      setError('Invalid credentials. Please try again.');
+      if (result?.error) {
+        setError('Invalid credentials. Please try again.');
+        setIsLoading(false);
+      }
+    } catch {
+      setError('An error occurred. Please try again.');
+      setIsLoading(false);
     }
   }
 
   return (
-    <div className="mx-auto max-w-md rounded-3xl border border-black/10 bg-white p-8 shadow-sm">
-      <p className="text-xs uppercase tracking-[0.4em] text-black/50">Admin</p>
-      <h1 className="mt-3 text-3xl font-semibold">Sign in</h1>
-      <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-        <label className="block text-sm">
-          <span className="text-black/60">Email</span>
+    <div className={styles.card}>
+      <p className={styles.sidebarSubtitle}>Admin</p>
+      <h1 className={styles.pageTitle}>Sign in</h1>
+
+      {reason === 'timeout' && (
+        <div className={styles.statusError}>
+          <p className={styles.statusErrorText}>
+            Your session expired due to inactivity. Please sign in again.
+          </p>
+        </div>
+      )}
+
+      <form className={styles.formGrid} onSubmit={handleSubmit}>
+        <label className={styles.label}>
+          <span className={styles.labelText}>Email</span>
           <input
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="mt-2 w-full rounded-full border border-black/20 px-4 py-2"
+            className={styles.input}
             required
+            autoComplete="email"
           />
         </label>
-        <label className="block text-sm">
-          <span className="text-black/60">Password</span>
+        <label className={styles.label}>
+          <span className={styles.labelText}>Password</span>
           <input
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="mt-2 w-full rounded-full border border-black/20 px-4 py-2"
+            className={styles.input}
             required
+            autoComplete="current-password"
           />
         </label>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          className="w-full rounded-full border border-black/20 bg-black px-4 py-2 text-sm uppercase tracking-[0.2em] text-white hover:bg-black/80"
-        >
-          Sign in
+        {error && (
+          <div className={styles.statusError}>
+            <p className={styles.statusErrorText}>{error}</p>
+          </div>
+        )}
+        <button type="submit" disabled={isLoading} className={styles.btnPrimary}>
+          {isLoading ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<div className={styles.card}><p>Loading...</p></div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

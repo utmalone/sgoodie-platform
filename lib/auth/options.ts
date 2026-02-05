@@ -2,10 +2,18 @@ import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { createHash, timingSafeEqual } from 'crypto';
 
+// Session timeout: 30 minutes of inactivity
+const SESSION_MAX_AGE = 30 * 60; // 30 minutes in seconds
+
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: {
-    strategy: 'jwt'
+    strategy: 'jwt',
+    maxAge: SESSION_MAX_AGE,
+    updateAge: 5 * 60 // Update session every 5 minutes if active
+  },
+  jwt: {
+    maxAge: SESSION_MAX_AGE
   },
   providers: [
     CredentialsProvider({
@@ -42,5 +50,20 @@ export const authOptions: NextAuthOptions = {
   ],
   pages: {
     signIn: '/admin/login'
+  },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.email = token.email as string;
+      }
+      return session;
+    }
   }
 };

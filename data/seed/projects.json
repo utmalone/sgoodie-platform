@@ -6,7 +6,7 @@
     "subtitle": "Architectural Photography",
     "intro": "A warm, midcentury residence styled for layered texture and gentle light.",
     "body": "We focused on the rhythm of the rooms, moving from wide framing to tactile closeups that highlight material choices.",
-    "category": "interiors",
+    "category": "home-garden",
     "heroPhotoId": "project-lanvale-hero",
     "galleryPhotoIds": [
       "home-1",
@@ -50,7 +50,7 @@
     "subtitle": "Interior + Architecture",
     "intro": "A contemporary home shaped by light, stone, and open flow.",
     "body": "We highlighted the transition between interior and exterior spaces, keeping the framing clean and understated.",
-    "category": "interiors",
+    "category": "home-garden",
     "heroPhotoId": "project-riverstone-hero",
     "galleryPhotoIds": [
       "home-4",
@@ -87,7 +87,7 @@
     "subtitle": "Architecture",
     "intro": "A coastal build defined by strong verticals and expansive glazing.",
     "body": "This project is currently in edit and will be published soon.",
-    "category": "architecture",
+    "category": "hotels",
     "heroPhotoId": "project-shoreline-hero",
     "galleryPhotoIds": [
       "home-6",
@@ -122,7 +122,7 @@
     "subtitle": "Brand Marketing",
     "intro": "An editorial branding shoot for a design-forward studio.",
     "body": "We focused on process, tactile moments, and light that feels both fresh and grounded.",
-    "category": "brand-marketing",
+    "category": "brand",
     "heroPhotoId": "project-atelier-hero",
     "galleryPhotoIds": [
       "brand-1",

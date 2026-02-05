@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import type { PhotoAsset, Project } from '@/types';
+import type { PhotoAsset, Project, ProjectCategory } from '@/types';
 import styles from '@/styles/public/WorkGalleryGrid.module.css';
 
 type WorkGalleryItem = {
@@ -10,9 +10,11 @@ type WorkGalleryItem = {
 
 type WorkGalleryGridProps = {
   items: WorkGalleryItem[];
+  isPreview?: boolean;
+  category?: ProjectCategory;
 };
 
-export function WorkGalleryGrid({ items }: WorkGalleryGridProps) {
+export function WorkGalleryGrid({ items, isPreview = false, category }: WorkGalleryGridProps) {
   if (items.length === 0) return null;
 
   return (
@@ -20,6 +22,8 @@ export function WorkGalleryGrid({ items }: WorkGalleryGridProps) {
       {items.map(({ project, photo }) => {
         const label = project.hoverTitle || project.title;
         const isDraft = project.status === 'draft';
+        // Use category from prop or from project
+        const projectCategory = category || project.category;
 
         const card = (
           <div className={styles.card}>
@@ -32,12 +36,14 @@ export function WorkGalleryGrid({ items }: WorkGalleryGridProps) {
             />
             <div className={styles.overlay}>
               <span className={styles.overlayText}>{label}</span>
-              {isDraft && <span className={styles.status}>Coming Soon</span>}
+              {isDraft && !isPreview && <span className={styles.status}>Coming Soon</span>}
+              {isDraft && isPreview && <span className={styles.statusDraft}>Draft</span>}
             </div>
           </div>
         );
 
-        if (isDraft) {
+        // In preview mode, drafts are clickable
+        if (isDraft && !isPreview) {
           return (
             <div key={project.id} className={styles.itemStatic} aria-disabled="true">
               {card}
@@ -45,10 +51,16 @@ export function WorkGalleryGrid({ items }: WorkGalleryGridProps) {
           );
         }
 
+        // Build the href - add preview param if in preview mode
+        const basePath = projectCategory 
+          ? `/portfolio/${projectCategory}/${project.slug}`
+          : `/portfolio/hotels/${project.slug}`;
+        const href = isPreview ? `${basePath}?preview=draft` : basePath;
+
         return (
           <Link
             key={project.id}
-            href={`/work/${project.slug}`}
+            href={href}
             className={styles.itemLink}
             aria-label={`View ${label}`}
           >

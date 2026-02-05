@@ -3,13 +3,14 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { EditorialGallery } from '@/components/portfolio/EditorialGallery';
 import { ProjectHero } from '@/components/portfolio/ProjectHero';
-import { getAllProjects, getProjectBySlug } from '@/lib/data/projects';
+import { getAllProjects, getProjectBySlug, getPublishedProjects } from '@/lib/data/projects';
 import { getPhotosByIds } from '@/lib/data/photos';
 import { getWorkIndex } from '@/lib/data/work';
 import styles from '@/styles/public/WorkDetailPage.module.css';
 
 type ProjectPageProps = {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ preview?: string }>;
 };
 
 export async function generateStaticParams() {
@@ -18,7 +19,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: ProjectPageProps): Promise<Metadata> {
-  const project = await getProjectBySlug(params.slug);
+  const { slug } = await params;
+  const project = await getProjectBySlug(slug);
   if (!project) return {};
   return {
     title: project.metaTitle || project.title,
@@ -27,10 +29,15 @@ export async function generateMetadata({ params }: ProjectPageProps): Promise<Me
   };
 }
 
-export default async function ProjectPage({ params }: ProjectPageProps) {
-  const project = await getProjectBySlug(params.slug);
+export default async function ProjectPage({ params, searchParams }: ProjectPageProps) {
+  const { slug } = await params;
+  const { preview } = await searchParams;
+  const isPreview = preview === 'draft';
+  
+  const project = await getProjectBySlug(slug);
 
-  if (!project) {
+  // In production, don't show draft projects
+  if (!project || (!isPreview && project.status === 'draft')) {
     notFound();
   }
 
@@ -46,7 +53,8 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     .filter((photo): photo is NonNullable<typeof photo> => Boolean(photo));
 
   const workIndex = await getWorkIndex();
-  const allProjects = await getAllProjects();
+  // In preview mode, include all projects for navigation; otherwise only published
+  const allProjects = isPreview ? await getAllProjects() : await getPublishedProjects();
   const projectMap = new Map(allProjects.map((item) => [item.id, item]));
   const orderedProjects = workIndex.projectIds
     .map((id) => projectMap.get(id))
@@ -62,8 +70,18 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     notFound();
   }
 
+  // Build URLs - preserve preview param if in preview mode
+  const buildUrl = (projectSlug: string) => 
+    isPreview ? `/work/${projectSlug}?preview=draft` : `/work/${projectSlug}`;
+
   return (
     <div className={styles.wrapper}>
+      {isPreview && project.status === 'draft' && (
+        <div className={styles.draftBanner}>
+          This project is currently a draft and not visible to the public.
+        </div>
+      )}
+      
       <ProjectHero
         title={project.title}
         subtitle={project.subtitle}
@@ -95,14 +113,14 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
       <div className={styles.pager}>
         {previousProject ? (
-          <Link href={`/work/${previousProject.slug}`} className={styles.pagerLink}>
+          <Link href={buildUrl(previousProject.slug)} className={styles.pagerLink}>
             Previous
           </Link>
         ) : (
           <span className={styles.pagerMuted}>Previous</span>
         )}
         {nextProject ? (
-          <Link href={`/work/${nextProject.slug}`} className={styles.pagerLink}>
+          <Link href={buildUrl(nextProject.slug)} className={styles.pagerLink}>
             Next
           </Link>
         ) : (

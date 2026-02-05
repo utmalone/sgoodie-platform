@@ -61,6 +61,19 @@
   opacity: 0.85;
 }
 
+.statusDraft {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgb(146, 64, 14);
+  background: rgb(254, 243, 199);
+  border-radius: 9999px;
+}
+
 .itemLink:hover .image,
 .itemLink:focus-visible .image,
 .itemStatic:hover .image {

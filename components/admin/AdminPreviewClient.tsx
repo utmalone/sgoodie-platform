@@ -138,6 +138,11 @@ export function AdminPreviewClient() {
     ? projects.find((project) => project.slug === projectSlug)
     : null;
 
+  const journalSlug = activePath.startsWith('/journal/') ? activePath.split('/')[2] : null;
+  const activeJournalPost = journalSlug
+    ? journalPosts.find((post) => post.slug === journalSlug)
+    : null;
+
   const orderedProjects = useMemo(() => {
     if (!workIndex) return projects;
     const projectMap = new Map(projects.map((project) => [project.id, project]));
@@ -322,7 +327,7 @@ export function AdminPreviewClient() {
           </div>
         )}
 
-        {activePath === '/journal' && (
+        {activePath === '/journal' && !activeJournalPost && (
           <div className="space-y-12">
             <div className="max-w-2xl space-y-4">
               <p className="eyebrow">Journal</p>
@@ -330,15 +335,82 @@ export function AdminPreviewClient() {
               <p className="text-base text-ink/70">{currentPage?.intro}</p>
             </div>
             <div className="space-y-10">
-              {journalPosts.map((post) => (
-                <div key={post.id} className="border-b border-line pb-8">
-                  <p className="text-[11px] uppercase tracking-[0.35em] text-ink/50">
-                    {post.category} · {post.author} · {formatDate(post.date)}
-                  </p>
-                  <h2 className="mt-3 text-3xl font-semibold">{post.title}</h2>
-                  <p className="mt-3 max-w-2xl text-sm text-ink/60">{post.excerpt}</p>
-                </div>
-              ))}
+              {journalPosts
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .map((post) => (
+                  <button
+                    key={post.id}
+                    type="button"
+                    onClick={() => handleNav(`/journal/${post.slug}`)}
+                    className="block w-full border-b border-line pb-8 text-left transition hover:opacity-70"
+                  >
+                    <p className="text-[11px] uppercase tracking-[0.35em] text-ink/50">
+                      {post.category} · {post.author} · {formatDate(post.date)}
+                    </p>
+                    <h2 className="mt-3 text-3xl font-semibold">{post.title}</h2>
+                    <p className="mt-3 max-w-2xl text-sm text-ink/60">{post.excerpt}</p>
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {activeJournalPost && (
+          <div className="space-y-12">
+            <div className="max-w-2xl mx-auto text-center space-y-4">
+              <h1 className="text-4xl font-semibold md:text-5xl">{activeJournalPost.title}</h1>
+              <p className="text-[11px] uppercase tracking-[0.35em] text-ink/50">
+                {activeJournalPost.category}
+              </p>
+            </div>
+
+            {/* Photo Grid */}
+            {(activeJournalPost.heroPhotoId || activeJournalPost.galleryPhotoIds.length > 0) && (
+              <div className="grid gap-4 md:grid-cols-3">
+                {[activeJournalPost.heroPhotoId, ...activeJournalPost.galleryPhotoIds]
+                  .filter(Boolean)
+                  .map((id) => photosById.get(id))
+                  .filter(Boolean)
+                  .map((photo) => (
+                    <div key={photo!.id} className="relative aspect-[4/3] overflow-hidden bg-fog">
+                      <img src={photo!.src} alt={photo!.alt} className="h-full w-full object-cover" />
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            {/* Body */}
+            <div className="grid gap-12 lg:grid-cols-[2fr_1fr]">
+              <div className="space-y-6">
+                {activeJournalPost.body.split('\n\n').map((paragraph, idx) => (
+                  <p key={idx} className="text-base text-ink/70">{paragraph}</p>
+                ))}
+              </div>
+
+              {/* Credits */}
+              {activeJournalPost.credits && activeJournalPost.credits.length > 0 && (
+                <aside className="space-y-4">
+                  <p className="text-[11px] uppercase tracking-[0.35em] text-ink/50">Credits</p>
+                  <div className="border-t border-line pt-4 space-y-2">
+                    {activeJournalPost.credits.map((credit) => (
+                      <div key={`${credit.label}-${credit.value}`} className="text-sm">
+                        <span className="text-ink/50">{credit.label}:</span>{' '}
+                        <span className="text-ink">{credit.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </aside>
+              )}
+            </div>
+
+            <div className="pt-8">
+              <button
+                type="button"
+                onClick={() => handleNav('/journal')}
+                className="text-sm text-ink/60 hover:text-ink"
+              >
+                ← Back to Journal
+              </button>
             </div>
           </div>
         )}

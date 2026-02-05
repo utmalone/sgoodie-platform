@@ -1,7 +1,7 @@
 # Technical Architecture - S.Goodie Photography Platform
 
-**Last Updated:** 2026-02-04  
-**Version:** 3.0  
+**Last Updated:** 2026-02-05  
+**Version:** 4.0  
 
 ---
 
@@ -17,15 +17,16 @@ Browser
                                     |-- Local JSON store (data/local)
                                     |-- Analytics store (data/local/analytics.json)
                                     |-- OpenAI Responses API (server-side fetch)
+                                    |-- OpenAI Vision API (photo analysis)
 ```
 
 ### Key Principles
 - Single deployable app with route groups for public and admin
 - All content comes from backend (mock JSON now, API later)
 - Frontend components are reusable templates
-- Authenticated admin routes with NextAuth
+- Authenticated admin routes with NextAuth and session timeout
 - Real analytics data recorded locally
-- AI-assisted copy and metadata optimization
+- AI-assisted copy and metadata optimization (including vision AI for photos)
 
 ---
 
@@ -36,11 +37,11 @@ Browser
 | Framework | Next.js 14 (App Router) |
 | Language | TypeScript 5 |
 | UI | React 18 |
-| Styling | CSS Modules (`styles/public/*.module.css`) |
-| Auth | NextAuth Credentials |
+| Styling | CSS Modules (`styles/public/*.module.css`, `styles/admin/*.module.css`) |
+| Auth | NextAuth Credentials with JWT sessions |
 | Data | JSON files under `data/local/` |
 | Analytics | Custom client provider and server route |
-| AI | OpenAI Responses API |
+| AI | OpenAI Responses API + Vision API |
 
 ---
 
@@ -53,23 +54,49 @@ app/
     contact/
     journal/
       [slug]/
-    work/
-      [slug]/
+    portfolio/           # Portfolio category pages
+      [category]/
+        [slug]/          # Individual project pages
   (admin)/admin/         # Admin pages
     dashboard/
     pages/
     photos/
-    preview/
+    portfolio/           # Portfolio management
+      new/
+      [id]/
+    journal/             # Journal management
+      new/
+      [id]/
+    profile/             # NEW - Admin profile management
   api/                   # API routes
     admin/
+      ai/
+        analyze-photo/   # NEW - Vision AI photo analysis
+        batch-stream/    # NEW - SSE batch optimization
+      layouts/           # Home, About, Contact layouts
+      profile/           # NEW - Profile CRUD
+      password/          # NEW - Password change
     analytics/
     auth/
     instagram/
 
 components/
   admin/                 # Admin UI components
+    AdminDashboardClient.tsx
+    AdminNav.tsx
+    AdminPagesClient.tsx
+    AdminPhotosClient.tsx
+    AdminPortfolioClient.tsx
+    AdminPortfolioEditorClient.tsx
+    AdminJournalClient.tsx
+    AdminJournalEditorClient.tsx
+    AdminProfileClient.tsx    # NEW
+    AdminPreviewModal.tsx
+    AdminShell.tsx
   analytics/             # Analytics provider
   layout/                # Header, footer
+    SiteHeader.tsx       # Dynamic social links
+    SiteFooter.tsx       # Dynamic profile data
   portfolio/             # Public UI components
     ContactForm.tsx
     EditorialGallery.tsx
@@ -85,7 +112,13 @@ components/
 
 lib/
   admin/                 # Admin utilities
+    draft-store.ts
+    page-config.ts
+    portfolio-config.ts  # Portfolio categories
+    save-context.tsx     # NEW - Master save state
+    preview-context.tsx  # NEW - Preview modal state
   ai/                    # AI integration
+    openai.ts            # Vision AI support
   analytics/             # Analytics helpers
   auth/                  # Auth utilities
   data/                  # Data fetching
@@ -96,18 +129,22 @@ lib/
     local-store.ts
     pages.ts
     photos.ts
+    profile.ts           # NEW - Profile data
     projects.ts
-    work.ts
 
 styles/
   public/                # CSS Modules for public UI
+  admin/                 # CSS Modules for admin UI
+    AdminShared.module.css
+    AdminProfile.module.css
 
 data/
   seed/                  # Seed data (source of truth)
   local/                 # Working copy (gitignored)
+    profile.json         # NEW - Profile data
 
 types/
-  index.ts               # TypeScript type definitions
+  index.ts               # TypeScript type definitions (includes SiteProfile)
 ```
 
 ---
@@ -132,6 +169,11 @@ export default async function AboutPage() {
 3. Page components call data functions at build/request time
 4. Data is passed to presentational components as props
 
+### Dynamic Header/Footer
+- `SiteHeader` receives `socialLinks` prop from layout
+- `SiteFooter` reads profile data directly for contact info and social links
+- Social icons only display if URLs are configured in admin profile
+
 ### Metadata
 Generated via `generateMetadata` using stored fields:
 - `metaTitle`
@@ -146,8 +188,8 @@ Generated via `generateMetadata` using stored fields:
 
 | Component | Purpose |
 |-----------|---------|
-| `SiteHeader` | Navigation with transparent/solid state |
-| `SiteFooter` | Footer with links |
+| `SiteHeader` | Navigation with transparent/solid state, dynamic social icons |
+| `SiteFooter` | Footer with dynamic profile data (contact, social, availability) |
 | `FullBleedHero` | Full-viewport image with overlay |
 | `ProjectHero` | Hero with title/subtitle overlay |
 
@@ -156,7 +198,7 @@ Generated via `generateMetadata` using stored fields:
 | Component | Purpose |
 |-----------|---------|
 | `EditorialGallery` | Alternating double/single rows with offsets and captions |
-| `WorkGalleryGrid` | Hover-to-reveal grid for work index |
+| `WorkGalleryGrid` | Hover-to-reveal grid for portfolio index |
 | `JournalGrid` | Post cards with excerpts for journal index |
 | `JournalPhotoGrid` | 3-column grid with large padding for journal posts |
 | `HomeGalleryGrid` | Gallery grid for home page |
@@ -181,15 +223,30 @@ type Project = {
   slug: string;
   title: string;
   subtitle?: string;
+  category?: PortfolioCategory;  // hotels, restaurants, travel, home-garden, brand
   heroPhotoId: string;
   galleryPhotoIds: string[];
   editorialCaptions?: EditorialRowCaption[];
   // ...
 };
 
-type EditorialRow = 
-  | { type: 'single'; photoId: string }
-  | { type: 'double'; leftPhotoId: string; rightPhotoId: string; caption?: EditorialRowCaption };
+type PortfolioCategory = 'hotels' | 'restaurants' | 'travel' | 'home-garden' | 'brand';
+
+type SiteProfile = {
+  name: string;
+  title: string;
+  photoId: string;
+  email: string;
+  phone: string;
+  address: { street: string; city: string; state: string };
+  availability: { regions: string[]; note: string };
+  social: {
+    instagram: { url: string; handle?: string };
+    linkedin: { url: string; name?: string };
+    twitter: { url: string; handle?: string };
+    facebook: { url: string; name?: string };
+  };
+};
 
 type AboutPageContent = {
   heroPhotoId: string;
@@ -217,16 +274,34 @@ type ContactPageContent = {
 
 ### Authentication
 - NextAuth Credentials provider
-- Session stored as JWT
+- Session stored as JWT with expiration
+- Inactivity timeout (configurable)
 - Guard helpers: `requireAdmin` and `requireAdminApi`
+- Logout functionality
 
 ### Admin Pages
 | Route | Purpose |
 |-------|---------|
+| `/admin/profile` | **NEW** - Manage profile, contact info, social links, change password |
 | `/admin/dashboard` | Analytics and AI batch actions |
-| `/admin/pages` | Edit page text and metadata |
-| `/admin/photos` | Upload and manage photos |
-| `/admin/preview` | Preview with draft data |
+| `/admin/pages` | Edit page text and metadata (includes portfolio category pages) |
+| `/admin/portfolio` | Manage portfolio projects with full CRUD |
+| `/admin/portfolio/[id]` | Edit individual project |
+| `/admin/journal` | Manage journal posts with full CRUD |
+| `/admin/journal/[id]` | Edit individual post |
+| `/admin/photos` | Upload and manage photos with AI analysis |
+
+### Preview System
+- Full-screen modal preview (`AdminPreviewModal`)
+- Context-aware: opens to relevant public page based on current admin section
+- Yellow header bar with "Close Preview" button
+- Loads actual public site in iframe
+
+### Master Save System
+- `SaveContext` tracks pending changes across all sections
+- "Save All" button in sidebar saves all changes atomically
+- Visual indicators: pending (amber), saving (spinner), success (green), error (red)
+- Disabled until changes are detected
 
 ### Draft Preview
 - Draft content stored in browser localStorage
@@ -255,6 +330,20 @@ type ContactPageContent = {
 | `GET /api/admin/ai/models` | List available models |
 | `POST /api/admin/ai/optimize` | Optimize single field |
 | `POST /api/admin/ai/batch` | Bulk SEO/text updates |
+| `POST /api/admin/ai/batch-stream` | **NEW** - SSE streaming batch optimization |
+| `POST /api/admin/ai/analyze-photo` | **NEW** - Vision AI photo analysis |
+
+### Vision AI (Photo Analysis)
+- Uses GPT-4o Vision to analyze uploaded photos
+- Generates: alt text, SEO title, description, keywords
+- Triggered automatically on photo upload (optional)
+- System message provides photography context
+
+### Batch Optimization
+- Real-time progress via Server-Sent Events (SSE)
+- Processes pages, photos, portfolio projects, and journal posts
+- Checkboxes to include/exclude content types
+- Progress percentage and milestone indicators
 
 ---
 
@@ -287,5 +376,5 @@ INSTAGRAM_ACCESS_TOKEN=<token>
 
 ---
 
-**Document Version:** 3.0  
-**Last Updated:** 2026-02-04
+**Document Version:** 4.0  
+**Last Updated:** 2026-02-05

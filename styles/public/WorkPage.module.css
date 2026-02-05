@@ -1,5 +1,29 @@
 .wrapper > * + * {
-  margin-top: 3rem;
+  margin-top: 2rem;
+}
+
+.pageHeader {
+  padding: 3rem 0 0.5rem;
+  text-align: center;
+}
+
+.pageTitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: var(--font-display), sans-serif;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+@media (min-width: 768px) {
+  .pageHeader {
+    padding: 2rem 0 0.75rem;
+  }
+
+  .pageTitle {
+    font-size: 1rem;
+  }
 }
 
 .intro {
@@ -28,6 +52,13 @@
 }
 
 .body {
+  font-size: 1rem;
+  color: var(--ink-soft);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 4rem 1rem;
   font-size: 1rem;
   color: var(--ink-soft);
 }

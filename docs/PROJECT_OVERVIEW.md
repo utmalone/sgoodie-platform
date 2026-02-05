@@ -3,7 +3,7 @@
 **Repository:** `sgoodie-platform`  
 **Created:** 2025-01-16  
 **Status:** Active development (local prototype with mock data)  
-**Last Updated:** 2026-02-04  
+**Last Updated:** 2026-02-05  
 
 ---
 
@@ -40,8 +40,8 @@
 | Page | Route | Features |
 |------|-------|----------|
 | Home | `/` | Full-screen hero with text overlay, editorial gallery grid with lightbox |
-| Work | `/work` | Photo grid with hover effects, links to portfolio detail pages |
-| Work Detail | `/work/[slug]` | Full-bleed hero with title overlay, editorial gallery (alternating double/single rows with captions), lightbox |
+| Portfolio | `/portfolio/[category]` | Photo grid by category (Hotels, Restaurants, Travel, Home & Garden, Brand) |
+| Portfolio Detail | `/portfolio/[category]/[slug]` | Full-bleed hero with title overlay, editorial gallery, lightbox |
 | About | `/about` | Hero with title, multi-paragraph intro, 4-column approach grid, featured publications, bio section |
 | Journal | `/journal` | 3/4 height hero, 3-column post grid with pagination (21 posts per page) |
 | Journal Detail | `/journal/[slug]` | Centered title, 3-column photo grid, body paragraphs with credits sidebar |
@@ -58,21 +58,29 @@
 - **GalleryLightbox**: Full-screen image viewer with prev/next navigation
 
 ### Header Behavior
-- Transparent over hero images on: Home, About, Work Detail, Journal, Contact
-- Solid white on: Work index, Journal detail pages
+- Transparent over hero images on: Home, About, Portfolio Detail, Journal, Contact
+- Solid white on: Portfolio category pages, Journal detail pages
 - Transitions to solid on scroll
+- Dynamic social icons linked to profile data
 
 ### Admin (Authenticated)
 - NextAuth credentials login (single admin)
+- **Profile management**: Personal info, contact details, social links
 - Admin dashboard with real analytics (local mock DB)
-- Pages editor: text only (no photo upload here)
-- Photos editor: upload, assign to pages, drag to reorder, edit metadata
-- Preview mode: admin-only preview that mirrors the public UI
+- Pages editor: text and SEO for all page types including portfolio categories
+- Photos editor: upload, assign to pages, drag to reorder, edit metadata, AI analysis
+- Portfolio editor: full CRUD for portfolio projects with categories
+- Journal editor: full CRUD for journal posts
+- **Full-screen preview modal**: Context-aware site preview
+- **Master "Save All" button**: Saves all pending changes across sections
+- **Session management**: Inactivity timeout, logout functionality
 
 ### AI Features
 - AI Fix buttons on page text and metadata fields
 - AI Fix buttons on photo metadata fields
+- **AI photo analysis**: Vision AI (GPT-4o) generates metadata from images
 - Dashboard batch AI optimize for SEO metadata and text copy
+- **Real-time SSE streaming**: Progress updates during batch optimization
 - AI model dropdown with curated top models
 - OpenAI integration via the Responses API
 
@@ -91,14 +99,15 @@ All content comes from JSON files in `data/local/` (seeded from `data/seed/`):
 
 | File | Content |
 |------|---------|
-| `pages.json` | Basic page content (home, about, work, journal, contact) |
+| `pages.json` | Basic page content (home, about, portfolio categories, journal, contact) |
 | `about.json` | Structured about page content (hero, intro, approach, publications, bio) |
 | `contact.json` | Structured contact page content (hero, form fields, social links) |
 | `photos.json` | All photo assets with metadata |
-| `projects.json` | Portfolio projects with gallery configurations |
+| `projects.json` | Portfolio projects with gallery configurations and categories |
 | `journal.json` | Journal posts with body text and credits |
 | `home.json` | Home page layout configuration |
-| `work.json` | Work page project ordering |
+| `work.json` | Portfolio project ordering |
+| `profile.json` | **NEW** - Admin profile, contact info, social links |
 
 ### Frontend Data Flow
 1. Data fetching functions in `lib/data/` read from local JSON (or future API)
@@ -112,12 +121,12 @@ All content comes from JSON files in `data/local/` (seeded from `data/seed/`):
 
 - **Framework:** Next.js 14 (App Router)
 - **Language:** TypeScript 5
-- **Styling:** CSS Modules under `styles/public/`
-- **Auth:** NextAuth (Credentials)
+- **Styling:** CSS Modules under `styles/public/` and `styles/admin/`
+- **Auth:** NextAuth (Credentials) with session timeout
 - **Data:** Local JSON store under `data/local/` seeded from `data/seed/`
 - **API:** Next.js Route Handlers in `app/api/`
 - **Analytics:** Client provider + API storage
-- **AI:** OpenAI Responses API via server routes
+- **AI:** OpenAI Responses API via server routes (including Vision for photos)
 
 ---
 
@@ -155,5 +164,5 @@ npm run dev
 
 ---
 
-**Document Version:** 3.0  
-**Last Updated:** 2026-02-04
+**Document Version:** 4.0  
+**Last Updated:** 2026-02-05

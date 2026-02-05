@@ -85,6 +85,96 @@
   color: #ffffff;
 }
 
+/* Dropdown styles */
+.dropdownWrapper {
+  position: relative;
+}
+
+.dropdownTrigger {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+}
+
+.dropdownArrow {
+  transition: transform 0.2s ease;
+}
+
+.dropdownArrowOpen {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 160px;
+  padding: 0.75rem 0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  animation: dropdownFadeIn 0.15s ease;
+}
+
+.dropdownScrolled {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid var(--line);
+}
+
+.dropdownHero {
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.dropdownLink {
+  display: block;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.dropdownScrolled .dropdownLink {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.dropdownScrolled .dropdownLink:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--ink);
+}
+
+.dropdownHero .dropdownLink {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.dropdownHero .dropdownLink:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
 .iconRow {
   display: none;
   align-items: center;
@@ -151,6 +241,52 @@
 
 .mobileLink {
   color: rgba(43, 43, 43, 0.8);
+}
+
+/* Mobile accordion for Portfolio */
+.mobileAccordion {
+  display: flex;
+  flex-direction: column;
+}
+
+.mobileAccordionTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  color: rgba(43, 43, 43, 0.8);
+  text-align: left;
+}
+
+.mobileAccordionArrow {
+  transition: transform 0.2s ease;
+}
+
+.mobileAccordionArrowOpen {
+  transform: rotate(180deg);
+}
+
+.mobileAccordionContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 0 0.5rem 1rem;
+}
+
+.mobileSubLink {
+  color: rgba(43, 43, 43, 0.6);
+  font-size: 9px;
+  transition: color 0.2s ease;
+}
+
+.mobileSubLink:hover {
+  color: var(--ink);
 }
 
 .mobileSocial {

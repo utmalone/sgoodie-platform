@@ -1,5 +1,5 @@
 import type { AboutPageContent } from '@/types';
-import { readJson } from './local-store';
+import { readJson, writeJson } from './local-store';
 
 const USE_MOCK_DATA = process.env.USE_MOCK_DATA === 'true';
 
@@ -10,21 +10,7 @@ const USE_MOCK_DATA = process.env.USE_MOCK_DATA === 'true';
  */
 export async function getAboutContent(): Promise<AboutPageContent> {
   if (USE_MOCK_DATA) {
-    return readJson<AboutPageContent>('about.json', {
-      heroPhotoId: '',
-      heroTitle: 'About',
-      heroSubtitle: '',
-      introParagraphs: [],
-      approachTitle: 'Approach & Results',
-      approachItems: [],
-      featuredTitle: 'Featured In',
-      featuredPublications: [],
-      bio: {
-        name: '',
-        photoId: '',
-        paragraphs: []
-      }
-    });
+    return readJson<AboutPageContent>('about.json');
   }
 
   // TODO: Fetch from real backend API
@@ -33,4 +19,14 @@ export async function getAboutContent(): Promise<AboutPageContent> {
     throw new Error('Failed to fetch about content');
   }
   return res.json();
+}
+
+/**
+ * Update the About page content.
+ */
+export async function updateAboutContent(updates: Partial<AboutPageContent>): Promise<AboutPageContent> {
+  const current = await readJson<AboutPageContent>('about.json');
+  const updated = { ...current, ...updates };
+  await writeJson('about.json', updated);
+  return updated;
 }

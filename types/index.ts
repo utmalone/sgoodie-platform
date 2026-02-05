@@ -1,6 +1,6 @@
-export type ProjectCategory = 'interiors' | 'travel' | 'brand-marketing' | 'architecture';
+export type ProjectCategory = 'hotels' | 'restaurants' | 'travel' | 'home-garden' | 'brand';
 
-export type PageSlug = 'home' | 'about' | 'work' | 'journal' | 'contact';
+export type PageSlug = 'home' | 'about' | 'portfolio' | 'journal' | 'contact';
 
 export type PortfolioSequenceId = 'two-up' | 'one-up';
 
@@ -20,7 +20,7 @@ export type PhotoAsset = Photo & {
 };
 
 export type PageContent = {
-  slug: PageSlug;
+  slug: string; // Can be PageSlug or portfolio category slugs (e.g., 'portfolio-hotels')
   title: string;
   intro: string;
   body: string;
@@ -163,4 +163,36 @@ export type ContactPageContent = {
   instagramUrl: string;
   linkedinUrl: string;
   instagramHandle: string;
+};
+
+/** Social media link */
+export type SocialLink = {
+  handle?: string;
+  name?: string;
+  url: string;
+};
+
+/** Admin/Site profile for footer and contact info */
+export type SiteProfile = {
+  name: string;
+  title: string;
+  email: string;
+  phone: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    zip: string;
+  };
+  availability: {
+    regions: string[];
+    note: string;
+  };
+  social: {
+    instagram: SocialLink;
+    linkedin: SocialLink;
+    twitter: SocialLink;
+    facebook: SocialLink;
+  };
+  photoId: string;
 };

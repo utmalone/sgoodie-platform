@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { PhotoAsset, Project } from '@/types';
-import { getAllProjects } from '@/lib/data/projects';
+import { getAllProjects, getPublishedProjects } from '@/lib/data/projects';
 import { getPageBySlug } from '@/lib/data/pages';
 import { getPhotosByIds } from '@/lib/data/photos';
 import { getWorkIndex } from '@/lib/data/work';
@@ -16,8 +16,19 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function WorkPage() {
-  const [projects, workIndex] = await Promise.all([getAllProjects(), getWorkIndex()]);
+type WorkPageProps = {
+  searchParams: Promise<{ preview?: string }>;
+};
+
+export default async function WorkPage({ searchParams }: WorkPageProps) {
+  const params = await searchParams;
+  const isPreview = params.preview === 'draft';
+  
+  // In preview mode, show all projects including drafts
+  const [projects, workIndex] = await Promise.all([
+    isPreview ? getAllProjects() : getPublishedProjects(),
+    getWorkIndex()
+  ]);
   const projectMap = new Map(projects.map((project) => [project.id, project]));
 
   const orderedProjects = workIndex.projectIds
@@ -41,7 +52,7 @@ export default async function WorkPage() {
 
   return (
     <div className={styles.wrapper}>
-      <WorkGalleryGrid items={items} />
+      <WorkGalleryGrid items={items} isPreview={isPreview} />
     </div>
   );
 }

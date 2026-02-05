@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import type { PhotoAsset } from '@/types';
-import { Lightbox } from './Lightbox';
+import { GalleryLightbox } from './GalleryLightbox';
 import styles from '@/styles/public/PhotoGrid.module.css';
 
 type PhotoGridProps = {
@@ -11,16 +11,28 @@ type PhotoGridProps = {
 };
 
 export function PhotoGrid({ photos }: PhotoGridProps) {
-  const [activePhoto, setActivePhoto] = useState<PhotoAsset | null>(null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   if (photos.length === 0) {
     return null;
   }
 
+  function handlePrev() {
+    setActiveIndex((idx) =>
+      idx === null ? null : idx > 0 ? idx - 1 : photos.length - 1
+    );
+  }
+
+  function handleNext() {
+    setActiveIndex((idx) =>
+      idx === null ? null : idx < photos.length - 1 ? idx + 1 : 0
+    );
+  }
+
   return (
     <>
       <div className={styles.grid}>
-        {photos.map((photo) => (
+        {photos.map((photo, idx) => (
           <figure key={photo.id} className={styles.figure}>
             <div className={styles.imageWrap}>
               <Image
@@ -31,13 +43,19 @@ export function PhotoGrid({ photos }: PhotoGridProps) {
                 className={styles.image}
               />
             </div>
-            <button type="button" onClick={() => setActivePhoto(photo)} className={styles.button}>
+            <button type="button" onClick={() => setActiveIndex(idx)} className={styles.button}>
               View fullsize
             </button>
           </figure>
         ))}
       </div>
-      <Lightbox photo={activePhoto} onClose={() => setActivePhoto(null)} />
+      <GalleryLightbox
+        photos={photos}
+        index={activeIndex}
+        onClose={() => setActiveIndex(null)}
+        onPrev={handlePrev}
+        onNext={handleNext}
+      />
     </>
   );
 }

@@ -1,7 +1,7 @@
 # SEO Strategy and Implementation
 
-**Last Updated:** 2026-02-04  
-**Version:** 3.0  
+**Last Updated:** 2026-02-05  
+**Version:** 4.0  
 
 ---
 
@@ -19,14 +19,26 @@ Admin pages are client-side, protected, and not indexed.
 - Each page stores `metaTitle`, `metaDescription`, and `metaKeywords`
 - Public pages use `generateMetadata` to emit these values
 - Metadata is editable in `/admin/pages`
+- Portfolio category pages have dedicated SEO fields
 
 ### Photo Metadata
 - Each photo stores `alt`, `metaTitle`, `metaDescription`, and `metaKeywords`
 - Photo metadata is editable in `/admin/photos`
+- **Vision AI auto-generates metadata** on upload using GPT-4o
+
+### Project Metadata
+- Each portfolio project has its own SEO fields
+- Editable in `/admin/portfolio/[id]`
+- AI Fix buttons for individual field optimization
+
+### Journal Metadata
+- Journal posts inherit page-level SEO patterns
+- Body content contributes to page SEO
 
 ### Sitemap
 - `app/sitemap.ts` generates dynamic sitemap with all public routes
-- Includes all work portfolio pages
+- Includes all portfolio category pages
+- Includes all portfolio project pages
 - Includes all journal posts
 
 ### Robots
@@ -41,18 +53,28 @@ Admin pages are client-side, protected, and not indexed.
 | Page | URL Pattern | SEO Features |
 |------|-------------|--------------|
 | Home | `/` | Full metadata, hero imagery |
-| Work | `/work` | Project listing with metadata |
-| Work Detail | `/work/[slug]` | Project-specific metadata |
+| Portfolio Category | `/portfolio/[category]` | Category-specific metadata |
+| Portfolio Detail | `/portfolio/[category]/[slug]` | Project-specific metadata |
 | About | `/about` | Bio and expertise metadata |
 | Journal | `/journal` | Blog listing with pagination |
 | Journal Detail | `/journal/[slug]` | Post-specific metadata |
 | Contact | `/contact` | Contact page metadata |
+
+### Portfolio Categories
+| Category | URL | Slug |
+|----------|-----|------|
+| Hotels | `/portfolio/hotels` | `portfolio-hotels` |
+| Restaurants | `/portfolio/restaurants` | `portfolio-restaurants` |
+| Travel | `/portfolio/travel` | `portfolio-travel` |
+| Home & Garden | `/portfolio/home-garden` | `portfolio-home-garden` |
+| Brand | `/portfolio/brand` | `portfolio-brand` |
 
 ### Image Optimization
 - All images use Next.js `Image` component
 - Automatic lazy loading
 - Responsive sizing with `sizes` attribute
 - Alt text stored in photo metadata
+- **Vision AI generates descriptive alt text**
 
 ---
 
@@ -61,14 +83,29 @@ Admin pages are client-side, protected, and not indexed.
 ### AI Fix (Single Field)
 - Available on page text and metadata fields
 - Available on photo metadata fields
+- Available on project and journal metadata
+
+### AI Photo Analysis (Vision)
+- Uses GPT-4o Vision to analyze photo content
+- Automatically generates:
+  - Alt text (accessibility and SEO)
+  - SEO title (descriptive, keyword-rich)
+  - SEO description (detailed, contextual)
+  - SEO keywords (relevant terms)
+- Triggered on photo upload
+- Results can be edited manually
 
 ### AI Batch Optimization
 - Dashboard batch action for SEO metadata
-- Processes pages and photos in bulk
+- Processes pages, photos, portfolio projects, and journal posts
+- **Real-time SSE streaming** for progress updates
+- Checkboxes to select content types to optimize
+- Progress milestones displayed during processing
 
 ### AI Context Rules
 - Page metadata AI receives page text and gallery photo metadata
-- Photo metadata AI receives page context and sibling photo metadata
+- Photo metadata AI analyzes the actual image using vision
+- Project metadata AI receives project content and gallery context
 - Ensures keyword consistency without stuffing
 
 ---
@@ -97,6 +134,21 @@ export async function generateMetadata({ params }) {
 }
 ```
 
+### Vision AI Integration
+```typescript
+// Photo analysis endpoint
+POST /api/admin/ai/analyze-photo
+Content-Type: multipart/form-data
+Body: { file: <image file> }
+
+Response: {
+  alt: "Descriptive alt text",
+  metaTitle: "SEO-optimized title",
+  metaDescription: "Detailed description",
+  metaKeywords: "relevant, keywords"
+}
+```
+
 ---
 
 ## 6. Planned Enhancements
@@ -106,8 +158,9 @@ export async function generateMetadata({ params }) {
 - [ ] JSON-LD structured data for photography portfolio
 - [ ] Image optimization pipeline (WebP, AVIF variants)
 - [ ] CDN integration for faster image delivery
+- [ ] Canonical URLs for portfolio categories
 
 ---
 
-**Document Version:** 3.0  
-**Last Updated:** 2026-02-04
+**Document Version:** 4.0  
+**Last Updated:** 2026-02-05

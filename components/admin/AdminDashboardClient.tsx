@@ -4,11 +4,36 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DashboardStats, Period } from '@/lib/data/stats';
 import { loadAiModel, saveAiModel } from '@/lib/admin/ai-model';
 import { getApiErrorMessage } from '@/lib/admin/api-error';
+import { clearDraftPages } from '@/lib/admin/draft-store';
 
 type ModelResponse = {
   models: string[];
   defaultModel: string;
 };
+
+type ProgressEvent = {
+  type: 'progress';
+  phase: string;
+  item: string;
+  completed: number;
+  total: number;
+  percent: number;
+};
+
+type CompleteEvent = {
+  type: 'complete';
+  updatedPages: number;
+  updatedPhotos: number;
+  updatedProjects: number;
+  updatedJournalPosts: number;
+};
+
+type ErrorEvent = {
+  type: 'error';
+  message: string;
+};
+
+type StreamEvent = ProgressEvent | CompleteEvent | ErrorEvent;
 
 export function AdminDashboardClient() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -19,12 +44,20 @@ export function AdminDashboardClient() {
   const [isBatching, setIsBatching] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState('');
+  const [currentPhase, setCurrentPhase] = useState('');
+  const [currentItem, setCurrentItem] = useState('');
+  const [completedCount, setCompletedCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [includePages, setIncludePages] = useState(true);
+  const [includePhotos, setIncludePhotos] = useState(true);
+  const [includeProjects, setIncludeProjects] = useState(true);
+  const [includeJournal, setIncludeJournal] = useState(true);
   const [period, setPeriod] = useState<Period>('monthly');
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [quarter, setQuarter] = useState(Math.floor(new Date().getMonth() / 3) + 1);
-  const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressReset = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortController = useRef<AbortController | null>(null);
 
   useEffect(() => {
     async function loadModels() {
@@ -101,7 +134,7 @@ export function AdminDashboardClient() {
     () => ({
       '/': 'Home',
       '/about': 'About',
-      '/work': 'Work',
+      '/portfolio': 'Portfolio',
       '/journal': 'Journal',
       '/contact': 'Contact'
     }),
@@ -109,46 +142,48 @@ export function AdminDashboardClient() {
   );
 
   function formatPageLabel(path: string) {
-    if (pageLabelMap[path]) return pageLabelMap[path];
+    const label = pageLabelMap[path as keyof typeof pageLabelMap];
+    if (label) return label;
     const cleaned = path.replace(/^\//, '').replace(/-/g, ' ');
     if (!cleaned) return 'Home';
     return cleaned.replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
-  function clearProgressTimers() {
-    if (progressTimer.current) {
-      clearInterval(progressTimer.current);
-      progressTimer.current = null;
-    }
+  function resetProgress() {
     if (progressReset.current) {
       clearTimeout(progressReset.current);
       progressReset.current = null;
     }
+    if (abortController.current) {
+      abortController.current.abort();
+      abortController.current = null;
+    }
   }
 
   function startBatchProgress(mode: 'seo' | 'text') {
-    clearProgressTimers();
+    resetProgress();
     setIsBatching(true);
-    setProgress(6);
+    setProgress(0);
     setProgressLabel(`Optimizing ${mode.toUpperCase()}...`);
-    progressTimer.current = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 90) return prev;
-        const next = prev + Math.max(1, Math.round((90 - prev) / 8));
-        return Math.min(90, next);
-      });
-    }, 700);
+    setCurrentPhase('');
+    setCurrentItem('');
+    setCompletedCount(0);
+    setTotalCount(0);
   }
 
   function finishBatchProgress(label?: string) {
-    clearProgressTimers();
+    resetProgress();
     setProgressLabel(label || 'Finalizing updates...');
     setProgress(100);
     progressReset.current = setTimeout(() => {
       setIsBatching(false);
       setProgress(0);
       setProgressLabel('');
-    }, 900);
+      setCurrentPhase('');
+      setCurrentItem('');
+      setCompletedCount(0);
+      setTotalCount(0);
+    }, 1500);
   }
 
   async function handleBatch(mode: 'seo' | 'text') {
@@ -157,15 +192,31 @@ export function AdminDashboardClient() {
       setAiStatus('Select a model first.');
       return;
     }
+    
+    const hasSelection = includePages || includePhotos || includeProjects || includeJournal;
+    if (!hasSelection) {
+      setAiStatus('Select at least one category to optimize.');
+      return;
+    }
 
     setAiStatus(`Running AI ${mode.toUpperCase()} optimization...`);
     startBatchProgress(mode);
 
     try {
-      const response = await fetch('/api/admin/ai/batch', {
+      abortController.current = new AbortController();
+      
+      const response = await fetch('/api/admin/ai/batch-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode, model: selectedModel })
+        body: JSON.stringify({ 
+          mode, 
+          model: selectedModel,
+          includePages,
+          includePhotos,
+          includeProjects,
+          includeJournal
+        }),
+        signal: abortController.current.signal
       });
 
       if (!response.ok) {
@@ -173,13 +224,63 @@ export function AdminDashboardClient() {
         throw new Error(message);
       }
 
-      const data = (await response.json()) as { updatedPages: number; updatedPhotos: number };
-      setAiStatus(`Done. Updated ${data.updatedPages} pages and ${data.updatedPhotos} photos.`);
-      finishBatchProgress('Done.');
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response stream available.');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const jsonStr = line.slice(6);
+            try {
+              const event = JSON.parse(jsonStr) as StreamEvent;
+
+              if (event.type === 'progress') {
+                setProgress(event.percent);
+                setCurrentPhase(event.phase);
+                setCurrentItem(event.item);
+                setCompletedCount(event.completed);
+                setTotalCount(event.total);
+                setProgressLabel(`${event.phase}: ${event.item}`);
+              } else if (event.type === 'complete') {
+                const parts = [
+                  `${event.updatedPages} pages`,
+                  `${event.updatedPhotos} photos`
+                ];
+                if (event.updatedProjects) parts.push(`${event.updatedProjects} projects`);
+                if (event.updatedJournalPosts) parts.push(`${event.updatedJournalPosts} journal posts`);
+                setAiStatus(`Done. Updated ${parts.join(', ')}. Refresh Pages/Photos to see changes.`);
+                // Clear any cached drafts so admin UI shows fresh data
+                clearDraftPages();
+                finishBatchProgress('Complete!');
+              } else if (event.type === 'error') {
+                throw new Error(event.message);
+              }
+            } catch (parseError) {
+              console.error('Failed to parse SSE event:', parseError);
+            }
+          }
+        }
+      }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Batch optimization failed.';
-      setAiStatus(message);
-      finishBatchProgress('Stopping...');
+      if (error instanceof Error && error.name === 'AbortError') {
+        setAiStatus('Optimization cancelled.');
+      } else {
+        const message = error instanceof Error ? error.message : 'Batch optimization failed.';
+        setAiStatus(message);
+      }
+      finishBatchProgress('Stopped.');
     }
   }
 
@@ -191,19 +292,46 @@ export function AdminDashboardClient() {
     <div className="space-y-8" aria-busy={isBatching}>
       {isBatching && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-sm">
-          <div className="w-[min(520px,90vw)] rounded-3xl border border-black/10 bg-white p-6 shadow-xl">
+          <div className="w-[min(560px,90vw)] rounded-3xl border border-black/10 bg-white p-8 shadow-xl">
             <p className="text-xs uppercase tracking-[0.3em] text-black/40">AI Optimization</p>
-            <h2 className="mt-3 text-xl font-semibold">{progressLabel || 'Working...'}</h2>
-            <p className="mt-2 text-sm text-black/60">
-              Please keep this tab open. Navigation and editing are disabled while this runs.
-            </p>
-            <div className="mt-4 h-2 w-full rounded-full bg-black/10">
-              <div
-                className="h-2 rounded-full bg-black/80 transition-all duration-500"
-                style={{ width: `${progress}%` }}
-              />
+            <h2 className="mt-3 text-xl font-semibold">
+              {progress === 100 ? 'Complete!' : 'Processing...'}
+            </h2>
+            
+            {/* Phase indicator */}
+            {currentPhase && (
+              <div className="mt-4 flex items-center gap-3">
+                <span className="inline-flex items-center rounded-full bg-black/5 px-3 py-1 text-xs font-medium uppercase tracking-wider">
+                  {currentPhase}
+                </span>
+                <span className="text-sm text-black/60 truncate">{currentItem}</span>
+              </div>
+            )}
+
+            {/* Progress bar */}
+            <div className="mt-5">
+              <div className="h-3 w-full rounded-full bg-black/10 overflow-hidden">
+                <div
+                  className="h-3 rounded-full bg-gradient-to-r from-black/70 to-black/90 transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-sm font-medium">{Math.round(progress)}%</span>
+                {totalCount > 0 && (
+                  <span className="text-xs text-black/50">
+                    {completedCount} / {totalCount} items
+                  </span>
+                )}
+              </div>
             </div>
-            <p className="mt-2 text-xs text-black/40">{Math.round(progress)}% complete</p>
+
+            {/* Status message */}
+            <p className="mt-4 text-sm text-black/50">
+              {progress === 100 
+                ? 'All items have been optimized.'
+                : 'Please keep this tab open. This may take a few minutes.'}
+            </p>
           </div>
         </div>
       )}
@@ -329,7 +457,7 @@ export function AdminDashboardClient() {
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold">AI Optimization</h2>
           <p className="mt-2 text-sm text-black/60">
-            Choose a model and run global updates across pages and photos.
+            Choose a model and run global updates across pages, photos, projects, and journal posts.
           </p>
           <div className="mt-4 grid gap-3">
             <label className="text-sm text-black/60">
@@ -347,6 +475,48 @@ export function AdminDashboardClient() {
                 ))}
               </select>
             </label>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includePages}
+                  onChange={(e) => setIncludePages(e.target.checked)}
+                  disabled={isBatching}
+                  className="h-4 w-4 rounded border-black/20"
+                />
+                <span className="text-black/60">Pages</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includePhotos}
+                  onChange={(e) => setIncludePhotos(e.target.checked)}
+                  disabled={isBatching}
+                  className="h-4 w-4 rounded border-black/20"
+                />
+                <span className="text-black/60">Photos</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includeProjects}
+                  onChange={(e) => setIncludeProjects(e.target.checked)}
+                  disabled={isBatching}
+                  className="h-4 w-4 rounded border-black/20"
+                />
+                <span className="text-black/60">Projects</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includeJournal}
+                  onChange={(e) => setIncludeJournal(e.target.checked)}
+                  disabled={isBatching}
+                  className="h-4 w-4 rounded border-black/20"
+                />
+                <span className="text-black/60">Journal</span>
+              </label>
+            </div>
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"

@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import type { PhotoAsset } from '@/types';
-import { Lightbox } from './Lightbox';
+import { GalleryLightbox } from './GalleryLightbox';
 import styles from '@/styles/public/HeroImage.module.css';
 
 type HeroImageProps = {
@@ -33,7 +33,13 @@ export function HeroImage({ photo }: HeroImageProps) {
           View fullsize
         </button>
       </div>
-      <Lightbox photo={active ? photo : null} onClose={() => setActive(false)} />
+      <GalleryLightbox
+        photos={[photo]}
+        index={active ? 0 : null}
+        onClose={() => setActive(false)}
+        onPrev={() => {}}
+        onNext={() => {}}
+      />
     </>
   );
 }
