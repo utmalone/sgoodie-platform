@@ -140,6 +140,7 @@ module "amplify" {
   domain_name         = var.domain_name
 
   # Environment variables for the Next.js app
+  # Note: AWS_ prefix is reserved by Amplify, so we use different names
   environment_variables = {
     USE_MOCK_DATA          = "false"
     NEXTAUTH_URL           = var.domain_name != "" ? "https://${var.domain_name}" : ""
@@ -149,10 +150,10 @@ module "amplify" {
     OPENAI_API_KEY         = var.openai_api_key
     INSTAGRAM_ACCESS_TOKEN = var.instagram_access_token
 
-    # AWS Resources
-    AWS_S3_PHOTOS_BUCKET  = module.storage.photos_bucket_name
-    AWS_S3_UPLOADS_BUCKET = module.storage.uploads_bucket_name
-    AWS_CLOUDFRONT_URL    = module.cdn.distribution_domain
-    AWS_DYNAMODB_REGION   = var.aws_region
+    # S3/CloudFront Resources (using non-AWS prefix for Amplify compatibility)
+    S3_PHOTOS_BUCKET  = module.storage.photos_bucket_name
+    S3_UPLOADS_BUCKET = module.storage.uploads_bucket_name
+    CLOUDFRONT_URL    = module.cdn.distribution_domain
+    DYNAMODB_REGION   = var.aws_region
   }
 }
