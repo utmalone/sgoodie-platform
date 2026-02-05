@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { AdminPortfolioEditorClient } from '@/components/admin/AdminPortfolioEditorClient';
 
 type Props = {
@@ -6,5 +7,9 @@ type Props = {
 
 export default async function AdminEditPortfolioProjectPage({ params }: Props) {
   const { id } = await params;
-  return <AdminPortfolioEditorClient projectId={id} />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AdminPortfolioEditorClient projectId={id} />
+    </Suspense>
+  );
 }
