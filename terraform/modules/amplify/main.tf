@@ -71,6 +71,9 @@ resource "aws_amplify_app" "main" {
   # Allow SSR/runtime access to DynamoDB
   iam_service_role_arn = aws_iam_role.amplify_service_role.arn
 
+  # Ensure runtime has access to environment variables
+  environment_variables = var.environment_variables
+
   # Build settings for Next.js SSR
   # Note: USE_MOCK_DATA=true during build so we don't need DynamoDB access
   # Runtime will use the branch environment variables (USE_MOCK_DATA=false)
