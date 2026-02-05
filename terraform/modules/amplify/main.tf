@@ -134,6 +134,7 @@ resource "aws_amplify_branch" "main" {
   stage     = "PRODUCTION"
 
   enable_auto_build = true
+  environment_variables = var.environment_variables
 
   tags = {
     Name        = "${var.project_name}-main-${var.environment}"
