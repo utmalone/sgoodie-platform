@@ -1,6 +1,7 @@
 import { requireAdminApi } from '@/lib/auth/require-admin-api';
 import { getAllPages, updatePage } from '@/lib/data/pages';
 import type { PageContent } from '@/types';
+import { revalidatePage } from '@/lib/admin/revalidate';
 
 export const runtime = 'nodejs';
 
@@ -47,6 +48,7 @@ export async function PUT(request: Request) {
     };
 
     const page = await updatePage(updated);
+    revalidatePage(updated.slug);
     return Response.json(page);
   } catch (error) {
     return Response.json(

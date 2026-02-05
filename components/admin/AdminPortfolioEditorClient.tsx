@@ -50,7 +50,7 @@ const emptyProject: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> = {
 export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { openPreview } = usePreview();
+  const { openPreview, refreshPreview } = usePreview();
   const { registerChange, unregisterChange } = useSave();
   const isNew = !projectId;
 
@@ -120,11 +120,12 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
         router.push(`/admin/portfolio/${saved.id}`);
       }
 
+      refreshPreview();
       return true;
     } catch {
       return false;
     }
-  }, [project, isNew, projectId, router]);
+  }, [project, isNew, projectId, router, refreshPreview]);
 
   // Register/unregister changes with master save context
   useEffect(() => {
@@ -223,6 +224,7 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
       if (isNew) {
         router.push(`/admin/portfolio/${saved.id}`);
       }
+      refreshPreview();
     } catch {
       setStatus('Failed to save project.');
     } finally {

@@ -8,6 +8,7 @@ import { pageLabels, photoPageOrder } from '@/lib/admin/page-config';
 import { loadAiModel } from '@/lib/admin/ai-model';
 import { getApiErrorMessage } from '@/lib/admin/api-error';
 import { AiFixButton } from '@/components/admin/AiFixButton';
+import { usePreview } from '@/lib/admin/preview-context';
 
 type PageLayouts = {
   home: HomeLayout | null;
@@ -31,6 +32,7 @@ const MAX_BULK_PHOTOS = 50;
 
 export function AdminPhotosClient() {
   const { registerChange, unregisterChange } = useSave();
+  const { refreshPreview } = usePreview();
   const [pages, setPages] = useState<PageContent[]>([]);
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
   const [savedPhotos, setSavedPhotos] = useState<PhotoAsset[]>([]);
@@ -75,7 +77,7 @@ export function AdminPhotosClient() {
         saved.metaKeywords !== photo.metaKeywords
       );
     });
-  }, [photos, savedPhotos]);
+  }, [photos, savedPhotos, refreshPreview]);
 
   // Save function for master save
   const savePhotos = useCallback(async (): Promise<boolean> => {
@@ -110,6 +112,7 @@ export function AdminPhotosClient() {
 
       if (results.some((res) => !res.ok)) return false;
       setSavedPhotos([...photos]);
+      refreshPreview();
       return true;
     } catch {
       return false;
@@ -329,6 +332,7 @@ export function AdminPhotosClient() {
         const updated = await response.json();
         setLayouts(prev => ({ ...prev, home: updated }));
         setStatus('Order updated.');
+        refreshPreview();
       } else {
         setStatus('Failed to update order.');
       }
@@ -367,6 +371,7 @@ export function AdminPhotosClient() {
         const updated = await response.json();
         setLayouts(prev => ({ ...prev, about: updated }));
         setStatus('Order updated.');
+        refreshPreview();
       } else {
         setStatus('Failed to update order.');
       }
@@ -384,6 +389,7 @@ export function AdminPhotosClient() {
         const updated = await response.json();
         setLayouts(prev => ({ ...prev, contact: updated }));
         setStatus('Order updated.');
+        refreshPreview();
       } else {
         setStatus('Failed to update order.');
       }
@@ -443,6 +449,7 @@ export function AdminPhotosClient() {
 
     setSavedPhotos(photos);
     setStatus(`Saved ${changedPhotos.length} photo(s).`);
+    refreshPreview();
   }
 
   async function handleFileSelect(file: File | null) {
@@ -529,6 +536,7 @@ export function AdminPhotosClient() {
     setUploadMetaKeywords('');
     setUploadFile(null);
     setStatus('Upload complete and added to page.');
+    refreshPreview();
   }
 
   // === BULK UPLOAD FUNCTIONS ===
@@ -675,6 +683,7 @@ export function AdminPhotosClient() {
     
     setIsBulkProcessing(false);
     setStatus(`Successfully uploaded ${uploadedPhotoIds.length} photos!`);
+    refreshPreview();
   }
 
   function removeBulkItem(id: string) {
@@ -708,6 +717,7 @@ export function AdminPhotosClient() {
     setPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
     setSavedPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
     await removeFromGallery(photoId);
+    refreshPreview();
   }
 
   // Get label for photo position

@@ -1,74 +1,79 @@
 import Link from 'next/link';
+import type { SiteProfile } from '@/types';
 import { getProfile } from '@/lib/data/profile';
 import styles from '@/styles/public/SiteFooter.module.css';
 
-export async function SiteFooter() {
-  const profile = await getProfile();
+type SiteFooterProps = {
+  profile?: SiteProfile;
+};
+
+export async function SiteFooter({ profile }: SiteFooterProps = {}) {
+  const resolvedProfile = profile ?? await getProfile();
 
   return (
     <footer className={styles.footer}>
       <div className={styles.inner}>
         <div className={styles.column}>
           <p className={styles.eyebrow}>Contact</p>
-          <a href={`mailto:${profile.email}`} className={styles.link}>
-            {profile.email}
+          <a href={`mailto:${resolvedProfile.email}`} className={styles.link}>
+            {resolvedProfile.email}
           </a>
-          <a href={`tel:${profile.phone.replace(/[^+\d]/g, '')}`} className={styles.link}>
-            {profile.phone}
+          <a href={`tel:${resolvedProfile.phone.replace(/[^+\d]/g, '')}`} className={styles.link}>
+            {resolvedProfile.phone}
           </a>
         </div>
         <div className={styles.column}>
           <p className={styles.eyebrow}>Social</p>
-          {profile.social.instagram.url && (
+          {resolvedProfile.social.instagram.url && (
             <a 
-              href={profile.social.instagram.url} 
+              href={resolvedProfile.social.instagram.url} 
               target="_blank" 
               rel="noopener noreferrer"
               className={styles.link}
             >
-              Instagram: {profile.social.instagram.handle || '@sgoodiephoto'}
+              Instagram: {resolvedProfile.social.instagram.handle || '@sgoodiephoto'}
             </a>
           )}
-          {profile.social.linkedin.url && (
+          {resolvedProfile.social.linkedin.url && (
             <a 
-              href={profile.social.linkedin.url} 
+              href={resolvedProfile.social.linkedin.url} 
               target="_blank" 
               rel="noopener noreferrer"
               className={styles.link}
             >
-              LinkedIn: {profile.social.linkedin.name || 'S.Goodie Studio'}
+              LinkedIn: {resolvedProfile.social.linkedin.name || 'S.Goodie Studio'}
             </a>
           )}
-          {profile.social.twitter.url && (
+          {resolvedProfile.social.twitter.url && (
             <a 
-              href={profile.social.twitter.url} 
+              href={resolvedProfile.social.twitter.url} 
               target="_blank" 
               rel="noopener noreferrer"
               className={styles.link}
             >
-              Twitter: {profile.social.twitter.handle}
+              Twitter: {resolvedProfile.social.twitter.handle}
             </a>
           )}
-          {profile.social.facebook.url && (
+          {resolvedProfile.social.facebook.url && (
             <a 
-              href={profile.social.facebook.url} 
+              href={resolvedProfile.social.facebook.url} 
               target="_blank" 
               rel="noopener noreferrer"
               className={styles.link}
             >
-              Facebook: {profile.social.facebook.name}
+              Facebook: {resolvedProfile.social.facebook.name}
             </a>
           )}
         </div>
         <div className={styles.column}>
           <p className={styles.eyebrow}>Availability</p>
-          <p className={styles.text}>{profile.availability.regions.join(', ')}</p>
-          <p className={styles.muted}>{profile.availability.note}</p>
+          <p className={styles.text}>{resolvedProfile.availability.regions.join(', ')}</p>
+          <p className={styles.muted}>{resolvedProfile.availability.note}</p>
         </div>
       </div>
       <div className={styles.bottom}>
         <div className={styles.bottomRow}>
-          <span>© {new Date().getFullYear()} {profile.name} Photography</span>
+          <span>© {new Date().getFullYear()} {resolvedProfile.name} Photography</span>
           <Link href="/admin/login" className={styles.adminLink}>
             Studio
           </Link>

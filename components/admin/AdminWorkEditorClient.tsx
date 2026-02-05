@@ -42,7 +42,7 @@ const emptyProject: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> = {
 
 export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps) {
   const router = useRouter();
-  const { openPreview } = usePreview();
+  const { openPreview, refreshPreview } = usePreview();
   const isNew = !projectId;
 
   const [project, setProject] = useState<Partial<Project>>(emptyProject);
@@ -147,6 +147,7 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
       } else {
         setProject(saved);
       }
+      refreshPreview();
     } catch {
       setStatus('Failed to save project.');
     } finally {

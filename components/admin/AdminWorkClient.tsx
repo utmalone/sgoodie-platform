@@ -12,7 +12,7 @@ export function AdminWorkClient() {
   const [status, setStatus] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [draggedId, setDraggedId] = useState<string | null>(null);
-  const { openPreview } = usePreview();
+  const { openPreview, refreshPreview } = usePreview();
 
   const photosById = useMemo(() => {
     return new Map(photos.map((photo) => [photo.id, photo]));
@@ -102,6 +102,7 @@ export function AdminWorkClient() {
       }
 
       setStatus('Order saved.');
+      refreshPreview();
       setTimeout(() => setStatus(''), 2000);
     } catch {
       setStatus('Failed to save order.');
@@ -129,6 +130,7 @@ export function AdminWorkClient() {
         prev.map((p) => (p.id === project.id ? { ...p, status: newStatus } : p))
       );
       setStatus(newStatus === 'published' ? 'Published.' : 'Set to draft.');
+      refreshPreview();
       setTimeout(() => setStatus(''), 2000);
     } catch {
       setStatus('Failed to update status.');
@@ -154,6 +156,7 @@ export function AdminWorkClient() {
         prev ? { projectIds: prev.projectIds.filter((id) => id !== project.id) } : null
       );
       setStatus('Deleted.');
+      refreshPreview();
       setTimeout(() => setStatus(''), 2000);
     } catch {
       setStatus('Failed to delete project.');

@@ -35,7 +35,7 @@ const emptyPost: Omit<JournalPost, 'id'> = {
 
 export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientProps) {
   const router = useRouter();
-  const { openPreview } = usePreview();
+  const { openPreview, refreshPreview } = usePreview();
   const { registerChange, unregisterChange } = useSave();
   const isNew = !postId;
 
@@ -95,11 +95,12 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
         router.push(`/admin/journal/${saved.id}`);
       }
 
+      refreshPreview();
       return true;
     } catch {
       return false;
     }
-  }, [post, isNew, postId, router]);
+  }, [post, isNew, postId, router, refreshPreview]);
 
   // Register/unregister changes with master save context
   useEffect(() => {
@@ -196,6 +197,7 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
       if (isNew) {
         router.push(`/admin/journal/${saved.id}`);
       }
+      refreshPreview();
     } catch {
       setStatus('Failed to save post.');
     } finally {

@@ -10,6 +10,7 @@ import { loadAiModel } from '@/lib/admin/ai-model';
 import { getApiErrorMessage } from '@/lib/admin/api-error';
 import { AiFixButton } from '@/components/admin/AiFixButton';
 import { useSave } from '@/lib/admin/save-context';
+import { usePreview } from '@/lib/admin/preview-context';
 import {
   portfolioCategories,
   portfolioCategoryLabels,
@@ -48,6 +49,7 @@ type PageLayouts = {
 
 export function AdminPagesClient() {
   const { registerChange, unregisterChange } = useSave();
+  const { refreshPreview } = usePreview();
   const [savedPages, setSavedPages] = useState<PageContent[]>([]);
   const [draftPages, setDraftPages] = useState<PageContent[]>([]);
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
@@ -100,11 +102,12 @@ export function AdminPagesClient() {
         }
         return [...prev, updated];
       });
+      refreshPreview();
       return true;
     } catch {
       return false;
     }
-  }, [activePage]);
+  }, [activePage, refreshPreview]);
 
   useEffect(() => {
     if (isDirty && !isLoading) {
@@ -224,6 +227,7 @@ export function AdminPagesClient() {
       return [...prev, updated];
     });
     setStatus('Saved.');
+    refreshPreview();
   }
 
   function updateField(field: keyof PageContent, value: string | string[]) {

@@ -3,6 +3,8 @@ import { SiteHeader } from '@/components/layout/SiteHeader';
 import { getProfile } from '@/lib/data/profile';
 import layoutStyles from '@/styles/public/layout.module.css';
 
+export const dynamic = 'force-dynamic';
+
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const profile = await getProfile();
   
@@ -19,7 +21,7 @@ export default async function PublicLayout({ children }: { children: React.React
       <main id="main-content" className={`${layoutStyles.container} ${layoutStyles.main}`}>
         {children}
       </main>
-      <SiteFooter />
+      <SiteFooter profile={profile} />
     </div>
   );
 }

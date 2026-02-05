@@ -10,6 +10,10 @@ export function revalidatePortfolioPages(projectSlug?: string, category?: string
   portfolioCategories.forEach((cat) => {
     revalidatePath(`/portfolio/${cat}`);
   });
+
+  // Revalidate portfolio landing and work index pages
+  revalidatePath('/portfolio');
+  revalidatePath('/work');
   
   // Revalidate the home page (may show featured projects)
   revalidatePath('/');
@@ -17,6 +21,10 @@ export function revalidatePortfolioPages(projectSlug?: string, category?: string
   // Revalidate the specific project page if slug and category provided
   if (projectSlug && category) {
     revalidatePath(`/portfolio/${category}/${projectSlug}`);
+  }
+
+  if (projectSlug) {
+    revalidatePath(`/work/${projectSlug}`);
   }
 }
 
@@ -45,12 +53,20 @@ export function revalidateJournalPages(postSlug?: string) {
  * Revalidate a specific page by slug.
  */
 export function revalidatePage(slug: string) {
+  if (slug.startsWith('portfolio-')) {
+    const category = slug.replace('portfolio-', '');
+    revalidatePath(`/portfolio/${category}`);
+    revalidatePath('/portfolio');
+    return;
+  }
+
   const pathMap: Record<string, string> = {
     home: '/',
     about: '/about',
     portfolio: '/portfolio',
     journal: '/journal',
-    contact: '/contact'
+    contact: '/contact',
+    work: '/work'
   };
   
   const path = pathMap[slug];
@@ -66,9 +82,11 @@ export function revalidatePage(slug: string) {
 export function revalidateAllPages() {
   revalidatePath('/');
   revalidatePath('/about');
+  revalidatePath('/portfolio');
   portfolioCategories.forEach((cat) => {
     revalidatePath(`/portfolio/${cat}`);
   });
   revalidatePath('/journal');
   revalidatePath('/contact');
+  revalidatePath('/work');
 }

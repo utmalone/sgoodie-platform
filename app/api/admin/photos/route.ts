@@ -2,6 +2,7 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import { requireAdminApi } from '@/lib/auth/require-admin-api';
 import { createPhoto, getAllPhotos } from '@/lib/data/photos';
+import { revalidateAllPages } from '@/lib/admin/revalidate';
 
 export const runtime = 'nodejs';
 
@@ -64,6 +65,7 @@ export async function POST(request: Request) {
       height: 1200
     });
 
+    revalidateAllPages();
     return Response.json(photo);
   } catch (error) {
     return Response.json(

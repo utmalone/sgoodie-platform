@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import { requireAdminApi } from '@/lib/auth/require-admin-api';
 import { deletePhoto, getAllPhotos, updatePhoto } from '@/lib/data/photos';
 import type { PhotoAsset } from '@/types';
+import { revalidateAllPages } from '@/lib/admin/revalidate';
 
 export const runtime = 'nodejs';
 
@@ -38,6 +39,7 @@ export async function PATCH(request: Request, context: { params: { id: string } 
     };
 
     await updatePhoto(updated);
+    revalidateAllPages();
     return Response.json(updated);
   } catch (error) {
     return Response.json(
@@ -70,6 +72,7 @@ export async function DELETE(_: Request, context: { params: { id: string } }) {
     }
 
     await deletePhoto(existing.id);
+    revalidateAllPages();
     return Response.json({ ok: true });
   } catch (error) {
     return Response.json(

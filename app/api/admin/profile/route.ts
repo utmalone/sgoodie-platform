@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getProfile, updateProfile } from '@/lib/data/profile';
 import { requireAdminApi } from '@/lib/auth/require-admin-api';
 import { updateAdminEmail } from '@/lib/auth/admin-store';
-import { revalidatePath } from 'next/cache';
+import { revalidateAllPages } from '@/lib/admin/revalidate';
 
 export async function GET() {
   const session = await requireAdminApi();
@@ -37,9 +37,8 @@ export async function PUT(request: Request) {
       }
     }
 
-    // Refresh public layout/pages so footer and contact info update immediately
-    revalidatePath('/', 'layout');
-    revalidatePath('/contact');
+    // Refresh public pages so footer + contact info update immediately
+    revalidateAllPages();
 
     return NextResponse.json(updated);
   } catch (error) {
