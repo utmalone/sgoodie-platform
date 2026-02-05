@@ -1,22 +1,29 @@
 import type { ContactPageContent } from '@/types';
 import { readJson, writeJson } from './local-store';
-import { useMockData, getItem, putItem } from './db';
+import { isMockMode, getItem, putItem } from './db';
 
 const TABLE_NAME = 'pages';
 const CONTACT_SLUG = 'contact-page';
 
 const defaultContactContent: ContactPageContent = {
-  headline: 'Get in Touch',
-  intro: '',
-  formFields: ['name', 'email', 'message'],
-  successMessage: 'Thank you for your message. We will get back to you soon.'
+  heroPhotoId: '',
+  heroTitle: 'Get in Touch',
+  heroSubtitle: 'Let\'s work together',
+  sectionTitle: 'Contact',
+  introParagraph: '',
+  companyName: 'S.Goodie Photography',
+  email: 'hello@sgoodie.com',
+  phone: '(202) 555-0194',
+  instagramUrl: 'https://instagram.com/sgoodiephoto',
+  linkedinUrl: 'https://linkedin.com/company/sgoodie-studio',
+  instagramHandle: '@sgoodiephoto'
 };
 
 /**
  * Fetch the structured Contact page content.
  */
 export async function getContactContent(): Promise<ContactPageContent> {
-  if (useMockData()) {
+  if (isMockMode()) {
     try {
       return await readJson<ContactPageContent>('contact.json');
     } catch {
@@ -36,7 +43,7 @@ export async function updateContactContent(updates: Partial<ContactPageContent>)
   const current = await getContactContent();
   const updated = { ...current, ...updates };
 
-  if (useMockData()) {
+  if (isMockMode()) {
     await writeJson('contact.json', updated);
     return updated;
   }

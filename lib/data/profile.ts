@@ -1,6 +1,6 @@
 import type { SiteProfile } from '@/types';
 import { readJson, writeJson } from './local-store';
-import { useMockData, getItem, putItem } from './db';
+import { isMockMode, getItem, putItem } from './db';
 
 const PROFILE_FILE = 'profile.json';
 const TABLE_NAME = 'pages'; // Store profile in pages table with slug 'profile'
@@ -31,7 +31,7 @@ const defaultProfile: SiteProfile = {
 };
 
 export async function getProfile(): Promise<SiteProfile> {
-  if (useMockData()) {
+  if (isMockMode()) {
     try {
       const profile = await readJson<SiteProfile>(PROFILE_FILE);
       return { ...defaultProfile, ...profile };
@@ -52,7 +52,7 @@ export async function updateProfile(updates: Partial<SiteProfile>): Promise<Site
   const current = await getProfile();
   const updated = { ...current, ...updates };
 
-  if (useMockData()) {
+  if (isMockMode()) {
     await writeJson(PROFILE_FILE, updated);
     return updated;
   }

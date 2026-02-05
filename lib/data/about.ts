@@ -1,22 +1,31 @@
 import type { AboutPageContent } from '@/types';
 import { readJson, writeJson } from './local-store';
-import { useMockData, getItem, putItem } from './db';
+import { isMockMode, getItem, putItem } from './db';
 
 const TABLE_NAME = 'pages';
 const ABOUT_SLUG = 'about-page';
 
 const defaultAboutContent: AboutPageContent = {
-  headline: 'S.Goodie Photography',
-  intro: 'Welcome to S.Goodie Photography',
-  body: '',
-  photoIds: []
+  heroPhotoId: '',
+  heroTitle: 'S.Goodie Photography',
+  heroSubtitle: 'Architecture & Interiors',
+  introParagraphs: [],
+  approachTitle: 'Our Approach',
+  approachItems: [],
+  featuredTitle: 'Featured In',
+  featuredPublications: [],
+  bio: {
+    name: 'S.Goodie',
+    photoId: '',
+    paragraphs: []
+  }
 };
 
 /**
  * Fetch the structured About page content.
  */
 export async function getAboutContent(): Promise<AboutPageContent> {
-  if (useMockData()) {
+  if (isMockMode()) {
     try {
       return await readJson<AboutPageContent>('about.json');
     } catch {
@@ -36,7 +45,7 @@ export async function updateAboutContent(updates: Partial<AboutPageContent>): Pr
   const current = await getAboutContent();
   const updated = { ...current, ...updates };
 
-  if (useMockData()) {
+  if (isMockMode()) {
     await writeJson('about.json', updated);
     return updated;
   }

@@ -1,6 +1,6 @@
 import type { WorkIndex } from '@/types';
 import { readJson, writeJson } from './local-store';
-import { useMockData, getItem, putItem } from './db';
+import { isMockMode, getItem, putItem } from './db';
 
 const WORK_FILE = 'work.json';
 const TABLE_NAME = 'pages'; // Store work index in pages table with slug 'work-index'
@@ -11,7 +11,7 @@ const defaultWorkIndex: WorkIndex = {
 };
 
 export async function getWorkIndex(): Promise<WorkIndex> {
-  if (useMockData()) {
+  if (isMockMode()) {
     try {
       return await readJson<WorkIndex>(WORK_FILE);
     } catch {
@@ -27,7 +27,7 @@ export async function getWorkIndex(): Promise<WorkIndex> {
 export async function updateWorkIndex(projectIds: string[]): Promise<WorkIndex> {
   const workIndex: WorkIndex = { projectIds };
 
-  if (useMockData()) {
+  if (isMockMode()) {
     await writeJson(WORK_FILE, workIndex);
     return workIndex;
   }

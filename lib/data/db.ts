@@ -85,6 +85,6 @@ export async function deleteItem(
 /**
  * Check if we should use mock data (local JSON files)
  */
-export function useMockData(): boolean {
+export function isMockMode(): boolean {
   return process.env.USE_MOCK_DATA === 'true';
 }

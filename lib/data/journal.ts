@@ -1,13 +1,13 @@
 import { randomUUID } from 'crypto';
 import type { JournalPost } from '@/types';
 import { readJson, writeJson } from './local-store';
-import { useMockData, getAllItems, getItem, putItem, deleteItem } from './db';
+import { isMockMode, getAllItems, getItem, putItem, deleteItem } from './db';
 
 const JOURNAL_FILE = 'journal.json';
 const TABLE_NAME = 'journal';
 
 export async function getAllJournalPosts(): Promise<JournalPost[]> {
-  if (useMockData()) {
+  if (isMockMode()) {
     return readJson<JournalPost[]>(JOURNAL_FILE);
   }
 
@@ -21,7 +21,7 @@ export async function getJournalPostBySlug(slug: string): Promise<JournalPost | 
 }
 
 export async function getJournalPostById(id: string): Promise<JournalPost | null> {
-  if (useMockData()) {
+  if (isMockMode()) {
     const posts = await getAllJournalPosts();
     return posts.find((post) => post.id === id) || null;
   }
@@ -46,7 +46,7 @@ export async function createJournalPost(
     id: randomUUID()
   };
 
-  if (useMockData()) {
+  if (isMockMode()) {
     posts.push(post);
     await writeJson(JOURNAL_FILE, posts);
     return post;
@@ -80,7 +80,7 @@ export async function updateJournalPost(
     ...updates
   };
 
-  if (useMockData()) {
+  if (isMockMode()) {
     const index = posts.findIndex((p) => p.id === id);
     posts[index] = updated;
     await writeJson(JOURNAL_FILE, posts);
@@ -92,7 +92,7 @@ export async function updateJournalPost(
 }
 
 export async function deleteJournalPost(id: string): Promise<void> {
-  if (useMockData()) {
+  if (isMockMode()) {
     const posts = await getAllJournalPosts();
     const filtered = posts.filter((p) => p.id !== id);
 

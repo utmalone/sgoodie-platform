@@ -1,19 +1,18 @@
 import type { HomeLayout } from '@/types';
 import { readJson, writeJson } from './local-store';
-import { useMockData, getItem, putItem } from './db';
+import { isMockMode, getItem, putItem } from './db';
 
 const HOME_FILE = 'home.json';
 const TABLE_NAME = 'pages';
 const HOME_SLUG = 'home-page';
 
 const defaultHomeLayout: HomeLayout = {
-  heroPhotoId: null,
-  featuredProjectIds: [],
-  galleryPhotoIds: []
+  heroPhotoId: '',
+  featurePhotoIds: []
 };
 
 export async function getHomeLayout(): Promise<HomeLayout> {
-  if (useMockData()) {
+  if (isMockMode()) {
     try {
       return await readJson<HomeLayout>(HOME_FILE);
     } catch {
@@ -30,7 +29,7 @@ export async function updateHomeLayout(updates: Partial<HomeLayout>): Promise<Ho
   const current = await getHomeLayout();
   const updated = { ...current, ...updates };
 
-  if (useMockData()) {
+  if (isMockMode()) {
     await writeJson(HOME_FILE, updated);
     return updated;
   }

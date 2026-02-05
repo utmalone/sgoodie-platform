@@ -1,13 +1,13 @@
 import { randomUUID } from 'crypto';
 import { readJson, writeJson } from './local-store';
 import type { Project, ProjectCategory } from '@/types';
-import { useMockData, getAllItems, getItem, putItem, deleteItem } from './db';
+import { isMockMode, getAllItems, getItem, putItem, deleteItem } from './db';
 
 const PROJECTS_FILE = 'projects.json';
 const TABLE_NAME = 'projects';
 
 export async function getAllProjects(): Promise<Project[]> {
-  if (useMockData()) {
+  if (isMockMode()) {
     return readJson<Project[]>(PROJECTS_FILE);
   }
 
@@ -26,7 +26,7 @@ export async function getPublishedProjectsByCategory(category: ProjectCategory):
 }
 
 export async function getProjectById(id: string): Promise<Project | null> {
-  if (useMockData()) {
+  if (isMockMode()) {
     const projects = await getAllProjects();
     return projects.find((project) => project.id === id) || null;
   }
@@ -68,7 +68,7 @@ export async function createProject(
     updatedAt: new Date().toISOString()
   };
 
-  if (useMockData()) {
+  if (isMockMode()) {
     projects.push(project);
     await writeJson(PROJECTS_FILE, projects);
     return project;
@@ -103,7 +103,7 @@ export async function updateProject(
     updatedAt: new Date().toISOString()
   };
 
-  if (useMockData()) {
+  if (isMockMode()) {
     const index = projects.findIndex((p) => p.id === id);
     projects[index] = updated;
     await writeJson(PROJECTS_FILE, projects);
@@ -115,7 +115,7 @@ export async function updateProject(
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  if (useMockData()) {
+  if (isMockMode()) {
     const projects = await getAllProjects();
     const filtered = projects.filter((p) => p.id !== id);
 

@@ -1,6 +1,6 @@
 import type { PageContent } from '@/types';
 import { readJson, writeJson } from './local-store';
-import { useMockData, getAllItems, putItem, getItem } from './db';
+import { isMockMode, getAllItems, putItem, getItem } from './db';
 
 const PAGES_FILE = 'pages.json';
 const TABLE_NAME = 'pages';
@@ -27,7 +27,7 @@ function createDefaultPage(slug: string): PageContent {
 }
 
 export async function getAllPages(): Promise<PageContent[]> {
-  if (useMockData()) {
+  if (isMockMode()) {
     const pages = await readJson<PageContent[]>(PAGES_FILE);
     return pages.map((page) => ({
       ...page,
@@ -51,7 +51,7 @@ export async function getAllPages(): Promise<PageContent[]> {
  * Get a page by slug. Returns a default empty page if not found.
  */
 export async function getPageBySlug(slug: string): Promise<PageContent> {
-  if (useMockData()) {
+  if (isMockMode()) {
     const pages = await getAllPages();
     const page = pages.find((item) => item.slug === slug);
     return page || createDefaultPage(slug);
@@ -63,7 +63,7 @@ export async function getPageBySlug(slug: string): Promise<PageContent> {
 }
 
 export async function updatePage(updated: PageContent): Promise<PageContent> {
-  if (useMockData()) {
+  if (isMockMode()) {
     const pages = await getAllPages();
     const index = pages.findIndex((page) => page.slug === updated.slug);
 
@@ -88,7 +88,7 @@ export async function removePhotoFromPages(photoId: string) {
     gallery: page.gallery.filter((id) => id !== photoId)
   }));
 
-  if (useMockData()) {
+  if (isMockMode()) {
     await writeJson(PAGES_FILE, nextPages);
   } else {
     // Update each page in DynamoDB

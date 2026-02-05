@@ -2,13 +2,13 @@ import { randomUUID } from 'crypto';
 import type { PhotoAsset } from '@/types';
 import { readJson, writeJson } from './local-store';
 import { removePhotoFromPages } from './pages';
-import { useMockData, getAllItems, getItem, putItem, deleteItem } from './db';
+import { isMockMode, getAllItems, getItem, putItem, deleteItem } from './db';
 
 const PHOTOS_FILE = 'photos.json';
 const TABLE_NAME = 'photos';
 
 export async function getAllPhotos(): Promise<PhotoAsset[]> {
-  if (useMockData()) {
+  if (isMockMode()) {
     const photos = await readJson<PhotoAsset[]>(PHOTOS_FILE);
     return photos.map((photo) => ({
       ...photo,
@@ -35,7 +35,7 @@ export async function getPhotosByIds(ids: string[]): Promise<PhotoAsset[]> {
 }
 
 export async function getPhotoById(id: string): Promise<PhotoAsset | null> {
-  if (useMockData()) {
+  if (isMockMode()) {
     const photos = await getAllPhotos();
     return photos.find((photo) => photo.id === id) ?? null;
   }
@@ -54,7 +54,7 @@ export async function createPhoto(input: Omit<PhotoAsset, 'id' | 'createdAt'>) {
     ...input
   };
 
-  if (useMockData()) {
+  if (isMockMode()) {
     const photos = await getAllPhotos();
     photos.push(photo);
     await writeJson(PHOTOS_FILE, photos);
@@ -66,7 +66,7 @@ export async function createPhoto(input: Omit<PhotoAsset, 'id' | 'createdAt'>) {
 }
 
 export async function updatePhoto(updated: PhotoAsset) {
-  if (useMockData()) {
+  if (isMockMode()) {
     const photos = await getAllPhotos();
     const index = photos.findIndex((photo) => photo.id === updated.id);
     if (index >= 0) {
@@ -83,7 +83,7 @@ export async function updatePhoto(updated: PhotoAsset) {
 }
 
 export async function deletePhoto(photoId: string) {
-  if (useMockData()) {
+  if (isMockMode()) {
     const photos = await getAllPhotos();
     const nextPhotos = photos.filter((photo) => photo.id !== photoId);
     await writeJson(PHOTOS_FILE, nextPhotos);
