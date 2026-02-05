@@ -45,47 +45,47 @@ const tables = [
   {
     name: process.env.DYNAMODB_TABLE_PROJECTS,
     attributes: [
-      { AttributeName: 'project_id', AttributeType: 'S' },
-      { AttributeName: 'category', AttributeType: 'S' },
-      { AttributeName: 'order', AttributeType: 'N' }
+      { AttributeName: 'project_id', AttributeType: 'S' as const },
+      { AttributeName: 'category', AttributeType: 'S' as const },
+      { AttributeName: 'order', AttributeType: 'N' as const }
     ],
-    keySchema: [{ AttributeName: 'project_id', KeyType: 'HASH' }],
+    keySchema: [{ AttributeName: 'project_id', KeyType: 'HASH' as const }],
     gsi: [
       {
         IndexName: 'gsi_category_order',
         KeySchema: [
-          { AttributeName: 'category', KeyType: 'HASH' },
-          { AttributeName: 'order', KeyType: 'RANGE' }
+          { AttributeName: 'category', KeyType: 'HASH' as const },
+          { AttributeName: 'order', KeyType: 'RANGE' as const }
         ],
-        Projection: { ProjectionType: 'ALL' }
+        Projection: { ProjectionType: 'ALL' as const }
       }
     ]
   },
   {
     name: process.env.DYNAMODB_TABLE_PHOTOS,
     attributes: [
-      { AttributeName: 'project_id', AttributeType: 'S' },
-      { AttributeName: 'order_photo_id', AttributeType: 'S' }
+      { AttributeName: 'project_id', AttributeType: 'S' as const },
+      { AttributeName: 'order_photo_id', AttributeType: 'S' as const }
     ],
     keySchema: [
-      { AttributeName: 'project_id', KeyType: 'HASH' },
-      { AttributeName: 'order_photo_id', KeyType: 'RANGE' }
+      { AttributeName: 'project_id', KeyType: 'HASH' as const },
+      { AttributeName: 'order_photo_id', KeyType: 'RANGE' as const }
     ]
   },
   {
     name: process.env.DYNAMODB_TABLE_PAGES,
-    attributes: [{ AttributeName: 'page_id', AttributeType: 'S' }],
-    keySchema: [{ AttributeName: 'page_id', KeyType: 'HASH' }]
+    attributes: [{ AttributeName: 'page_id', AttributeType: 'S' as const }],
+    keySchema: [{ AttributeName: 'page_id', KeyType: 'HASH' as const }]
   },
   {
     name: process.env.DYNAMODB_TABLE_SETTINGS,
-    attributes: [{ AttributeName: 'setting_key', AttributeType: 'S' }],
-    keySchema: [{ AttributeName: 'setting_key', KeyType: 'HASH' }]
+    attributes: [{ AttributeName: 'setting_key', AttributeType: 'S' as const }],
+    keySchema: [{ AttributeName: 'setting_key', KeyType: 'HASH' as const }]
   },
   {
     name: process.env.DYNAMODB_TABLE_ADMINS,
-    attributes: [{ AttributeName: 'user_id', AttributeType: 'S' }],
-    keySchema: [{ AttributeName: 'user_id', KeyType: 'HASH' }]
+    attributes: [{ AttributeName: 'user_id', AttributeType: 'S' as const }],
+    keySchema: [{ AttributeName: 'user_id', KeyType: 'HASH' as const }]
   }
 ].filter((table) => Boolean(table.name));
 
