@@ -25,6 +25,16 @@ export async function getItem<T>(
   tableName: string,
   key: Record<string, string>
 ): Promise<T | null> {
+  const hasEmptyKeyValue = Object.values(key).some(
+    (value) => typeof value !== 'string' || value.trim() === ''
+  );
+  if (hasEmptyKeyValue) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(`Skipping getItem for ${tableName}: empty key value`, key);
+    }
+    return null;
+  }
+
   try {
     const result = await db.send(
       new GetCommand({

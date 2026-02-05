@@ -29,12 +29,19 @@ export async function getAllPhotos(): Promise<PhotoAsset[]> {
 }
 
 export async function getPhotosByIds(ids: string[]): Promise<PhotoAsset[]> {
+  const filteredIds = ids.filter((id) => typeof id === 'string' && id.trim() !== '');
+  if (filteredIds.length === 0) {
+    return [];
+  }
   const photos = await getAllPhotos();
   const map = new Map(photos.map((photo) => [photo.id, photo]));
-  return ids.map((id) => map.get(id)).filter(Boolean) as PhotoAsset[];
+  return filteredIds.map((id) => map.get(id)).filter(Boolean) as PhotoAsset[];
 }
 
 export async function getPhotoById(id: string): Promise<PhotoAsset | null> {
+  if (!id || id.trim() === '') {
+    return null;
+  }
   if (isMockMode()) {
     const photos = await getAllPhotos();
     return photos.find((photo) => photo.id === id) ?? null;
