@@ -1,6 +1,8 @@
 import type { NextRequest } from 'next/server';
 import { createHash } from 'crypto';
 import { getAdminAuthRecord, verifyAdminCredentials } from '@/lib/auth/admin-store';
+import { GetCommand } from '@aws-sdk/lib-dynamodb';
+import { db } from '@/lib/aws/dynamodb';
 import { getTableName, isMockMode } from '@/lib/data/db';
 
 export const runtime = 'nodejs';
@@ -56,6 +58,37 @@ export async function GET(request: NextRequest) {
   const credentialsMatch =
     email && password ? Boolean(await verifyAdminCredentials(email, password)) : null;
 
+  let ddbProbe: {
+    ok: boolean;
+    table: string;
+    hasItem?: boolean;
+    error?: { name?: string; message?: string };
+  } = {
+    ok: false,
+    table: getTableName('admins')
+  };
+
+  try {
+    const probe = await db.send(
+      new GetCommand({
+        TableName: getTableName('admins'),
+        Key: { id: 'primary' }
+      })
+    );
+    ddbProbe = {
+      ok: true,
+      table: getTableName('admins'),
+      hasItem: Boolean(probe.Item)
+    };
+  } catch (error) {
+    const err = error as { name?: string; message?: string };
+    ddbProbe = {
+      ok: false,
+      table: getTableName('admins'),
+      error: { name: err?.name, message: err?.message }
+    };
+  }
+
   return Response.json(
     {
       ok: true,
@@ -69,6 +102,11 @@ export async function GET(request: NextRequest) {
         adminsTable: getTableName('admins'),
         region: process.env.AWS_REGION || 'us-east-1',
         dynamodbRegion: process.env.DYNAMODB_REGION || '',
+        hasAwsAccessKeyId: Boolean(process.env.AWS_ACCESS_KEY_ID),
+        hasAwsSecretAccessKey: Boolean(process.env.AWS_SECRET_ACCESS_KEY),
+        hasAwsSessionToken: Boolean(process.env.AWS_SESSION_TOKEN),
+        hasWebIdentityTokenFile: Boolean(process.env.AWS_WEB_IDENTITY_TOKEN_FILE),
+        hasAwsRoleArn: Boolean(process.env.AWS_ROLE_ARN),
         adminEmailEnv: process.env.ADMIN_EMAIL || '',
         adminPasswordHashEnv: process.env.ADMIN_PASSWORD_HASH || '',
         revalidateTokenEnv: process.env.REVALIDATE_TOKEN || '',
@@ -83,6 +121,7 @@ export async function GET(request: NextRequest) {
             updatedAt: record.updatedAt || record.createdAt || null
           }
         : { exists: false },
+      ddbProbe,
       credentialsMatch
     },
     {
