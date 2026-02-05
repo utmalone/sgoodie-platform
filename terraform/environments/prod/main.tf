@@ -13,6 +13,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
   }
 
   # Remote state configuration - stores state in S3 with DynamoDB locking
@@ -218,4 +222,17 @@ module "waf" {
   cloudfront_distribution_id    = var.amplify_cloudfront_distribution_id
   rate_limit_auth               = 100
   rate_limit_admin              = 300
+}
+
+resource "null_resource" "amplify_waf" {
+  count = var.amplify_cloudfront_distribution_id != "" ? 1 : 0
+
+  triggers = {
+    web_acl_arn = module.waf[0].web_acl_arn
+    app_id      = module.amplify.app_id
+  }
+
+  provisioner "local-exec" {
+    command = "aws amplify update-app --app-id ${module.amplify.app_id} --waf-configuration webAclArn=${module.waf[0].web_acl_arn}"
+  }
 }

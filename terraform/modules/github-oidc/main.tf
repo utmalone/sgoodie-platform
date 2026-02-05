@@ -109,6 +109,8 @@ data "aws_iam_policy_document" "github_actions" {
   statement {
     effect = "Allow"
     actions = [
+      "amplify:UpdateApp",
+      "amplify:GetApp",
       "amplify:StartJob",
       "amplify:GetJob",
       "amplify:ListJobs",
@@ -139,6 +141,7 @@ data "aws_iam_policy_document" "github_actions" {
       "secretsmanager:DeleteSecret",
       "secretsmanager:DescribeSecret",
       "secretsmanager:GetSecretValue",
+      "secretsmanager:GetResourcePolicy",
       "secretsmanager:TagResource",
       "secretsmanager:UntagResource",
       "secretsmanager:ListSecrets"

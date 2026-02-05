@@ -106,8 +106,3 @@ resource "aws_wafv2_web_acl" "main" {
     sampled_requests_enabled   = true
   }
 }
-
-resource "aws_wafv2_web_acl_association" "cloudfront" {
-  resource_arn = local.distribution_arn
-  web_acl_arn  = aws_wafv2_web_acl.main.arn
-}
