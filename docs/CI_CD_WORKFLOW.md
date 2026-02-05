@@ -1,25 +1,27 @@
 # CI/CD Workflow Documentation
 
 **Last Updated:** 2026-02-05  
-**Version:** 5.0  
+**Version:** 6.0  
 
 ---
 
 ## Overview
 
 The S.Goodie Photography Platform uses GitHub Actions for CI/CD, deploying to AWS via:
-- **AWS Amplify** for Next.js hosting
+- **AWS Amplify (SSR)** for Next.js hosting
+- **DynamoDB** for content and analytics storage
 - **S3** for photo storage
 - **CloudFront** for CDN
-- **DynamoDB** for content storage
 - **Terraform** for infrastructure as code
+
+Amplify builds automatically on pushes to `main`. GitHub Actions ensures infrastructure is applied and caches are invalidated.
 
 ---
 
 ## Branch Strategy
 
 ```
-feature branch → develop → PR → main → deploy
+feature branch -> develop -> PR -> main -> deploy
 ```
 
 | Branch | Purpose | Auto Deploy? |
@@ -33,7 +35,7 @@ feature branch → develop → PR → main → deploy
 ## GitHub Workflows
 
 ### 1. Development CI (`develop-ci.yml`)
-**Triggers:** Push to `develop` branch
+**Triggers:** Push to `develop`
 
 **What it does:**
 - Installs dependencies
@@ -41,17 +43,13 @@ feature branch → develop → PR → main → deploy
 - Runs TypeScript check
 - Builds Next.js
 
-**Purpose:** Validates code before PR to main
-
 ### 2. PR Validation (`pr-validation.yml`)
 **Triggers:** Pull request to `main`
 
 **What it does:**
 - Validates build
-- Runs Terraform plan (preview changes)
-- Comments plan on PR
-
-**Purpose:** Review infrastructure changes before merge
+- Applies Terraform to staging to catch real infra issues
+- Runs a production plan preview
 
 ### 3. Production Deploy (`deploy.yml`)
 **Triggers:** Push to `main` (after PR merge)
@@ -59,10 +57,8 @@ feature branch → develop → PR → main → deploy
 **What it does:**
 1. **Terraform Apply** - Creates/updates AWS infrastructure
 2. **Build Validation** - Ensures Next.js builds
-3. **Amplify Deploy** - Triggers production deployment
+3. **Amplify Deploy** - Amplify auto-builds from `main`
 4. **Cache Invalidation** - Clears CloudFront cache
-
-**Purpose:** Deploy to production
 
 ---
 
@@ -72,37 +68,58 @@ feature branch → develop → PR → main → deploy
 
 | Resource | Purpose |
 |----------|---------|
-| Amplify App | Next.js hosting with SSR |
+| Amplify App (WEB_COMPUTE) | Next.js SSR hosting |
+| IAM Service/Compute Role | Runtime DynamoDB access for SSR |
 | S3 (photos) | Optimized images via CloudFront |
 | S3 (uploads) | Original photo uploads |
 | CloudFront | CDN for fast image delivery |
-| DynamoDB (5 tables) | Content storage (pages, photos, projects, journal, analytics) |
+| DynamoDB (6 tables) | Content + analytics + admin auth |
 | IAM Role (OIDC) | Secure GitHub Actions auth |
 
-### Authentication
-
-GitHub Actions authenticates to AWS using **OIDC** (OpenID Connect):
-- No long-lived AWS access keys stored in GitHub
-- Role assumption based on repository identity
-- Automatic credential rotation
+### Amplify Runtime Details
+- **Compute role** grants DynamoDB access for SSR
+- **Build spec writes env vars to `.env.production`** for runtime access
+- No custom rewrite rules needed (Next.js SSR handles routing)
 
 ---
 
 ## GitHub Secrets
 
-Required secrets in **Settings → Secrets and variables → Actions**:
+Required secrets in **Settings -> Secrets and variables -> Actions**:
 
 | Secret | Description |
 |--------|-------------|
-| `AWS_ACCOUNT_ID` | AWS account ID (667516054009) |
-| `GH_ACCESS_TOKEN` | GitHub PAT for Amplify |
+| `AWS_ACCOUNT_ID` | AWS account ID for OIDC role |
+| `GH_ACCESS_TOKEN` | GitHub PAT for Amplify app creation |
+| `NEXTAUTH_URL` | Production URL for NextAuth |
 | `NEXTAUTH_SECRET` | JWT encryption secret |
-| `ADMIN_EMAIL` | Admin login email |
-| `ADMIN_PASSWORD_HASH` | SHA256 of admin password |
+| `ADMIN_EMAIL` | Seed admin login email |
+| `ADMIN_PASSWORD_HASH` | Seed admin password hash |
 | `OPENAI_API_KEY` | OpenAI API key (optional) |
 | `INSTAGRAM_ACCESS_TOKEN` | Instagram token (optional) |
 
-See `scripts/setup-github-secrets.md` for setup instructions.
+Notes:
+- `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH` seed the DynamoDB admin record on first run.
+- After seeding, admin credentials are updated in DynamoDB via the Profile page.
+
+---
+
+## Environment Variables (Amplify)
+
+Amplify environment variables are set via Terraform and written to `.env.production` during build for SSR access.
+
+Common variables:
+- `USE_MOCK_DATA=false`
+- `NEXTAUTH_URL`
+- `NEXTAUTH_SECRET`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD_HASH`
+- `DYNAMODB_TABLE_PREFIX`
+- `DYNAMODB_TABLE_ENV`
+- `DYNAMODB_REGION`
+- `S3_PHOTOS_BUCKET`
+- `S3_UPLOADS_BUCKET`
+- `CLOUDFRONT_URL`
 
 ---
 
@@ -116,115 +133,43 @@ graph TD
     C -->|No| E[Fix issues]
     E --> A
     D --> F[PR Validation]
-    F --> G[Terraform Plan]
-    G --> H{Plan OK?}
+    F --> G[Terraform Staging Apply]
+    G --> H{Staging OK?}
     H -->|Yes| I[Review & Merge]
     H -->|No| E
     I --> J[Production Deploy]
     J --> K[Terraform Apply]
     K --> L[Build Validation]
-    L --> M[Amplify Deploy]
+    L --> M[Amplify Auto-Build]
     M --> N[Invalidate CDN]
-    N --> O[Site Live!]
+    N --> O[Site Live]
 ```
-
----
-
-## Environment Variables
-
-Environment variables are set in Amplify via Terraform:
-
-| Variable | Source |
-|----------|--------|
-| `USE_MOCK_DATA` | Set to `false` in production |
-| `NEXTAUTH_URL` | Derived from domain |
-| `NEXTAUTH_SECRET` | GitHub Secret |
-| `ADMIN_EMAIL` | GitHub Secret |
-| `ADMIN_PASSWORD_HASH` | GitHub Secret |
-| `OPENAI_API_KEY` | GitHub Secret |
-| `AWS_S3_PHOTOS_BUCKET` | Terraform output |
-| `AWS_CLOUDFRONT_URL` | Terraform output |
 
 ---
 
 ## Local Development
 
 ```bash
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
 ```
 
 Server runs at `http://localhost:3000`
 
-### Local AWS Testing (Optional)
-
-```bash
-# Start LocalStack
-npm run localstack:start
-
-# Setup resources
-npm run setup:localstack
-
-# Run with local AWS
-USE_LOCALSTACK=true npm run dev
-```
-
----
-
-## Terraform Commands
-
-```bash
-cd terraform/environments/prod
-
-# Initialize
-terraform init
-
-# Preview changes
-terraform plan -var-file=terraform.tfvars
-
-# Apply changes
-terraform apply -var-file=terraform.tfvars
-
-# View outputs
-terraform output
-```
-
 ---
 
 ## Troubleshooting
 
-### Terraform State Lock
-If terraform is stuck on a lock:
-```bash
-terraform force-unlock <LOCK_ID>
-```
-
 ### Amplify Build Failure
-Check the Amplify console for build logs:
-https://us-east-1.console.aws.amazon.com/amplify/
+Check Amplify console for build logs.
 
 ### OIDC Authentication Error
-Verify the trust policy allows your branch:
+Verify the role trust policy allows your repo/branch:
 ```bash
 aws iam get-role --role-name sgoodie-github-actions-prod
 ```
 
 ---
 
-## Quick Reference
-
-| Action | Command/Steps |
-|--------|---------------|
-| Deploy to prod | Merge PR to `main` |
-| Preview infra | Create PR, check Terraform plan comment |
-| Check build status | View Actions tab in GitHub |
-| View logs | AWS Amplify Console |
-| Invalidate cache | Automatic after deploy |
-
----
-
-**Document Version:** 5.0  
+**Document Version:** 6.0  
 **Last Updated:** 2026-02-05

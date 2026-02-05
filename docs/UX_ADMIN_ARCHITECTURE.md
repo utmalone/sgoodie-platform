@@ -1,7 +1,7 @@
 # UX + Admin Architecture
 
 **Last Updated:** 2026-02-05  
-**Version:** 4.0  
+**Version:** 5.0  
 
 ---
 
@@ -15,6 +15,7 @@ The platform provides a high-end photography portfolio experience with a clean, 
 - Admin can manage content without typing URLs or code
 - SEO metadata on both pages and photos with AI optimization
 - Social links and contact info managed centrally in profile
+- Public site updates are visible on refresh
 
 ---
 
@@ -24,13 +25,13 @@ The platform provides a high-end photography portfolio experience with a clean, 
 
 | Route | Page | Content Source |
 |-------|------|----------------|
-| `/` | Home | `home.json`, `pages.json` |
-| `/portfolio/[category]` | Portfolio Category | `pages.json`, `projects.json` |
-| `/portfolio/[category]/[slug]` | Portfolio Detail | `projects.json` |
-| `/about` | About | `about.json` |
-| `/journal` | Journal Index | `journal.json` |
-| `/journal/[slug]` | Journal Detail | `journal.json` |
-| `/contact` | Contact | `contact.json` |
+| `/` | Home | `pages` table (home layout + page copy) |
+| `/portfolio/[category]` | Portfolio Category | `pages` + `projects` |
+| `/portfolio/[category]/[slug]` | Portfolio Detail | `projects` |
+| `/about` | About | `pages` table (about content) |
+| `/journal` | Journal Index | `journal` + `pages` |
+| `/journal/[slug]` | Journal Detail | `journal` |
+| `/contact` | Contact | `pages` table (contact content + profile) |
 
 ### Portfolio Categories
 - Hotels (`/portfolio/hotels`)
@@ -80,14 +81,15 @@ The platform provides a high-end photography portfolio experience with a clean, 
 
 ### Dynamic Header/Footer
 - Header social icons linked to profile URLs
+- Header is transparent over heroes only if hero exists
 - Footer displays profile contact info, availability, and social links
-- All social data managed in admin Profile page
+- All social and contact data managed in admin Profile page
 
 ---
 
 ## 3. Content Model
 
-### Profile (`profile.json`) - NEW
+### Profile (stored in `pages` table, slug `site-profile`)
 ```json
 {
   "name": "string",
@@ -113,7 +115,7 @@ The platform provides a high-end photography portfolio experience with a clean, 
 }
 ```
 
-### Photos (`photos.json`)
+### Photos (`photos` table)
 ```json
 {
   "id": "string",
@@ -125,7 +127,7 @@ The platform provides a high-end photography portfolio experience with a clean, 
 }
 ```
 
-### Projects (`projects.json`)
+### Projects (`projects` table)
 ```json
 {
   "id": "string",
@@ -141,7 +143,7 @@ The platform provides a high-end photography portfolio experience with a clean, 
 }
 ```
 
-### Journal Posts (`journal.json`)
+### Journal Posts (`journal` table)
 ```json
 {
   "slug": "string",
@@ -152,38 +154,6 @@ The platform provides a high-end photography portfolio experience with a clean, 
   "heroPhotoId": "string",
   "galleryPhotoIds": ["string"],
   "credits": [{ "label": "string", "value": "string" }]
-}
-```
-
-### About Page (`about.json`)
-```json
-{
-  "heroPhotoId": "string",
-  "heroTitle": "string",
-  "introParagraphs": ["string"],
-  "approachItems": [
-    { "title": "string", "description": "string", "photoId": "string" }
-  ],
-  "featuredPublications": ["string"],
-  "bio": {
-    "photoId": "string",
-    "paragraphs": ["string"],
-    "ctaLabel": "string",
-    "ctaUrl": "string"
-  }
-}
-```
-
-### Contact Page (`contact.json`)
-```json
-{
-  "heroPhotoId": "string",
-  "heroTitle": "string",
-  "introParagraph": "string",
-  "companyName": "string",
-  "email": "string",
-  "phone": "string",
-  "instagramHandle": "string"
 }
 ```
 
@@ -204,91 +174,50 @@ The platform provides a high-end photography portfolio experience with a clean, 
 
 ### Admin Features
 - NextAuth credentials authentication with session timeout
-- Real-time analytics tracking
+- Admin credentials stored in DynamoDB (seeded from env)
+- Real-time analytics tracking (DynamoDB)
 - AI-assisted copy and SEO optimization
 - Vision AI for automatic photo metadata
 - Draft preview before publishing
 - Master save with visual status indicators
-- Responsive layout for all screen sizes
-
-### Profile Management (NEW)
-- Edit name, title, and profile photo
-- Manage contact information (email, phone, address)
-- Configure availability (regions, note)
-- Set social media links (Instagram, LinkedIn, Twitter, Facebook)
-- Change admin password
-
-### Preview System
-- Full-screen modal with iframe
-- Context-aware: opens to relevant public page
-- Yellow header bar with "Close Preview" button
-- Shows draft changes before saving
-
-### Save System
-- Master "Save All" button tracks all pending changes
-- Individual save buttons per section
-- Visual indicators:
-  - Disabled: no changes
-  - Amber dot: unsaved changes pending
-  - Spinner: saving in progress
-  - Green checkmark: saved successfully
-  - Red X: save failed
+- Preview auto-refresh after saves
+- Profile form validation (email includes `@`, phone auto-format)
 
 ---
 
 ## 5. Data Flow
 
-### Current (Mock)
+### Production
 ```
-data/seed/ → data/local/ → lib/data/* → Page Components
-                                      ↓
-                              Profile → Header/Footer
+DynamoDB (content + analytics) -> lib/data/* -> Page Components
+                                 |-> Admin API routes
+S3 (images) -> CloudFront -> Public UI
 ```
 
-### Planned (AWS)
+### Local Mock Mode
 ```
-S3 (images) → CloudFront
-DynamoDB (content) → lib/data/* → Page Components
+data/seed -> data/local -> lib/data/* -> Page Components
 ```
 
 ---
 
 ## 6. Component Architecture
 
-### Template Components
-All public page components are templates that receive data as props:
-
-```typescript
-// Example: Portfolio detail page
-export default async function PortfolioDetailPage({ params }) {
-  const project = await getProjectBySlug(params.slug);
-  const photos = await getPhotosByIds(project.galleryPhotoIds);
-  
-  return (
-    <>
-      <ProjectHero title={project.title} photo={heroPhoto} />
-      <EditorialGallery photos={photos} captions={project.editorialCaptions} />
-    </>
-  );
-}
-```
-
 ### Layout with Profile Data
 ```typescript
-// Public layout fetches profile for header
+// Public layout fetches profile for header + footer
 export default async function PublicLayout({ children }) {
   const profile = await getProfile();
   const socialLinks = {
     instagram: profile.social.instagram.url,
     linkedin: profile.social.linkedin.url,
-    // ...
   };
-  
+
   return (
     <>
       <SiteHeader socialLinks={socialLinks} />
       <main>{children}</main>
-      <SiteFooter />
+      <SiteFooter profile={profile} />
     </>
   );
 }
@@ -321,10 +250,10 @@ export default async function PublicLayout({ children }) {
 ## 8. Open Items
 
 1. Connect real Instagram API
-2. Migrate to AWS (S3 + DynamoDB)
-3. Add Open Graph and Twitter card metadata
+2. Add Open Graph and Twitter card metadata
+3. JSON-LD structured data
 
 ---
 
-**Document Version:** 4.0  
+**Document Version:** 5.0  
 **Last Updated:** 2026-02-05

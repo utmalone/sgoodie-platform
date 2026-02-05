@@ -1,13 +1,13 @@
 # SEO Strategy and Implementation
 
 **Last Updated:** 2026-02-05  
-**Version:** 4.0  
+**Version:** 5.0  
 
 ---
 
 ## 1. SEO Approach
 
-The public site is built with Next.js App Router using server components. All public pages are SSG/ISR-ready, ensuring search engines receive fully rendered HTML and metadata.
+The public site is rendered server-side on AWS Amplify (SSR). All public pages return fully rendered HTML and metadata on request, and admin saves trigger revalidation so changes appear immediately after refresh.
 
 Admin pages are client-side, protected, and not indexed.
 
@@ -24,7 +24,7 @@ Admin pages are client-side, protected, and not indexed.
 ### Photo Metadata
 - Each photo stores `alt`, `metaTitle`, `metaDescription`, and `metaKeywords`
 - Photo metadata is editable in `/admin/photos`
-- **Vision AI auto-generates metadata** on upload using GPT-4o
+- Vision AI auto-generates metadata on upload (GPT-4o)
 
 ### Project Metadata
 - Each portfolio project has its own SEO fields
@@ -32,7 +32,7 @@ Admin pages are client-side, protected, and not indexed.
 - AI Fix buttons for individual field optimization
 
 ### Journal Metadata
-- Journal posts inherit page-level SEO patterns
+- Journal posts follow page-level metadata patterns
 - Body content contributes to page SEO
 
 ### Sitemap
@@ -74,7 +74,7 @@ Admin pages are client-side, protected, and not indexed.
 - Automatic lazy loading
 - Responsive sizing with `sizes` attribute
 - Alt text stored in photo metadata
-- **Vision AI generates descriptive alt text**
+- Vision AI generates descriptive alt text
 
 ---
 
@@ -98,26 +98,19 @@ Admin pages are client-side, protected, and not indexed.
 ### AI Batch Optimization
 - Dashboard batch action for SEO metadata
 - Processes pages, photos, portfolio projects, and journal posts
-- **Real-time SSE streaming** for progress updates
+- Real-time SSE streaming for progress updates
 - Checkboxes to select content types to optimize
 - Progress milestones displayed during processing
-
-### AI Context Rules
-- Page metadata AI receives page text and gallery photo metadata
-- Photo metadata AI analyzes the actual image using vision
-- Project metadata AI receives project content and gallery context
-- Ensures keyword consistency without stuffing
 
 ---
 
 ## 5. Technical Implementation
 
-### Server Components
-All public pages use server components:
+### Server Rendering
+All public pages are server-rendered on request:
 ```typescript
-// SSG-friendly pattern
 export default async function Page() {
-  const data = await getData(); // Build time
+  const data = await getData();
   return <Content data={data} />;
 }
 ```
@@ -136,7 +129,6 @@ export async function generateMetadata({ params }) {
 
 ### Vision AI Integration
 ```typescript
-// Photo analysis endpoint
 POST /api/admin/ai/analyze-photo
 Content-Type: multipart/form-data
 Body: { file: <image file> }
@@ -157,10 +149,9 @@ Response: {
 - [ ] Twitter card metadata
 - [ ] JSON-LD structured data for photography portfolio
 - [ ] Image optimization pipeline (WebP, AVIF variants)
-- [ ] CDN integration for faster image delivery
 - [ ] Canonical URLs for portfolio categories
 
 ---
 
-**Document Version:** 4.0  
+**Document Version:** 5.0  
 **Last Updated:** 2026-02-05

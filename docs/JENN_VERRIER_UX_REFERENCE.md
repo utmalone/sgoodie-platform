@@ -1,7 +1,7 @@
 # Jenn Verrier UX/UI Reference
 
-**Last Updated:** 2026-02-04  
-**Version:** 3.0  
+**Last Updated:** 2026-02-05  
+**Version:** 4.0  
 
 ---
 
@@ -13,16 +13,17 @@ The public UI is inspired by: https://www.jennverrier.com/
 
 ## Implementation Status
 
-### Fully Implemented ✅
+### Fully Implemented
 
 **Global**
 - Clean, minimal design with charcoal text on white
 - Generous whitespace between sections
 - Photography-focused layouts with large images
 - Transparent header over hero images, solid on scroll
+- Hero-aware header fallback when no hero exists
 
 **Header/Navigation**
-- Work, About, Journal, Contact links
+- Portfolio, About, Journal, Contact links
 - Brand text and social icons (Instagram, LinkedIn)
 - Mobile menu toggle
 
@@ -36,18 +37,17 @@ The public UI is inspired by: https://www.jennverrier.com/
 - Editorial intro block
 - Photo grid with lightbox navigation
 
-**Work Index**
+**Portfolio Index**
 - Photo grid with hover-to-reveal project titles
 - Click navigates to project detail
 - "Coming Soon" state for drafts
 
-**Work Detail Pages**
+**Portfolio Detail Pages**
 - Full-bleed hero image with title overlay
 - Editorial gallery with alternating double/single rows
 - Vertical photo offsets in double rows
 - Optional captions aligned with taller photo
 - Credits block at bottom
-- Previous/Next project navigation
 
 **About Page**
 - Hero image with title overlay
@@ -102,5 +102,5 @@ The public UI is inspired by: https://www.jennverrier.com/
 
 ---
 
-**Document Version:** 3.0  
-**Last Updated:** 2026-02-04
+**Document Version:** 4.0  
+**Last Updated:** 2026-02-05

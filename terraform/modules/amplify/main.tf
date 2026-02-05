@@ -124,34 +124,8 @@ resource "aws_amplify_branch" "main" {
 
   enable_auto_build = true
 
-  # Environment variables for this branch
-  environment_variables = var.environment_variables
-
   tags = {
     Name        = "${var.project_name}-main-${var.environment}"
-    Environment = var.environment
-  }
-}
-
-# -----------------------------------------------------------------------------
-# Development Branch (develop) - for previews
-# -----------------------------------------------------------------------------
-resource "aws_amplify_branch" "develop" {
-  app_id      = aws_amplify_app.main.id
-  branch_name = "develop"
-
-  framework = "Next.js - SSR"
-  stage     = "DEVELOPMENT"
-
-  enable_auto_build = false # We don't auto-deploy develop
-
-  # Use same env vars but with development flag
-  environment_variables = merge(var.environment_variables, {
-    NODE_ENV = "development"
-  })
-
-  tags = {
-    Name        = "${var.project_name}-develop-${var.environment}"
     Environment = var.environment
   }
 }

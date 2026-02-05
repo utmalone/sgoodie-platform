@@ -1,5 +1,7 @@
 # Branch Protection Setup Guide
 
+**Last Updated:** 2026-02-05
+
 This guide explains how to configure GitHub branch protection rules to ensure:
 - PRs can only merge when all checks pass
 - Terraform staging deployment must succeed before merging
@@ -10,9 +12,7 @@ This guide explains how to configure GitHub branch protection rules to ensure:
 ## Configure Branch Protection for `main`
 
 1. Go to: **https://github.com/utmalone/sgoodie-platform/settings/branches**
-
 2. Click **"Add branch protection rule"** (or edit existing)
-
 3. Configure these settings:
 
 ### Branch name pattern
@@ -22,25 +22,22 @@ main
 
 ### Protect matching branches
 
-✅ **Require a pull request before merging**
-- ✅ Require approvals: `1` (optional, for solo projects set to 0)
-- ✅ Dismiss stale pull request approvals when new commits are pushed
+- Require a pull request before merging
+- Require approvals: `1` (optional, for solo projects set to 0)
+- Dismiss stale pull request approvals when new commits are pushed
 
-✅ **Require status checks to pass before merging**
-- ✅ Require branches to be up to date before merging
-- **Add these required status checks:**
+- Require status checks to pass before merging
+- Require branches to be up to date before merging
+- Add these required status checks:
   - `Validate Build` (from PR Validation workflow)
   - `Deploy to Staging` (from PR Validation workflow)
   - `Preview Production Changes` (from PR Validation workflow)
   - `Lint & Security Scan` (from Terraform Lint workflow)
 
-✅ **Require conversation resolution before merging**
-
-✅ **Do not allow bypassing the above settings**
-
-❌ **Allow force pushes** (keep unchecked)
-
-❌ **Allow deletions** (keep unchecked)
+- Require conversation resolution before merging
+- Do not allow bypassing the above settings
+- Do not allow force pushes
+- Do not allow deletions
 
 4. Click **"Create"** or **"Save changes"**
 
@@ -56,8 +53,8 @@ develop
 ```
 
 ### Settings
-✅ **Require a pull request before merging** (optional)
-✅ **Require status checks to pass before merging**
+- Require a pull request before merging (optional)
+- Require status checks to pass before merging
 - Add: `Build & Validate` (from Development CI workflow)
 
 ---
@@ -68,21 +65,21 @@ develop
 
 ```
 1. Developer pushes to develop
-   ↓
+   |
 2. Development CI runs (validates build)
-   ↓
-3. Developer creates PR: develop → main
-   ↓
+   |
+3. Developer creates PR: develop -> main
+   |
 4. PR Validation runs:
-   a. Build validation ✓
-   b. Terraform APPLIES to staging ✓  ← Real deployment test!
-   c. Production plan preview ✓
-   ↓
-5. All checks pass → Merge button enabled
-   ↓
+   a. Build validation OK
+   b. Terraform applies to staging
+   c. Production plan preview
+   |
+5. All checks pass -> Merge enabled
+   |
 6. Merge to main
-   ↓
-7. Production deploy runs (safe because staging already succeeded)
+   |
+7. Production deploy runs
 ```
 
 ### What This Catches:
@@ -106,10 +103,10 @@ After your first PR, these status checks will be available:
 
 | Workflow | Job Name | Required? |
 |----------|----------|-----------|
-| PR Validation | `Validate Build` | ✅ Yes |
-| PR Validation | `Deploy to Staging` | ✅ Yes |
-| PR Validation | `Preview Production Changes` | ✅ Yes |
-| Terraform Lint | `Lint & Security Scan` | ✅ Yes |
+| PR Validation | `Validate Build` | Yes |
+| PR Validation | `Deploy to Staging` | Yes |
+| PR Validation | `Preview Production Changes` | Yes |
+| Terraform Lint | `Lint & Security Scan` | Yes |
 | Development CI | `Build & Validate` | Optional |
 
 ---

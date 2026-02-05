@@ -1,32 +1,31 @@
 # Technical Architecture - S.Goodie Photography Platform
 
 **Last Updated:** 2026-02-05  
-**Version:** 4.0  
+**Version:** 5.0  
 
 ---
 
 ## 1. Architecture Overview
 
-This project runs as a single Next.js application containing the public site, admin UI, and all API routes.
+This project runs as a single Next.js application containing the public site, admin UI, and all API routes. Production runs on AWS Amplify (SSR) with DynamoDB as the primary data store.
 
 ```
 Browser
-  |-- Public pages (SSR/SSG-ready) -> Next.js App Router
-  |-- Admin UI (client components) -> Next.js App Router
-  |-- Admin API calls             -> /app/api/**
-                                    |-- Local JSON store (data/local)
-                                    |-- Analytics store (data/local/analytics.json)
-                                    |-- OpenAI Responses API (server-side fetch)
-                                    |-- OpenAI Vision API (photo analysis)
+  |-- Public pages (SSR) -> Next.js App Router (Amplify SSR)
+  |-- Admin UI (client)  -> Next.js App Router
+  |-- Admin API routes   -> /app/api/**
+                                |-- DynamoDB (content + analytics)
+                                |-- S3 + CloudFront (images)
+                                |-- OpenAI Responses API (text + vision)
 ```
 
 ### Key Principles
 - Single deployable app with route groups for public and admin
-- All content comes from backend (mock JSON now, API later)
-- Frontend components are reusable templates
+- DynamoDB is source of truth in production
+- Local mock data supported via `USE_MOCK_DATA=true`
 - Authenticated admin routes with NextAuth and session timeout
-- Real analytics data recorded locally
-- AI-assisted copy and metadata optimization (including vision AI for photos)
+- Admin changes trigger revalidation + preview refresh
+- Public pages render on request for fresh data
 
 ---
 
@@ -34,14 +33,15 @@ Browser
 
 | Category | Technology |
 |----------|------------|
-| Framework | Next.js 14 (App Router) |
+| Framework | Next.js 14 (App Router, SSR on Amplify) |
 | Language | TypeScript 5 |
 | UI | React 18 |
 | Styling | CSS Modules (`styles/public/*.module.css`, `styles/admin/*.module.css`) |
 | Auth | NextAuth Credentials with JWT sessions |
-| Data | JSON files under `data/local/` |
-| Analytics | Custom client provider and server route |
+| Data | DynamoDB (prod) + JSON mock store (local) |
+| Analytics | DynamoDB with TTL (90 days) |
 | AI | OpenAI Responses API + Vision API |
+| Infra | Terraform + AWS Amplify + S3 + CloudFront |
 
 ---
 
@@ -54,327 +54,166 @@ app/
     contact/
     journal/
       [slug]/
-    portfolio/           # Portfolio category pages
+    portfolio/
       [category]/
-        [slug]/          # Individual project pages
-  (admin)/admin/         # Admin pages
+        [slug]/
+    work/                # Legacy index + detail routes (still used by preview)
+  (admin)/admin/
     dashboard/
     pages/
     photos/
-    portfolio/           # Portfolio management
+    portfolio/
       new/
       [id]/
-    journal/             # Journal management
+    journal/
       new/
       [id]/
-    profile/             # NEW - Admin profile management
-  api/                   # API routes
+    profile/
+  api/
     admin/
       ai/
-        analyze-photo/   # NEW - Vision AI photo analysis
-        batch-stream/    # NEW - SSE batch optimization
-      layouts/           # Home, About, Contact layouts
-      profile/           # NEW - Profile CRUD
-      password/          # NEW - Password change
+        analyze-photo/
+        batch-stream/
+      layouts/
+      profile/
+      password/
     analytics/
     auth/
     instagram/
 
 components/
-  admin/                 # Admin UI components
-    AdminDashboardClient.tsx
-    AdminNav.tsx
-    AdminPagesClient.tsx
-    AdminPhotosClient.tsx
-    AdminPortfolioClient.tsx
-    AdminPortfolioEditorClient.tsx
-    AdminJournalClient.tsx
-    AdminJournalEditorClient.tsx
-    AdminProfileClient.tsx    # NEW
-    AdminPreviewModal.tsx
-    AdminShell.tsx
-  analytics/             # Analytics provider
-  layout/                # Header, footer
-    SiteHeader.tsx       # Dynamic social links
-    SiteFooter.tsx       # Dynamic profile data
-  portfolio/             # Public UI components
-    ContactForm.tsx
-    EditorialGallery.tsx
-    FullBleedHero.tsx
-    GalleryLightbox.tsx
-    HomeGalleryGrid.tsx
-    InstagramFeed.tsx
-    JournalGrid.tsx
-    JournalPhotoGrid.tsx
-    PhotoGrid.tsx
-    ProjectHero.tsx
-    WorkGalleryGrid.tsx
+  admin/
+  analytics/
+  layout/
+  portfolio/
 
 lib/
-  admin/                 # Admin utilities
-    draft-store.ts
-    page-config.ts
-    portfolio-config.ts  # Portfolio categories
-    save-context.tsx     # NEW - Master save state
-    preview-context.tsx  # NEW - Preview modal state
-  ai/                    # AI integration
-    openai.ts            # Vision AI support
-  analytics/             # Analytics helpers
-  auth/                  # Auth utilities
-  data/                  # Data fetching
+  admin/
+  ai/
+  analytics/
+  auth/
+  aws/
+    dynamodb.ts
+  data/
     about.ts
     contact.ts
     home.ts
     journal.ts
-    local-store.ts
     pages.ts
     photos.ts
-    profile.ts           # NEW - Profile data
+    profile.ts
     projects.ts
+    work.ts
+    db.ts
 
 styles/
-  public/                # CSS Modules for public UI
-  admin/                 # CSS Modules for admin UI
-    AdminShared.module.css
-    AdminProfile.module.css
-
-data/
-  seed/                  # Seed data (source of truth)
-  local/                 # Working copy (gitignored)
-    profile.json         # NEW - Profile data
+  public/
+  admin/
 
 types/
-  index.ts               # TypeScript type definitions (includes SiteProfile)
+  index.ts
 ```
 
 ---
 
 ## 4. Public Site Architecture
 
-### Page Components
-Pages use server components and read content from `lib/data/*` functions:
-
-```typescript
-// Example: About page
-export default async function AboutPage() {
-  const content = await getAboutContent();
-  const heroPhoto = await getPhotoById(content.heroPhotoId);
-  // ... render with data
-}
-```
-
-### Data Flow
-1. Seed data in `data/seed/` is the source of truth
-2. `local-store.ts` copies seed to `data/local/` if missing
-3. Page components call data functions at build/request time
-4. Data is passed to presentational components as props
+### Rendering
+- Public layout is **force-dynamic** to ensure fresh data on refresh
+- Pages fetch data from `lib/data/*` on request
+- Admin saves trigger revalidation so CDN/stale data clears quickly
 
 ### Dynamic Header/Footer
-- `SiteHeader` receives `socialLinks` prop from layout
-- `SiteFooter` reads profile data directly for contact info and social links
-- Social icons only display if URLs are configured in admin profile
+- `SiteHeader` uses hero-aware styling: transparent only if a hero exists
+- `SiteFooter` renders profile contact/social data (profile is fetched once in layout)
 
 ### Metadata
-Generated via `generateMetadata` using stored fields:
-- `metaTitle`
-- `metaDescription`
-- `metaKeywords`
+- `generateMetadata` pulls `metaTitle`, `metaDescription`, `metaKeywords` from storage
+- Metadata always reflects latest saved data
 
 ---
 
-## 5. Component Architecture
+## 5. Data Architecture
 
-### Layout Components
+### DynamoDB Tables (Production)
+| Table | Purpose |
+|-------|---------|
+| `pages` | Page copy + home/about/contact layouts + profile + work index |
+| `photos` | Photo assets + SEO metadata |
+| `projects` | Portfolio projects |
+| `journal` | Journal posts |
+| `analytics` | Event stream (TTL 90 days) |
+| `admins` | Admin login record |
 
-| Component | Purpose |
-|-----------|---------|
-| `SiteHeader` | Navigation with transparent/solid state, dynamic social icons |
-| `SiteFooter` | Footer with dynamic profile data (contact, social, availability) |
-| `FullBleedHero` | Full-viewport image with overlay |
-| `ProjectHero` | Hero with title/subtitle overlay |
-
-### Gallery Components
-
-| Component | Purpose |
-|-----------|---------|
-| `EditorialGallery` | Alternating double/single rows with offsets and captions |
-| `WorkGalleryGrid` | Hover-to-reveal grid for portfolio index |
-| `JournalGrid` | Post cards with excerpts for journal index |
-| `JournalPhotoGrid` | 3-column grid with large padding for journal posts |
-| `HomeGalleryGrid` | Gallery grid for home page |
-| `PhotoGrid` | Simple grid for general use |
-| `GalleryLightbox` | Full-screen image viewer |
-
-### Form Components
-
-| Component | Purpose |
-|-----------|---------|
-| `ContactForm` | Styled contact form with validation |
-| `InstagramFeed` | 6-photo Instagram grid |
+### Local Mock Mode
+- Enabled with `USE_MOCK_DATA=true`
+- Uses `data/local/*.json`
+- Same API surface as DynamoDB
 
 ---
 
-## 6. Data Types
-
-### Core Types
-```typescript
-type Project = {
-  id: string;
-  slug: string;
-  title: string;
-  subtitle?: string;
-  category?: PortfolioCategory;  // hotels, restaurants, travel, home-garden, brand
-  heroPhotoId: string;
-  galleryPhotoIds: string[];
-  editorialCaptions?: EditorialRowCaption[];
-  // ...
-};
-
-type PortfolioCategory = 'hotels' | 'restaurants' | 'travel' | 'home-garden' | 'brand';
-
-type SiteProfile = {
-  name: string;
-  title: string;
-  photoId: string;
-  email: string;
-  phone: string;
-  address: { street: string; city: string; state: string };
-  availability: { regions: string[]; note: string };
-  social: {
-    instagram: { url: string; handle?: string };
-    linkedin: { url: string; name?: string };
-    twitter: { url: string; handle?: string };
-    facebook: { url: string; name?: string };
-  };
-};
-
-type AboutPageContent = {
-  heroPhotoId: string;
-  heroTitle: string;
-  introParagraphs: string[];
-  approachItems: ApproachItem[];
-  featuredPublications: string[];
-  bio: BioSection;
-};
-
-type ContactPageContent = {
-  heroPhotoId: string;
-  heroTitle: string;
-  introParagraph: string;
-  companyName: string;
-  email: string;
-  phone: string;
-  instagramHandle: string;
-};
-```
-
----
-
-## 7. Admin Architecture
+## 6. Admin Architecture
 
 ### Authentication
 - NextAuth Credentials provider
-- Session stored as JWT with expiration
-- Inactivity timeout (configurable)
-- Guard helpers: `requireAdmin` and `requireAdminApi`
-- Logout functionality
+- Admin record stored in `admins` table
+- `ADMIN_EMAIL` + `ADMIN_PASSWORD_HASH` seed DynamoDB on first run
+- Admin email/password updates persist to DynamoDB
 
-### Admin Pages
-| Route | Purpose |
-|-------|---------|
-| `/admin/profile` | **NEW** - Manage profile, contact info, social links, change password |
-| `/admin/dashboard` | Analytics and AI batch actions |
-| `/admin/pages` | Edit page text and metadata (includes portfolio category pages) |
-| `/admin/portfolio` | Manage portfolio projects with full CRUD |
-| `/admin/portfolio/[id]` | Edit individual project |
-| `/admin/journal` | Manage journal posts with full CRUD |
-| `/admin/journal/[id]` | Edit individual post |
-| `/admin/photos` | Upload and manage photos with AI analysis |
-
-### Preview System
-- Full-screen modal preview (`AdminPreviewModal`)
-- Context-aware: opens to relevant public page based on current admin section
-- Yellow header bar with "Close Preview" button
-- Loads actual public site in iframe
-
-### Master Save System
-- `SaveContext` tracks pending changes across all sections
-- "Save All" button in sidebar saves all changes atomically
-- Visual indicators: pending (amber), saving (spinner), success (green), error (red)
-- Disabled until changes are detected
-
-### Draft Preview
-- Draft content stored in browser localStorage
-- Preview reads from draft first, falls back to saved data
+### Admin UX
+- Master "Save All" collects pending changes
+- Preview modal loads public site in iframe
+- Preview auto-refreshes after successful saves
+- Profile form includes phone auto-formatting and email validation
 
 ---
 
-## 8. Analytics Architecture
+## 7. Analytics Architecture
 
 ### Client
-- `AnalyticsProvider` records page views and time spent
-- Excludes admin and API routes
-- Stores visitor and session IDs in localStorage
+- Captures page views and time on page
+- Skips admin and API routes
 
 ### Server
-- `POST /api/analytics/events` appends events to `analytics.json`
-- `GET /api/admin/stats` aggregates stats for dashboard
+- `POST /api/analytics/events` writes to DynamoDB
+- TTL set to 90 days to control table size
+- `GET /api/admin/stats` aggregates metrics
 
 ---
 
-## 9. AI Architecture
+## 8. Environment Variables
 
-### Endpoints
-| Route | Purpose |
-|-------|---------|
-| `GET /api/admin/ai/models` | List available models |
-| `POST /api/admin/ai/optimize` | Optimize single field |
-| `POST /api/admin/ai/batch` | Bulk SEO/text updates |
-| `POST /api/admin/ai/batch-stream` | **NEW** - SSE streaming batch optimization |
-| `POST /api/admin/ai/analyze-photo` | **NEW** - Vision AI photo analysis |
-
-### Vision AI (Photo Analysis)
-- Uses GPT-4o Vision to analyze uploaded photos
-- Generates: alt text, SEO title, description, keywords
-- Triggered automatically on photo upload (optional)
-- System message provides photography context
-
-### Batch Optimization
-- Real-time progress via Server-Sent Events (SSE)
-- Processes pages, photos, portfolio projects, and journal posts
-- Checkboxes to include/exclude content types
-- Progress percentage and milestone indicators
-
----
-
-## 10. Environment Variables
-
-### Required
+### Required (Production)
 ```
-USE_MOCK_DATA=true
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD_HASH=<sha256-hex>
-NEXTAUTH_SECRET=<random-string>
+NEXTAUTH_URL
+NEXTAUTH_SECRET
+ADMIN_EMAIL
+ADMIN_PASSWORD_HASH
+DYNAMODB_TABLE_PREFIX
+DYNAMODB_TABLE_ENV
+DYNAMODB_REGION
+S3_PHOTOS_BUCKET
+S3_UPLOADS_BUCKET
+CLOUDFRONT_URL
+USE_MOCK_DATA=false
 ```
 
 ### Optional
 ```
-OPENAI_API_KEY=<your-key>
-OPENAI_DEFAULT_MODEL=gpt-4
-INSTAGRAM_ACCESS_TOKEN=<token>
+OPENAI_API_KEY
+INSTAGRAM_ACCESS_TOKEN
+USE_LOCALSTACK=true
+DYNAMODB_ACCESS_KEY_ID
+DYNAMODB_SECRET_ACCESS_KEY
+DYNAMODB_SESSION_TOKEN
+REVALIDATE_TOKEN
 ```
 
----
-
-## 11. Future AWS Architecture
-
-- S3 for photos and image variants
-- DynamoDB for structured content
-- CloudFront for delivery
-- LocalStack for local AWS emulation
-- Terraform for infrastructure provisioning
+Notes:
+- Amplify build writes selected env vars to `.env.production` for SSR access
+- `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH` are **seed values**, not the live auth store
 
 ---
 
-**Document Version:** 4.0  
+**Document Version:** 5.0  
 **Last Updated:** 2026-02-05

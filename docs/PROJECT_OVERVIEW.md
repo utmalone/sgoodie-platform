@@ -2,14 +2,14 @@
 
 **Repository:** `sgoodie-platform`  
 **Created:** 2025-01-16  
-**Status:** Active development (local prototype with mock data)  
+**Status:** Production on AWS Amplify (SSR) with DynamoDB (local mock mode supported)  
 **Last Updated:** 2026-02-05  
 
 ---
 
 ## 1. Migration Purpose & Goals
 
-### Current State
+### Current State (Pre-Migration)
 - Platform: WordPress website hosted on Bluehost
 - Issues:
   - Slow page load times
@@ -58,35 +58,35 @@
 - **GalleryLightbox**: Full-screen image viewer with prev/next navigation
 
 ### Header Behavior
-- Transparent over hero images on: Home, About, Portfolio Detail, Journal, Contact
-- Solid white on: Portfolio category pages, Journal detail pages
+- Transparent over hero images **only when a hero exists**
+- Falls back to solid header when hero content is missing (so menu is always visible)
 - Transitions to solid on scroll
 - Dynamic social icons linked to profile data
 
 ### Admin (Authenticated)
 - NextAuth credentials login (single admin)
-- **Profile management**: Personal info, contact details, social links
-- Admin dashboard with real analytics (local mock DB)
-- Pages editor: text and SEO for all page types including portfolio categories
-- Photos editor: upload, assign to pages, drag to reorder, edit metadata, AI analysis
-- Portfolio editor: full CRUD for portfolio projects with categories
-- Journal editor: full CRUD for journal posts
-- **Full-screen preview modal**: Context-aware site preview
-- **Master "Save All" button**: Saves all pending changes across sections
-- **Session management**: Inactivity timeout, logout functionality
+- **Admin credentials stored in DynamoDB** (seeded from env on first run)
+- **Profile management**: personal info, contact details, social links
+- **Password change** updates DynamoDB admin record
+- **Pages editor**: text and SEO for all page types including portfolio categories
+- **Photos editor**: upload, assign to pages, drag to reorder, edit metadata, AI analysis
+- **Portfolio editor**: full CRUD for portfolio projects with categories
+- **Journal editor**: full CRUD for journal posts
+- **Full-screen preview modal** with auto-refresh on save
+- **Master "Save All" button** saves all pending changes across sections
+- **Session management**: inactivity timeout, logout functionality
 
 ### AI Features
 - AI Fix buttons on page text and metadata fields
 - AI Fix buttons on photo metadata fields
-- **AI photo analysis**: Vision AI (GPT-4o) generates metadata from images
+- **AI photo analysis** (Vision) generates metadata from images
 - Dashboard batch AI optimize for SEO metadata and text copy
-- **Real-time SSE streaming**: Progress updates during batch optimization
-- AI model dropdown with curated top models
+- **Real-time SSE streaming** progress updates during batch optimization
 - OpenAI integration via the Responses API
 
-### Analytics (Real, Stored Locally)
+### Analytics (Stored in DynamoDB)
 - Client-side tracking of page views and time on page
-- Events stored in `data/local/analytics.json`
+- Events stored in `analytics` DynamoDB table (TTL: 90 days)
 - Dashboard filters: daily, monthly, quarterly, yearly
 - Top pages table uses friendly labels for non-technical admins
 
@@ -94,39 +94,47 @@
 
 ## 3. Data Architecture
 
-### Backend Data (Mock)
-All content comes from JSON files in `data/local/` (seeded from `data/seed/`):
+### Runtime Modes
+- **Production:** DynamoDB for all content + analytics
+- **Local:** JSON files in `data/local/` when `USE_MOCK_DATA=true`
 
-| File | Content |
-|------|---------|
-| `pages.json` | Basic page content (home, about, portfolio categories, journal, contact) |
-| `about.json` | Structured about page content (hero, intro, approach, publications, bio) |
-| `contact.json` | Structured contact page content (hero, form fields, social links) |
-| `photos.json` | All photo assets with metadata |
-| `projects.json` | Portfolio projects with gallery configurations and categories |
-| `journal.json` | Journal posts with body text and credits |
-| `home.json` | Home page layout configuration |
-| `work.json` | Portfolio project ordering |
-| `profile.json` | **NEW** - Admin profile, contact info, social links |
+### DynamoDB Tables (Production)
+- `pages` (page copy, home layout, about, contact, profile, work index)
+- `photos`
+- `projects`
+- `journal`
+- `analytics`
+- `admins`
+
+### Local JSON (Mock Mode)
+- `pages.json`
+- `about.json`
+- `contact.json`
+- `photos.json`
+- `projects.json`
+- `journal.json`
+- `home.json`
+- `work.json`
+- `profile.json`
 
 ### Frontend Data Flow
-1. Data fetching functions in `lib/data/` read from local JSON (or future API)
-2. Page components call these functions at build/request time
-3. Data is passed to presentational components as props
-4. All content is dynamic - frontend is a template that renders backend data
+1. `lib/data/*` reads from DynamoDB in production or local JSON in mock mode
+2. Page components fetch data at request time (SSR)
+3. Admin saves trigger revalidation and preview refresh
+4. Public pages show updated data on refresh
 
 ---
 
 ## 4. Technical Stack
 
-- **Framework:** Next.js 14 (App Router)
+- **Framework:** Next.js 14 (App Router, SSR on Amplify)
 - **Language:** TypeScript 5
 - **Styling:** CSS Modules under `styles/public/` and `styles/admin/`
 - **Auth:** NextAuth (Credentials) with session timeout
-- **Data:** Local JSON store under `data/local/` seeded from `data/seed/`
+- **Data:** DynamoDB (prod), JSON mock store (local)
 - **API:** Next.js Route Handlers in `app/api/`
-- **Analytics:** Client provider + API storage
-- **AI:** OpenAI Responses API via server routes (including Vision for photos)
+- **Analytics:** DynamoDB-backed with TTL
+- **AI:** OpenAI Responses API + Vision
 
 ---
 
@@ -138,8 +146,8 @@ All content comes from JSON files in `data/local/` (seeded from `data/seed/`):
 
 ### Setup
 1. Copy `.env.example` to `.env.local` and update values
-2. Ensure `USE_MOCK_DATA=true` (local JSON storage)
-3. Set admin credentials in `.env.local`
+2. Set `USE_MOCK_DATA=true` for local JSON storage
+3. Set `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH` in `.env.local`
 4. Add your OpenAI key if AI features are needed
 
 ### Commands
@@ -154,15 +162,17 @@ npm run dev
 
 ---
 
-## 6. Future AWS Architecture (Planned)
+## 6. AWS Architecture (Current)
 
-- S3 for photo storage
-- DynamoDB for structured content
-- CloudFront for image delivery
-- Terraform modules for infrastructure
-- LocalStack for local AWS emulation
+- **Amplify SSR (WEB_COMPUTE)** for Next.js hosting
+- **Compute Role** grants runtime access to DynamoDB
+- **Build spec writes env vars to `.env.production`** so SSR routes can read them
+- **DynamoDB** for content + analytics
+- **S3 + CloudFront** for image storage and delivery
+- **Terraform** for infrastructure provisioning
+- **GitHub Actions OIDC** for secure CI/CD authentication
 
 ---
 
-**Document Version:** 4.0  
+**Document Version:** 5.0  
 **Last Updated:** 2026-02-05
