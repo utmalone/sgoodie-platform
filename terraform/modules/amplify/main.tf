@@ -75,8 +75,8 @@ resource "aws_amplify_app" "main" {
   environment_variables = var.environment_variables
 
   # Build settings for Next.js SSR
-  # Note: USE_MOCK_DATA=true during build so we don't need DynamoDB access
-  # Runtime will use the branch environment variables (USE_MOCK_DATA=false)
+  # Note: Next.js server components don't automatically receive Amplify env vars at runtime.
+  # Write required vars into .env.production during build so SSR routes can read them.
   build_spec = <<-EOT
     version: 1
     frontend:
@@ -86,7 +86,9 @@ resource "aws_amplify_app" "main" {
             - npm ci
         build:
           commands:
-            - USE_MOCK_DATA=true npm run build
+            - rm -f .env.production
+            - env | grep -E '^(NEXTAUTH_URL|NEXTAUTH_SECRET|ADMIN_EMAIL|ADMIN_PASSWORD_HASH|DYNAMODB_TABLE_PREFIX|DYNAMODB_TABLE_ENV|DYNAMODB_REGION|USE_MOCK_DATA|USE_LOCALSTACK|ADMIN_DEBUG_TOKEN|REVALIDATE_TOKEN)=' >> .env.production
+            - npm run build
       artifacts:
         baseDirectory: .next
         files:
