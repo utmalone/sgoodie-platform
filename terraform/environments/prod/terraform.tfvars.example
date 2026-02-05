@@ -1,0 +1,31 @@
+# =============================================================================
+# Terraform Variables - EXAMPLE FILE
+# =============================================================================
+# Copy this file to terraform.tfvars and fill in your values.
+# NEVER commit terraform.tfvars to git - it contains secrets!
+# These values should come from GitHub Secrets in CI/CD.
+# =============================================================================
+
+# AWS Configuration
+aws_region  = "us-east-1"
+environment = "prod"
+
+# GitHub Configuration
+github_org  = "utmalone"
+github_repo = "sgoodie-platform"
+
+# GitHub Personal Access Token (create at https://github.com/settings/tokens)
+# Required scopes: repo, admin:repo_hook
+github_access_token = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Custom domain (optional - leave empty to use Amplify default domain)
+domain_name = ""
+
+# Application Secrets
+nextauth_secret     = "your-random-32-char-secret-here"
+admin_email         = "admin@example.com"
+admin_password_hash = "sha256-hash-of-your-password"
+
+# Optional API Keys
+openai_api_key         = ""
+instagram_access_token = ""

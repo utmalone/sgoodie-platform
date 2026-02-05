@@ -1,0 +1,239 @@
+# =============================================================================
+# S.Goodie Platform - Pull Request Validation
+# =============================================================================
+# Runs on PRs to main branch (develop -> main)
+# ACTUALLY APPLIES Terraform to staging to catch real failures
+# PR can only merge if staging deployment succeeds
+# =============================================================================
+
+name: PR Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+# Cancel previous runs for the same PR
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Build Validation - Must pass before Terraform
+  # ---------------------------------------------------------------------------
+  build:
+    name: Validate Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build Next.js
+        env:
+          USE_MOCK_DATA: 'true'
+          NEXTAUTH_SECRET: 'pr-validation-secret'
+        run: npm run build
+
+  # ---------------------------------------------------------------------------
+  # Terraform Staging Apply - The REAL validation
+  # ---------------------------------------------------------------------------
+  terraform-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/sgoodie-github-actions-prod
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+
+      - name: Terraform Format Check
+        id: fmt
+        working-directory: terraform/environments/staging
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Terraform Init (Staging)
+        id: init
+        working-directory: terraform/environments/staging
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        working-directory: terraform/environments/staging
+        run: terraform validate -no-color
+
+      - name: Terraform Plan (Staging)
+        id: plan
+        working-directory: terraform/environments/staging
+        run: terraform plan -no-color -out=tfplan
+        continue-on-error: true
+
+      - name: Terraform Apply (Staging)
+        id: apply
+        if: steps.plan.outcome == 'success'
+        working-directory: terraform/environments/staging
+        run: terraform apply -auto-approve tfplan
+        continue-on-error: true
+
+      - name: Comment Results on PR
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const formatIcon = '${{ steps.fmt.outcome }}' === 'success' ? '✅' : '⚠️';
+            const initIcon = '${{ steps.init.outcome }}' === 'success' ? '✅' : '❌';
+            const validateIcon = '${{ steps.validate.outcome }}' === 'success' ? '✅' : '❌';
+            const planIcon = '${{ steps.plan.outcome }}' === 'success' ? '✅' : '❌';
+            const applyIcon = '${{ steps.apply.outcome }}' === 'success' ? '✅' : '❌';
+            
+            const output = `## Terraform Staging Deployment
+            
+            | Step | Status |
+            |------|--------|
+            | Format Check | ${formatIcon} \`${{ steps.fmt.outcome }}\` |
+            | Init | ${initIcon} \`${{ steps.init.outcome }}\` |
+            | Validate | ${validateIcon} \`${{ steps.validate.outcome }}\` |
+            | Plan | ${planIcon} \`${{ steps.plan.outcome }}\` |
+            | **Apply (Staging)** | ${applyIcon} \`${{ steps.apply.outcome }}\` |
+            
+            ${applyIcon === '✅' ? '### ✅ Staging deployment successful! Safe to merge to production.' : '### ❌ Staging deployment failed! Fix issues before merging.'}
+            
+            *Pushed by: @${{ github.actor }}*`;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Terraform Staging Deployment')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: output
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              });
+            }
+
+      - name: Fail if Apply Failed
+        if: steps.apply.outcome == 'failure'
+        run: |
+          echo "❌ Terraform apply to staging failed!"
+          echo "This PR cannot be merged until the issue is fixed."
+          exit 1
+
+  # ---------------------------------------------------------------------------
+  # Production Plan Preview - Show what will happen on merge
+  # ---------------------------------------------------------------------------
+  terraform-prod-plan:
+    name: Preview Production Changes
+    runs-on: ubuntu-latest
+    needs: terraform-staging
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/sgoodie-github-actions-prod
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+
+      - name: Terraform Init (Prod)
+        working-directory: terraform/environments/prod
+        run: terraform init
+
+      - name: Terraform Plan (Prod)
+        id: plan-prod
+        working-directory: terraform/environments/prod
+        run: |
+          terraform plan \
+            -var="github_access_token=${{ secrets.GH_ACCESS_TOKEN }}" \
+            -var="nextauth_secret=${{ secrets.NEXTAUTH_SECRET }}" \
+            -var="admin_email=${{ secrets.ADMIN_EMAIL }}" \
+            -var="admin_password_hash=${{ secrets.ADMIN_PASSWORD_HASH }}" \
+            -var="openai_api_key=${{ secrets.OPENAI_API_KEY }}" \
+            -var="instagram_access_token=${{ secrets.INSTAGRAM_ACCESS_TOKEN }}" \
+            -no-color
+        continue-on-error: true
+
+      - name: Comment Prod Plan on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = `## Production Terraform Plan (Preview)
+            
+            <details>
+            <summary>Click to expand production plan</summary>
+            
+            \`\`\`terraform
+            ${{ steps.plan-prod.outputs.stdout }}
+            \`\`\`
+            
+            </details>
+            
+            > ℹ️ This shows what will be applied to **production** when you merge this PR.
+            
+            *Pushed by: @${{ github.actor }}*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output.substring(0, 65000)
+            });

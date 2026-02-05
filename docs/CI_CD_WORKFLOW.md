@@ -1,178 +1,230 @@
 # CI/CD Workflow Documentation
 
 **Last Updated:** 2026-02-05  
-**Version:** 4.0  
+**Version:** 5.0  
 
 ---
 
 ## Overview
 
-This document describes the CI/CD state for the S.Goodie Photography Platform.
-The codebase is a single Next.js app at the repo root.
-
----
-
-## Current State
-
-### Project Structure
-```
-sgoodie-platform/
-├── app/           # Next.js App Router pages
-│   ├── (public)/  # Public routes (home, portfolio, journal, about, contact)
-│   ├── (admin)/   # Admin routes (protected)
-│   └── api/       # API routes
-├── components/    # React components
-│   ├── admin/     # Admin UI components
-│   ├── layout/    # Header, footer
-│   └── portfolio/ # Public portfolio components
-├── lib/           # Data fetching and utilities
-│   ├── admin/     # Admin utilities (save context, preview context)
-│   ├── ai/        # OpenAI integration
-│   ├── auth/      # Authentication helpers
-│   └── data/      # Data access layer
-├── styles/        # CSS Modules
-│   ├── public/    # Public site styles
-│   └── admin/     # Admin UI styles
-├── data/          # Mock data
-│   ├── seed/      # Source of truth (committed)
-│   └── local/     # Working copy (gitignored)
-├── types/         # TypeScript types
-└── docs/          # Documentation
-```
-
-### Data Files
-| File | Purpose |
-|------|---------|
-| `pages.json` | Static page content and SEO |
-| `projects.json` | Portfolio projects with categories |
-| `journal.json` | Journal posts |
-| `photos.json` | Photo assets and metadata |
-| `home.json` | Home page layout |
-| `about.json` | About page structure |
-| `contact.json` | Contact page structure |
-| `work.json` | Portfolio project ordering |
-| `profile.json` | Admin profile and social links |
-| `analytics.json` | Analytics events (local only) |
-
-### Legacy Workflows
-The `.github/workflows/` folder contains legacy files from a previous monorepo structure:
-- `frontend-ci.yml` (targets `apps/frontend/**`)
-- `backend-ci.yml` (targets `services/backend/**`)
-- `terraform-ci.yml` (targets `terraform/**`)
-
-These workflows do not run against the current root app structure.
-
----
-
-## Recommended CI Pipeline
-
-When automating builds and deploys, use a root-level workflow:
-
-### Trigger Paths
-```yaml
-on:
-  push:
-    paths:
-      - 'app/**'
-      - 'components/**'
-      - 'lib/**'
-      - 'styles/**'
-      - 'types/**'
-      - 'data/seed/**'
-      - 'package*.json'
-```
-
-### Jobs
-```yaml
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run build
-```
+The S.Goodie Photography Platform uses GitHub Actions for CI/CD, deploying to AWS via:
+- **AWS Amplify** for Next.js hosting
+- **S3** for photo storage
+- **CloudFront** for CDN
+- **DynamoDB** for content storage
+- **Terraform** for infrastructure as code
 
 ---
 
 ## Branch Strategy
 
-- `main`: Production-ready code
-- `develop`: Active development
-
-### Flow
 ```
 feature branch → develop → PR → main → deploy
+```
+
+| Branch | Purpose | Auto Deploy? |
+|--------|---------|--------------|
+| `develop` | Active development, testing | No |
+| `main` | Production-ready code | Yes |
+| `feature/*` | Individual features | No |
+
+---
+
+## GitHub Workflows
+
+### 1. Development CI (`develop-ci.yml`)
+**Triggers:** Push to `develop` branch
+
+**What it does:**
+- Installs dependencies
+- Runs linter
+- Runs TypeScript check
+- Builds Next.js
+
+**Purpose:** Validates code before PR to main
+
+### 2. PR Validation (`pr-validation.yml`)
+**Triggers:** Pull request to `main`
+
+**What it does:**
+- Validates build
+- Runs Terraform plan (preview changes)
+- Comments plan on PR
+
+**Purpose:** Review infrastructure changes before merge
+
+### 3. Production Deploy (`deploy.yml`)
+**Triggers:** Push to `main` (after PR merge)
+
+**What it does:**
+1. **Terraform Apply** - Creates/updates AWS infrastructure
+2. **Build Validation** - Ensures Next.js builds
+3. **Amplify Deploy** - Triggers production deployment
+4. **Cache Invalidation** - Clears CloudFront cache
+
+**Purpose:** Deploy to production
+
+---
+
+## AWS Infrastructure
+
+### Resources Created by Terraform
+
+| Resource | Purpose |
+|----------|---------|
+| Amplify App | Next.js hosting with SSR |
+| S3 (photos) | Optimized images via CloudFront |
+| S3 (uploads) | Original photo uploads |
+| CloudFront | CDN for fast image delivery |
+| DynamoDB (5 tables) | Content storage (pages, photos, projects, journal, analytics) |
+| IAM Role (OIDC) | Secure GitHub Actions auth |
+
+### Authentication
+
+GitHub Actions authenticates to AWS using **OIDC** (OpenID Connect):
+- No long-lived AWS access keys stored in GitHub
+- Role assumption based on repository identity
+- Automatic credential rotation
+
+---
+
+## GitHub Secrets
+
+Required secrets in **Settings → Secrets and variables → Actions**:
+
+| Secret | Description |
+|--------|-------------|
+| `AWS_ACCOUNT_ID` | AWS account ID (667516054009) |
+| `GH_ACCESS_TOKEN` | GitHub PAT for Amplify |
+| `NEXTAUTH_SECRET` | JWT encryption secret |
+| `ADMIN_EMAIL` | Admin login email |
+| `ADMIN_PASSWORD_HASH` | SHA256 of admin password |
+| `OPENAI_API_KEY` | OpenAI API key (optional) |
+| `INSTAGRAM_ACCESS_TOKEN` | Instagram token (optional) |
+
+See `scripts/setup-github-secrets.md` for setup instructions.
+
+---
+
+## Deployment Flow
+
+```mermaid
+graph TD
+    A[Push to develop] --> B[Development CI]
+    B --> C{Build OK?}
+    C -->|Yes| D[Create PR to main]
+    C -->|No| E[Fix issues]
+    E --> A
+    D --> F[PR Validation]
+    F --> G[Terraform Plan]
+    G --> H{Plan OK?}
+    H -->|Yes| I[Review & Merge]
+    H -->|No| E
+    I --> J[Production Deploy]
+    J --> K[Terraform Apply]
+    K --> L[Build Validation]
+    L --> M[Amplify Deploy]
+    M --> N[Invalidate CDN]
+    N --> O[Site Live!]
 ```
 
 ---
 
 ## Environment Variables
 
-### Required for Build
-```
-USE_MOCK_DATA=true
-NEXTAUTH_SECRET=<random-string>
-```
+Environment variables are set in Amplify via Terraform:
 
-### Required for AI Features
-```
-OPENAI_API_KEY=<your-key>
-```
-
-### Required for Instagram
-```
-INSTAGRAM_ACCESS_TOKEN=<token>
-```
-
----
-
-## Deployment (Planned)
-
-- **Hosting:** AWS Amplify
-- **Trigger:** Push/merge to `main`
-- **Infrastructure:** Terraform (when AWS resources are added)
-
-### Static Files
-- `data/seed/` is committed and deployed
-- `data/local/` is gitignored (runtime only)
-- Public images in `public/images/`
-
-### Environment
-- Set environment variables in Amplify console
-- Ensure `NEXTAUTH_URL` matches production URL
+| Variable | Source |
+|----------|--------|
+| `USE_MOCK_DATA` | Set to `false` in production |
+| `NEXTAUTH_URL` | Derived from domain |
+| `NEXTAUTH_SECRET` | GitHub Secret |
+| `ADMIN_EMAIL` | GitHub Secret |
+| `ADMIN_PASSWORD_HASH` | GitHub Secret |
+| `OPENAI_API_KEY` | GitHub Secret |
+| `AWS_S3_PHOTOS_BUCKET` | Terraform output |
+| `AWS_CLOUDFRONT_URL` | Terraform output |
 
 ---
 
 ## Local Development
 
 ```bash
+# Install dependencies
 npm install
+
+# Start development server
 npm run dev
 ```
 
 Server runs at `http://localhost:3000`
 
-### Admin Access
-- Email: `admin@example.com`
-- Password: `admin123`
+### Local AWS Testing (Optional)
+
+```bash
+# Start LocalStack
+npm run localstack:start
+
+# Setup resources
+npm run setup:localstack
+
+# Run with local AWS
+USE_LOCALSTACK=true npm run dev
+```
 
 ---
 
-## Next Steps
+## Terraform Commands
 
-1. Replace legacy workflows with root-level workflow
-2. Configure Amplify auto-deploy from `main`
-3. Add staging environment when needed
-4. Set up AWS resources (S3, DynamoDB) via Terraform
-5. Migrate from local JSON to cloud storage
+```bash
+cd terraform/environments/prod
+
+# Initialize
+terraform init
+
+# Preview changes
+terraform plan -var-file=terraform.tfvars
+
+# Apply changes
+terraform apply -var-file=terraform.tfvars
+
+# View outputs
+terraform output
+```
 
 ---
 
-**Document Version:** 4.0  
+## Troubleshooting
+
+### Terraform State Lock
+If terraform is stuck on a lock:
+```bash
+terraform force-unlock <LOCK_ID>
+```
+
+### Amplify Build Failure
+Check the Amplify console for build logs:
+https://us-east-1.console.aws.amazon.com/amplify/
+
+### OIDC Authentication Error
+Verify the trust policy allows your branch:
+```bash
+aws iam get-role --role-name sgoodie-github-actions-prod
+```
+
+---
+
+## Quick Reference
+
+| Action | Command/Steps |
+|--------|---------------|
+| Deploy to prod | Merge PR to `main` |
+| Preview infra | Create PR, check Terraform plan comment |
+| Check build status | View Actions tab in GitHub |
+| View logs | AWS Amplify Console |
+| Invalidate cache | Automatic after deploy |
+
+---
+
+**Document Version:** 5.0  
 **Last Updated:** 2026-02-05

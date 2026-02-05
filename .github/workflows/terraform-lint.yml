@@ -1,0 +1,71 @@
+# =============================================================================
+# Terraform Linting and Security Scanning
+# =============================================================================
+# Runs on all PRs that touch Terraform files
+# Catches issues before they even reach the apply stage
+# =============================================================================
+
+name: Terraform Lint
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-lint.yml'
+
+jobs:
+  lint:
+    name: Lint & Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive terraform/
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Init TFLint
+        run: tflint --init
+        working-directory: terraform/environments/prod
+
+      - name: Run TFLint (Prod)
+        run: tflint --recursive
+        working-directory: terraform/environments/prod
+        continue-on-error: true
+
+      - name: Run TFLint (Staging)
+        run: tflint --recursive
+        working-directory: terraform/environments/staging
+        continue-on-error: true
+
+      - name: Run Trivy (Security Scan)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: 'terraform/'
+          format: 'table'
+          exit-code: '0'  # Don't fail on security warnings, just report
+          severity: 'HIGH,CRITICAL'
+
+      - name: Terraform Validate (Prod)
+        working-directory: terraform/environments/prod
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Terraform Validate (Staging)
+        working-directory: terraform/environments/staging
+        run: |
+          terraform init -backend=false
+          terraform validate
