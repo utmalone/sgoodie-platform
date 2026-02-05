@@ -41,6 +41,11 @@ export function AdminProfileClient() {
       if (response.ok) {
         const updated = await response.json();
         setSavedProfile(updated);
+        try {
+          localStorage.setItem('admin-preview-refresh', Date.now().toString());
+        } catch {
+          // Ignore storage failures (e.g., private mode)
+        }
         return true;
       }
       return false;

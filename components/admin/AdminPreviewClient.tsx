@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type {
   HomeLayout,
@@ -8,7 +8,8 @@ import type {
   PageContent,
   PhotoAsset,
   Project,
-  WorkIndex
+  WorkIndex,
+  SiteProfile
 } from '@/types';
 import { loadDraftPages } from '@/lib/admin/draft-store';
 import { FullBleedHero } from '@/components/portfolio/FullBleedHero';
@@ -55,6 +56,7 @@ export function AdminPreviewClient() {
   const [pages, setPages] = useState<PageContent[]>([]);
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [profile, setProfile] = useState<SiteProfile | null>(null);
   const [homeLayout, setHomeLayout] = useState<HomeLayout | null>(null);
   const [workIndex, setWorkIndex] = useState<WorkIndex | null>(null);
   const [journalPosts, setJournalPosts] = useState<JournalPost[]>([]);
@@ -67,49 +69,64 @@ export function AdminPreviewClient() {
     }
   }, [searchParams, activePath]);
 
-  useEffect(() => {
-    async function load() {
-      const [pagesRes, photosRes, projectsRes, homeRes, workRes, journalRes] =
-        await Promise.all([
-          fetch('/api/admin/pages'),
-          fetch('/api/admin/photos'),
-          fetch('/api/projects'),
-          fetch('/api/admin/layout/home'),
-          fetch('/api/admin/layout/work'),
-          fetch('/api/journal')
-        ]);
+  const loadData = useCallback(async () => {
+    const [pagesRes, photosRes, projectsRes, homeRes, workRes, journalRes, profileRes] =
+      await Promise.all([
+        fetch('/api/admin/pages'),
+        fetch('/api/admin/photos'),
+        fetch('/api/projects'),
+        fetch('/api/admin/layout/home'),
+        fetch('/api/admin/layout/work'),
+        fetch('/api/journal'),
+        fetch('/api/admin/profile')
+      ]);
 
-      if (
-        !pagesRes.ok ||
-        !photosRes.ok ||
-        !projectsRes.ok ||
-        !homeRes.ok ||
-        !workRes.ok ||
-        !journalRes.ok
-      ) {
-        setStatus('Unable to load preview data.');
-        return;
-      }
-
-      const pagesData = (await pagesRes.json()) as PageContent[];
-      const photosData = (await photosRes.json()) as PhotoAsset[];
-      const projectsData = (await projectsRes.json()) as Project[];
-      const homeData = (await homeRes.json()) as HomeLayout;
-      const workData = (await workRes.json()) as WorkIndex;
-      const journalData = (await journalRes.json()) as JournalPost[];
-
-      const draft = loadDraftPages();
-      setPages(draft ?? pagesData);
-      setPhotos(photosData);
-      setProjects(projectsData);
-      setHomeLayout(homeData);
-      setWorkIndex(workData);
-      setJournalPosts(journalData);
-      setStatus('');
+    if (
+      !pagesRes.ok ||
+      !photosRes.ok ||
+      !projectsRes.ok ||
+      !homeRes.ok ||
+      !workRes.ok ||
+      !journalRes.ok ||
+      !profileRes.ok
+    ) {
+      setStatus('Unable to load preview data.');
+      return;
     }
 
-    load();
+    const pagesData = (await pagesRes.json()) as PageContent[];
+    const photosData = (await photosRes.json()) as PhotoAsset[];
+    const projectsData = (await projectsRes.json()) as Project[];
+    const homeData = (await homeRes.json()) as HomeLayout;
+    const workData = (await workRes.json()) as WorkIndex;
+    const journalData = (await journalRes.json()) as JournalPost[];
+    const profileData = (await profileRes.json()) as SiteProfile;
+
+    const draft = loadDraftPages();
+    setPages(draft ?? pagesData);
+    setPhotos(photosData);
+    setProjects(projectsData);
+    setHomeLayout(homeData);
+    setWorkIndex(workData);
+    setJournalPosts(journalData);
+    setProfile(profileData);
+    setStatus('');
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    function handleStorage(event: StorageEvent) {
+      if (event.key === 'admin-preview-refresh') {
+        loadData();
+      }
+    }
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [loadData]);
 
   const photosById = useMemo(() => {
     return new Map(photos.map((photo) => [photo.id, photo]));
@@ -156,6 +173,17 @@ export function AdminPreviewClient() {
   if (status) {
     return <p className="text-sm text-ink/60">{status}</p>;
   }
+
+  const previewEmail = profile?.email || 'hello@sgoodie.com';
+  const previewPhone = profile?.phone || '(202) 555-0194';
+  const previewInstagram = profile?.social?.instagram?.handle || '@sgoodiephoto';
+  const previewLinkedIn = profile?.social?.linkedin?.name || 'S.Goodie Studio';
+  const previewRegions =
+    profile?.availability?.regions?.length
+      ? profile.availability.regions.join(', ')
+      : 'DC, MD, VA, PA, NY';
+  const previewNote =
+    profile?.availability?.note || 'Available for travel and select commissions.';
 
   return (
     <div className="min-h-screen bg-paper">
@@ -425,9 +453,9 @@ export function AdminPreviewClient() {
                 <p className="text-base text-ink/70">{currentPage?.intro}</p>
                 {currentPage?.body && <p className="text-base text-ink/60">{currentPage.body}</p>}
                 <div className="space-y-2 text-sm text-ink/70">
-                  <p>S.Goodie Photography</p>
-                  <p>hello@sgoodie.com</p>
-                  <p>(202) 555-0194</p>
+                  <p>{profile?.name || 'S.Goodie Photography'}</p>
+                  <p>{previewEmail}</p>
+                  <p>{previewPhone}</p>
                 </div>
               </div>
               {photosById.get('contact-hero') && (
@@ -452,18 +480,18 @@ export function AdminPreviewClient() {
         <div className="container-page grid gap-8 py-12 text-sm md:grid-cols-3">
           <div className="space-y-3">
             <p className="eyebrow">Contact</p>
-            <p className="text-ink">hello@sgoodie.com</p>
-            <p className="text-ink">(202) 555-0194</p>
+            <p className="text-ink">{previewEmail}</p>
+            <p className="text-ink">{previewPhone}</p>
           </div>
           <div className="space-y-3">
             <p className="eyebrow">Social</p>
-            <p className="text-ink">Instagram: @sgoodiephoto</p>
-            <p className="text-ink">LinkedIn: S.Goodie Studio</p>
+            <p className="text-ink">Instagram: {previewInstagram}</p>
+            <p className="text-ink">LinkedIn: {previewLinkedIn}</p>
           </div>
           <div className="space-y-3">
             <p className="eyebrow">Availability</p>
-            <p className="text-ink">DC, MD, VA, PA, NY</p>
-            <p className="text-ink/60">Available for travel and select commissions.</p>
+            <p className="text-ink">{previewRegions}</p>
+            <p className="text-ink/60">{previewNote}</p>
           </div>
         </div>
       </footer>

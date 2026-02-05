@@ -5,6 +5,7 @@ import { ContactForm } from '@/components/portfolio/ContactForm';
 import { InstagramFeed } from '@/components/portfolio/InstagramFeed';
 import { getContactContent } from '@/lib/data/contact';
 import { getPhotoById } from '@/lib/data/photos';
+import { getProfile } from '@/lib/data/profile';
 import styles from '@/styles/public/ContactPage.module.css';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -17,7 +18,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ContactPage() {
   const content = await getContactContent();
+  const profile = await getProfile();
   const heroPhoto = await getPhotoById(content.heroPhotoId);
+  const email = profile.email || content.email;
+  const phone = profile.phone || content.phone;
 
   return (
     <div className={styles.wrapper}>
@@ -52,10 +56,10 @@ export default async function ContactPage() {
 
             <div className={styles.contactDetails}>
               <p className={styles.companyName}>{content.companyName}</p>
-              <a href={`mailto:${content.email}`} className={styles.contactLink}>
-                {content.email}
+              <a href={`mailto:${email}`} className={styles.contactLink}>
+                {email}
               </a>
-              <p className={styles.phone}>{content.phone}</p>
+              <p className={styles.phone}>{phone}</p>
             </div>
 
             <div className={styles.socialIcons}>

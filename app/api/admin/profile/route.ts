@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getProfile, updateProfile } from '@/lib/data/profile';
 import { requireAdminApi } from '@/lib/auth/require-admin-api';
 import { updateAdminEmail } from '@/lib/auth/admin-store';
+import { revalidatePath } from 'next/cache';
 
 export async function GET() {
   const session = await requireAdminApi();
@@ -35,6 +36,10 @@ export async function PUT(request: Request) {
         console.error('Error updating admin email:', error);
       }
     }
+
+    // Refresh public layout/pages so footer and contact info update immediately
+    revalidatePath('/', 'layout');
+    revalidatePath('/contact');
 
     return NextResponse.json(updated);
   } catch (error) {

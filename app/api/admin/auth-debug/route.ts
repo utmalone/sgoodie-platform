@@ -19,7 +19,6 @@ function getDebugToken(request: NextRequest) {
 function getExpectedToken() {
   if (process.env.ADMIN_DEBUG_TOKEN) return { value: process.env.ADMIN_DEBUG_TOKEN, source: 'ADMIN_DEBUG_TOKEN' };
   if (process.env.REVALIDATE_TOKEN) return { value: process.env.REVALIDATE_TOKEN, source: 'REVALIDATE_TOKEN' };
-  if (process.env.NEXTAUTH_SECRET) return { value: process.env.NEXTAUTH_SECRET, source: 'NEXTAUTH_SECRET' };
   return { value: '', source: 'NONE' };
 }
 
@@ -34,9 +33,7 @@ export async function GET(request: NextRequest) {
   const expectedTokenHash = hashValue(expectedToken.value);
   const providedTokenHash = hashValue(providedToken);
 
-  const publicBypass = request.nextUrl.searchParams.get('public') === '1';
-  const authorized =
-    publicBypass || Boolean(expectedToken.value && providedToken === expectedToken.value);
+  const authorized = Boolean(expectedToken.value && providedToken === expectedToken.value);
 
   const email = request.nextUrl.searchParams.get('email') || '';
   const password = request.nextUrl.searchParams.get('password') || '';
@@ -110,11 +107,11 @@ export async function GET(request: NextRequest) {
         hasDynamoAccessKeyId: Boolean(process.env.DYNAMODB_ACCESS_KEY_ID),
         hasDynamoSecretAccessKey: Boolean(process.env.DYNAMODB_SECRET_ACCESS_KEY),
         hasDynamoSessionToken: Boolean(process.env.DYNAMODB_SESSION_TOKEN),
-        adminEmailEnv: process.env.ADMIN_EMAIL || '',
-        adminPasswordHashEnv: process.env.ADMIN_PASSWORD_HASH || '',
-        revalidateTokenEnv: process.env.REVALIDATE_TOKEN || '',
-        adminDebugTokenEnv: process.env.ADMIN_DEBUG_TOKEN || '',
-        nextAuthSecretEnv: process.env.NEXTAUTH_SECRET || ''
+        hasAdminEmailEnv: Boolean(process.env.ADMIN_EMAIL),
+        hasAdminPasswordHashEnv: Boolean(process.env.ADMIN_PASSWORD_HASH),
+        hasRevalidateTokenEnv: Boolean(process.env.REVALIDATE_TOKEN),
+        hasAdminDebugTokenEnv: Boolean(process.env.ADMIN_DEBUG_TOKEN),
+        hasNextAuthSecretEnv: Boolean(process.env.NEXTAUTH_SECRET)
       },
       record: record
         ? {
