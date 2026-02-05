@@ -40,18 +40,8 @@ resource "aws_amplify_app" "main" {
   # Platform for Next.js SSR
   platform = "WEB_COMPUTE"
 
-  # Custom rules for Next.js
-  custom_rule {
-    source = "/<*>"
-    status = "404"
-    target = "/404.html"
-  }
-
-  custom_rule {
-    source = "</^[^.]+$|\\.(?!(css|gif|ico|jpg|jpeg|js|png|txt|svg|woff|woff2|ttf|map|json|webp)$)([^.]+$)/>"
-    status = "200"
-    target = "/index.html"
-  }
+  # No custom rules needed for Next.js SSR - the framework handles routing
+  # Custom rules are only needed for static SPA sites
 
   tags = {
     Name        = "${var.project_name}-${var.environment}"
