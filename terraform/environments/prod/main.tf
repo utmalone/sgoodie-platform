@@ -151,7 +151,7 @@ module "amplify" {
 
   # Environment variables for the Next.js app
   # Note: AWS_ prefix is reserved by Amplify, so we use different names
-  environment_variables = {
+  environment_variables = merge({
     USE_MOCK_DATA          = "false"
     NEXTAUTH_URL           = var.nextauth_url
     NEXTAUTH_SECRET        = var.nextauth_secret
@@ -167,5 +167,15 @@ module "amplify" {
     DYNAMODB_REGION        = var.aws_region
     DYNAMODB_TABLE_PREFIX  = local.project_name
     DYNAMODB_TABLE_ENV     = var.environment
-  }
+  },
+  var.dynamodb_access_key_id != "" ? {
+    DYNAMODB_ACCESS_KEY_ID = var.dynamodb_access_key_id
+  } : {},
+  var.dynamodb_secret_access_key != "" ? {
+    DYNAMODB_SECRET_ACCESS_KEY = var.dynamodb_secret_access_key
+  } : {},
+  var.dynamodb_session_token != "" ? {
+    DYNAMODB_SESSION_TOKEN = var.dynamodb_session_token
+  } : {}
+  )
 }

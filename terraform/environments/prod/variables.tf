@@ -79,6 +79,27 @@ variable "instagram_access_token" {
   default     = ""
 }
 
+variable "dynamodb_access_key_id" {
+  description = "Access key ID for DynamoDB (optional; used for SSR runtime access)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "dynamodb_secret_access_key" {
+  description = "Secret access key for DynamoDB (optional; used for SSR runtime access)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "dynamodb_session_token" {
+  description = "Session token for DynamoDB (optional; used for SSR runtime access)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "nextauth_url" {
   description = "NextAuth.js callback URL (e.g., https://main.xxx.amplifyapp.com)"
   type        = string
