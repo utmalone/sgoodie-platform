@@ -29,18 +29,18 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        const adminEmail = process.env.ADMIN_EMAIL;
-        const adminHash = process.env.ADMIN_PASSWORD_HASH;
+        const adminEmail = process.env.ADMIN_EMAIL?.trim();
+        const adminHash = process.env.ADMIN_PASSWORD_HASH?.trim()?.toLowerCase();
 
         if (!adminEmail || !adminHash) {
           console.error('ADMIN_EMAIL or ADMIN_PASSWORD_HASH is not set.');
           return null;
         }
 
-        const email = credentials?.email || '';
+        const email = credentials?.email?.trim().toLowerCase() || '';
         const password = credentials?.password || '';
 
-        if (email !== adminEmail) return null;
+        if (email !== adminEmail.toLowerCase()) return null;
         const inputHash = createHash('sha256').update(password).digest('hex');
         const isValid =
           adminHash.length === inputHash.length &&
