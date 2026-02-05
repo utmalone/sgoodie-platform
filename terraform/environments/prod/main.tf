@@ -224,25 +224,6 @@ module "waf" {
   rate_limit_admin              = 300
 }
 
-resource "null_resource" "amplify_waf" {
-  count = var.amplify_cloudfront_distribution_id != "" ? 1 : 0
-
-  triggers = {
-    web_acl_arn = module.waf[0].web_acl_arn
-    app_id      = module.amplify.app_id
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      python - <<'PY'
-import boto3
-
-app_id = "${module.amplify.app_id}"
-web_acl_arn = "${module.waf[0].web_acl_arn}"
-
-client = boto3.client("amplify", region_name="us-east-1")
-client.update_app(appId=app_id, wafConfiguration={"webAclArn": web_acl_arn})
-PY
-    EOT
-  }
-}
+# NOTE: Amplify WAF association is not supported by the Terraform AWS provider,
+# and the current AWS CLI/SDK in CI does not accept wafConfiguration yet.
+# Manually attach the WebACL in the Amplify console (App > Hosting > Firewall).
