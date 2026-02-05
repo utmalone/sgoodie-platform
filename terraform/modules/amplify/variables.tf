@@ -40,3 +40,9 @@ variable "environment_variables" {
   default     = {}
   sensitive   = true
 }
+
+variable "service_role_dynamodb_arns" {
+  description = "DynamoDB table ARNs the Amplify service role can access"
+  type        = list(string)
+  default     = []
+}

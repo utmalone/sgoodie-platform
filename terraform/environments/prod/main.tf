@@ -140,6 +140,15 @@ module "amplify" {
   github_access_token = var.github_access_token
   domain_name         = var.domain_name
 
+  service_role_dynamodb_arns = [
+    module.database.pages_table_arn,
+    module.database.photos_table_arn,
+    module.database.projects_table_arn,
+    module.database.journal_table_arn,
+    module.database.analytics_table_arn,
+    module.database.admins_table_arn
+  ]
+
   # Environment variables for the Next.js app
   # Note: AWS_ prefix is reserved by Amplify, so we use different names
   environment_variables = {

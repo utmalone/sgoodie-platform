@@ -5,6 +5,60 @@
 # =============================================================================
 
 # -----------------------------------------------------------------------------
+# Amplify Service Role (grants runtime access to DynamoDB)
+# -----------------------------------------------------------------------------
+locals {
+  dynamodb_resources = flatten([
+    for arn in var.service_role_dynamodb_arns : [
+      arn,
+      "${arn}/index/*"
+    ]
+  ])
+}
+
+data "aws_iam_policy_document" "amplify_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["amplify.amazonaws.com"]
+    }
+  }
+}
+
+data "aws_iam_policy_document" "amplify_service_role" {
+  dynamic "statement" {
+    for_each = length(local.dynamodb_resources) > 0 ? [1] : []
+    content {
+      sid = "DynamoDbAccess"
+      actions = [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+      ]
+      resources = local.dynamodb_resources
+    }
+  }
+}
+
+resource "aws_iam_role" "amplify_service_role" {
+  name               = "${var.project_name}-${var.environment}-amplify-service"
+  assume_role_policy = data.aws_iam_policy_document.amplify_assume_role.json
+}
+
+resource "aws_iam_role_policy" "amplify_service_role" {
+  name   = "${var.project_name}-${var.environment}-amplify-service"
+  role   = aws_iam_role.amplify_service_role.id
+  policy = data.aws_iam_policy_document.amplify_service_role.json
+}
+
+# -----------------------------------------------------------------------------
 # Amplify App
 # -----------------------------------------------------------------------------
 resource "aws_amplify_app" "main" {
@@ -13,6 +67,9 @@ resource "aws_amplify_app" "main" {
 
   # GitHub access token for repository access
   access_token = var.github_access_token
+
+  # Allow SSR/runtime access to DynamoDB
+  iam_service_role_arn = aws_iam_role.amplify_service_role.arn
 
   # Build settings for Next.js SSR
   # Note: USE_MOCK_DATA=true during build so we don't need DynamoDB access
