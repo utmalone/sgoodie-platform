@@ -27,7 +27,7 @@ const emptyProject: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> = {
   subtitle: '',
   intro: '',
   body: '',
-  category: 'interiors',
+  category: 'hotels',
   status: 'draft',
   featured: false,
   hoverTitle: '',
