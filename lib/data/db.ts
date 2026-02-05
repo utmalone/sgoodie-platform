@@ -7,7 +7,12 @@ import { GetCommand, PutCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib
 import { db } from '@/lib/aws/dynamodb';
 
 const TABLE_PREFIX = process.env.DYNAMODB_TABLE_PREFIX || 'sgoodie-platform';
-const ENVIRONMENT = process.env.NODE_ENV === 'production' ? 'prod' : 'staging';
+const ENVIRONMENT = (
+  process.env.DYNAMODB_TABLE_ENV ||
+  process.env.APP_ENV ||
+  process.env.ENVIRONMENT ||
+  (process.env.NODE_ENV === 'production' ? 'prod' : 'staging')
+).toLowerCase();
 
 export function getTableName(tableName: string): string {
   return `${TABLE_PREFIX}-${tableName}-${ENVIRONMENT}`;

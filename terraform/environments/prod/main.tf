@@ -166,5 +166,6 @@ module "amplify" {
     CLOUDFRONT_URL         = module.cdn.distribution_domain
     DYNAMODB_REGION        = var.aws_region
     DYNAMODB_TABLE_PREFIX  = local.project_name
+    DYNAMODB_TABLE_ENV     = var.environment
   }
 }
