@@ -233,6 +233,10 @@ resource "null_resource" "amplify_waf" {
   }
 
   provisioner "local-exec" {
-    command = "aws amplify update-app --app-id ${module.amplify.app_id} --waf-configuration webAclArn=${module.waf[0].web_acl_arn}"
+    command = <<-EOT
+      AWS_BIN="aws"
+      if [ -x /usr/local/bin/aws ]; then AWS_BIN="/usr/local/bin/aws"; fi
+      "$AWS_BIN" amplify update-app --app-id ${module.amplify.app_id} --waf-configuration webAclArn=${module.waf[0].web_acl_arn}
+    EOT
   }
 }
