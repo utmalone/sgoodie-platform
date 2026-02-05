@@ -159,7 +159,7 @@ function useInactivityTimeout() {
 }
 
 function AdminShellInner({ children }: { children: React.ReactNode }) {
-  const { isOpen, initialPath, openPreview, closePreview } = usePreview();
+  const { isOpen, initialPath, refreshKey, openPreview, closePreview } = usePreview();
   const pathname = usePathname();
 
   // Inactivity timeout hook
@@ -227,7 +227,12 @@ function AdminShellInner({ children }: { children: React.ReactNode }) {
         </aside>
         <main className={styles.mainContent}>{children}</main>
       </div>
-      <AdminPreviewModal isOpen={isOpen} onClose={closePreview} initialPath={initialPath} />
+      <AdminPreviewModal
+        isOpen={isOpen}
+        onClose={closePreview}
+        initialPath={initialPath}
+        refreshKey={refreshKey}
+      />
     </>
   );
 }

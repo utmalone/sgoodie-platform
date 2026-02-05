@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { SiteProfile, PhotoAsset } from '@/types';
 import { useSave } from '@/lib/admin/save-context';
+import { usePreview } from '@/lib/admin/preview-context';
 import styles from '@/styles/admin/AdminProfile.module.css';
 
 export function AdminProfileClient() {
   const router = useRouter();
   const { registerChange, unregisterChange } = useSave();
+  const { refreshPreview } = usePreview();
   const [profile, setProfile] = useState<SiteProfile | null>(null);
   const [savedProfile, setSavedProfile] = useState<SiteProfile | null>(null);
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
@@ -41,11 +43,7 @@ export function AdminProfileClient() {
       if (response.ok) {
         const updated = await response.json();
         setSavedProfile(updated);
-        try {
-          localStorage.setItem('admin-preview-refresh', Date.now().toString());
-        } catch {
-          // Ignore storage failures (e.g., private mode)
-        }
+        refreshPreview();
         return true;
       }
       return false;

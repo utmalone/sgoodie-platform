@@ -6,12 +6,14 @@ type AdminPreviewModalProps = {
   isOpen: boolean;
   onClose: () => void;
   initialPath?: string;
+  refreshKey?: number;
 };
 
 export function AdminPreviewModal({
   isOpen,
   onClose,
-  initialPath = '/'
+  initialPath = '/',
+  refreshKey = 0
 }: AdminPreviewModalProps) {
   const [isLoading, setIsLoading] = useState(true);
 
@@ -44,7 +46,8 @@ export function AdminPreviewModal({
   if (!isOpen) return null;
 
   // Add preview query param so pages know to show draft content
-  const previewUrl = `${initialPath}${initialPath.includes('?') ? '&' : '?'}preview=draft`;
+  const separator = initialPath.includes('?') ? '&' : '?';
+  const previewUrl = `${initialPath}${separator}preview=draft&refresh=${refreshKey}`;
 
   return (
     <div 
@@ -124,6 +127,7 @@ export function AdminPreviewModal({
         )}
         <iframe
           src={previewUrl}
+          key={previewUrl}
           style={{
             position: 'absolute',
             top: 0,

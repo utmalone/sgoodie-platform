@@ -5,8 +5,10 @@ import { createContext, useContext, useState, useCallback, ReactNode } from 'rea
 type PreviewContextType = {
   isOpen: boolean;
   initialPath: string;
+  refreshKey: number;
   openPreview: (path?: string) => void;
   closePreview: () => void;
+  refreshPreview: () => void;
 };
 
 const PreviewContext = createContext<PreviewContextType | null>(null);
@@ -14,6 +16,7 @@ const PreviewContext = createContext<PreviewContextType | null>(null);
 export function PreviewProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [initialPath, setInitialPath] = useState('/');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const openPreview = useCallback((path: string = '/') => {
     setInitialPath(path);
@@ -24,8 +27,14 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
     setIsOpen(false);
   }, []);
 
+  const refreshPreview = useCallback(() => {
+    setRefreshKey((prev) => prev + 1);
+  }, []);
+
   return (
-    <PreviewContext.Provider value={{ isOpen, initialPath, openPreview, closePreview }}>
+    <PreviewContext.Provider
+      value={{ isOpen, initialPath, refreshKey, openPreview, closePreview, refreshPreview }}
+    >
       {children}
     </PreviewContext.Provider>
   );
