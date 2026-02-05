@@ -1,0 +1,809 @@
+2026-02-05T04:58:13.297Z [INFO]: # Build environment configured with Standard build compute type: 8GiB Memory, 4vCPUs, 128GB Disk Space
+2026-02-05T04:58:13.738Z [INFO]: # Cloning repository: git@github.com:utmalone/sgoodie-platform.git
+2026-02-05T04:58:14.339Z [INFO]: 
+2026-02-05T04:58:14.340Z [INFO]: Cloning into 'sgoodie-platform'...
+2026-02-05T04:58:14.340Z [INFO]: # Checking for Git submodules at: /codebuild/output/src2656023274/src/sgoodie-platform/.gitmodules
+2026-02-05T04:58:14.349Z [INFO]: # Retrieving environment cache...
+2026-02-05T04:58:14.409Z [WARNING]: ! Unable to write cache: {"code":"ERR_BAD_REQUEST","message":"Request failed with status code 404"})}
+2026-02-05T04:58:14.409Z [INFO]: ---- Setting Up SSM Secrets ----
+2026-02-05T04:58:14.409Z [INFO]: SSM params {"Path":"/amplify/d1vxd84cydganc/main/","WithDecryption":true}
+2026-02-05T04:58:14.452Z [WARNING]: !Failed to set up process.env.secrets
+2026-02-05T04:58:14.663Z [INFO]: # No package override configuration found.
+2026-02-05T04:58:14.666Z [INFO]: # Retrieving cache...
+2026-02-05T04:58:14.770Z [INFO]: # Retrieved cache
+2026-02-05T04:58:19.764Z [INFO]: ## Starting Backend Build
+                                 ## Checking for associated backend environment...
+                                 ## No backend environment association found, continuing...
+                                 ## Completed Backend Build
+2026-02-05T04:58:19.769Z [INFO]: {"backendDuration": 0}
+                                 ## Starting Frontend Build
+                                 # Starting phase: preBuild
+                                 # Executing command: npm ci
+2026-02-05T04:58:40.975Z [WARNING]: npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2026-02-05T04:58:41.262Z [WARNING]: npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+2026-02-05T04:58:41.308Z [WARNING]: npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+2026-02-05T04:58:41.315Z [WARNING]: npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-02-05T04:58:41.339Z [WARNING]: npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+2026-02-05T04:58:42.315Z [WARNING]: npm warn deprecated glob@10.3.10: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-02-05T04:58:43.626Z [WARNING]: npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+2026-02-05T04:58:54.422Z [INFO]: added 522 packages, and audited 523 packages in 29s
+2026-02-05T04:58:54.426Z [INFO]: 161 packages are looking for funding
+                                 run `npm fund` for details
+2026-02-05T04:58:54.498Z [INFO]: 4 high severity vulnerabilities
+                                 To address all issues (including breaking changes), run:
+                                 npm audit fix --force
+                                 Run `npm audit` for details.
+2026-02-05T04:58:54.522Z [INFO]: # Completed phase: preBuild
+                                 # Starting phase: build
+2026-02-05T04:58:54.523Z [INFO]: # Executing command: npm run build
+2026-02-05T04:58:54.625Z [INFO]: > sgoodie-platform@0.1.0 build
+                                 > next build
+2026-02-05T04:58:55.321Z [INFO]: ⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+2026-02-05T04:58:55.326Z [INFO]: Attention: Next.js now collects completely anonymous telemetry regarding usage.
+2026-02-05T04:58:55.327Z [INFO]: This information is used to shape Next.js' roadmap and prioritize features.
+                                 You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+                                 https://nextjs.org/telemetry
+2026-02-05T04:58:55.384Z [INFO]: ▲ Next.js 14.2.35
+2026-02-05T04:58:55.384Z [INFO]: 
+2026-02-05T04:58:55.463Z [INFO]: Creating an optimized production build ...
+2026-02-05T04:58:55.984Z [WARNING]: ⚠ Found lockfile missing swc dependencies, run next locally to automatically patch
+2026-02-05T04:59:09.639Z [WARNING]: ⚠ Found lockfile missing swc dependencies, run next locally to automatically patch
+2026-02-05T04:59:12.338Z [WARNING]: ⚠ Found lockfile missing swc dependencies, run next locally to automatically patch
+2026-02-05T04:59:18.603Z [INFO]: ✓ Compiled successfully
+2026-02-05T04:59:18.611Z [INFO]: Linting and checking validity of types ...
+2026-02-05T04:59:22.665Z [INFO]: ./components/admin/AdminJournalClient.tsx
+                                 175:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+                                 ./components/admin/AdminJournalEditorClient.tsx
+                                 124:6  Warning: React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+                                 381:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+                                 423:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+                                 ./components/admin/AdminPhotoSelector.tsx
+                                 127:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+                                 ./components/admin/AdminPortfolioClient.tsx
+                                 279:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+                                 ./components/admin/AdminPortfolioEditorClient.tsx
+                                 149:6  Warning: React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+                                 512:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+                                 548:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+                                 ./components/admin/AdminPreviewClient.tsx
+                                 376:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+                                 440:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+                                 ./components/admin/AdminWorkClient.tsx
+                                 240:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+                                 ./components/admin/AdminWorkEditorClient.tsx
+                                 72:6  Warning: React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+                                 431:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+                                 473:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+                                 info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+2026-02-05T04:59:26.538Z [INFO]: Collecting page data ...
+2026-02-05T04:59:26.793Z [WARNING]: ⚠ Found lockfile missing swc dependencies, run next locally to automatically patch
+2026-02-05T04:59:28.802Z [INFO]: Generating static pages (0/67) ...
+2026-02-05T04:59:29.369Z [INFO]: Generating static pages (16/67)
+2026-02-05T04:59:29.714Z [WARNING]: TypeError: Failed to parse URL from undefined/contact
+                                    at new Request (node:internal/deps/undici/undici:9588:19)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:2050
+                                    ... 3 lines matching cause stack trace ...
+                                    at async p (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:9025) {
+                                    digest: '1223864633',
+                                    [cause]: TypeError: Invalid URL
+                                    at new URL (node:internal/url:825:25)
+                                    at new Request (node:internal/deps/undici/undici:9586:25)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:2050
+                                    at B (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:8941)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:11303
+                                    at async n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/api/admin/layouts/contact/route.js:1:3412)
+                                    at async p (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:9025) {
+                                    code: 'ERR_INVALID_URL',
+                                    input: 'undefined/contact'
+                                    }
+                                    }
+                                    TypeError: Failed to parse URL from undefined/contact
+                                    at new Request (node:internal/deps/undici/undici:9588:19)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:2050
+                                    ... 3 lines matching cause stack trace ...
+                                    at async Module.u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:8901) {
+                                    digest: '1181117446',
+                                    [cause]: TypeError: Invalid URL
+                                    at new URL (node:internal/url:825:25)
+                                    at new Request (node:internal/deps/undici/undici:9586:25)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:2050
+                                    at B (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:8941)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:11303
+                                    at async n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/api/admin/layouts/contact/route.js:1:3412)
+                                    at async Module.u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:8901) {
+                                    code: 'ERR_INVALID_URL',
+                                    input: 'undefined/contact'
+                                    }
+                                    }
+                                    TypeError: Failed to parse URL from undefined/contact
+                                    at new Request (node:internal/deps/undici/undici:9588:19)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:2050
+                                    ... 3 lines matching cause stack trace ...
+                                    at async p (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:9025) {
+                                    digest: '1223864633',
+                                    [cause]: TypeError: Invalid URL
+                                    at new URL (node:internal/url:825:25)
+                                    at new Request (node:internal/deps/undici/undici:9586:25)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:2050
+                                    at B (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:8941)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:11303
+                                    at async n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/api/admin/layouts/contact/route.js:1:3412)
+                                    at async p (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:9025) {
+                                    code: 'ERR_INVALID_URL',
+                                    input: 'undefined/contact'
+                                    }
+                                    }
+                                    TypeError: Failed to parse URL from undefined/contact
+                                    at new Request (node:internal/deps/undici/undici:9588:19)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:2050
+                                    ... 3 lines matching cause stack trace ...
+                                    at async Module.u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:8901) {
+                                    digest: '1181117446',
+                                    [cause]: TypeError: Invalid URL
+                                    at new URL (node:internal/url:825:25)
+                                    at new Request (node:internal/deps/undici/undici:9586:25)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:2050
+                                    at B (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:8941)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:11303
+                                    at async n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/api/admin/layouts/contact/route.js:1:3412)
+                                    at async Module.u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:8901) {
+                                    code: 'ERR_INVALID_URL',
+                                    input: 'undefined/contact'
+                                    }
+                                    }
+                                    TypeError: Failed to parse URL from undefined/contact
+                                    at new Request (node:internal/deps/undici/undici:9588:19)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:2050
+                                    ... 3 lines matching cause stack trace ...
+                                    at async Module.u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:8901) {
+                                    digest: '1181117446',
+                                    [cause]: TypeError: Invalid URL
+                                    at new URL (node:internal/url:825:25)
+                                    at new Request (node:internal/deps/undici/undici:9586:25)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:2050
+                                    at B (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:8941)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:11303
+                                    at async n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/api/admin/layouts/contact/route.js:1:3412)
+                                    at async Module.u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:8901) {
+                                    code: 'ERR_INVALID_URL',
+                                    input: 'undefined/contact'
+                                    }
+                                    }
+2026-02-05T04:59:29.751Z [WARNING]: Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:4331)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:228449
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+                                    at NoopContextManager.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+                                    at ContextAPI.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+                                    at NoopTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+                                    at ProxyTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854) {
+                                    digest: '462531747'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:4331)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:228449
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+                                    at NoopContextManager.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+                                    at ContextAPI.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+                                    at NoopTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+                                    at ProxyTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854) {
+                                    digest: '462531747'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:4331)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:228449
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+                                    at NoopContextManager.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+                                    at ContextAPI.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+                                    at NoopTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+                                    at ProxyTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854) {
+                                    digest: '462531747'
+                                    }
+                                    Error occurred prerendering page "/journal". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:4331)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:228449
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+                                    at NoopContextManager.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+                                    at ContextAPI.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+                                    at NoopTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+                                    at ProxyTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+2026-02-05T04:59:29.751Z [WARNING]: Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7155)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7281)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7450)
+                                    at m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/page.js:1:6909)
+                                    at em (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:134808)
+                                    at e (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:137693)
+                                    at e_ (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:138168)
+                                    at Array.toJSON (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135777)
+                                    at stringify (<anonymous>)
+                                    at eE (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142242) {
+                                    digest: '2415421049'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7155)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7281)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7450)
+                                    at Module.p (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/page.js:1:6756)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:228449
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+                                    at NoopContextManager.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+                                    at ContextAPI.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+                                    at NoopTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+                                    at ProxyTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854) {
+                                    digest: '115207063'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7155)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7281)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7450)
+                                    at m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/page.js:1:6909)
+                                    at em (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:134808)
+                                    at e (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:137693)
+                                    at e_ (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:138168)
+                                    at Array.toJSON (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135777)
+                                    at stringify (<anonymous>)
+                                    at eE (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142242) {
+                                    digest: '2415421049'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7155)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7281)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7450)
+                                    at Module.p (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/page.js:1:6756)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:228449
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+                                    at NoopContextManager.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+                                    at ContextAPI.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+                                    at NoopTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+                                    at ProxyTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854) {
+                                    digest: '115207063'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7155)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7281)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7450)
+                                    at Module.p (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/page.js:1:6756)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:228449
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+                                    at NoopContextManager.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+                                    at ContextAPI.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+                                    at NoopTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+                                    at ProxyTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854) {
+                                    digest: '115207063'
+                                    }
+                                    Error occurred prerendering page "/". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7155)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7281)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7450)
+                                    at m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/page.js:1:6909)
+                                    at em (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:134808)
+                                    at e (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:137693)
+                                    at e_ (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:138168)
+                                    at Array.toJSON (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:135777)
+                                    at stringify (<anonymous>)
+                                    at eE (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:142242)
+2026-02-05T04:59:29.800Z [WARNING]: Error occurred prerendering page "/contact". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    TypeError: Failed to parse URL from undefined/contact
+                                    at new Request (node:internal/deps/undici/undici:9588:19)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:2050
+                                    at B (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:8941)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:11303
+                                    at async n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/api/admin/layouts/contact/route.js:1:3412)
+                                    at async p (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:9025)
+2026-02-05T04:59:29.836Z [INFO]: Generating static pages (33/67)
+2026-02-05T04:59:29.878Z [WARNING]: Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:3706)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:228449
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+                                    at NoopContextManager.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+                                    at ContextAPI.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+                                    at NoopTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+                                    at ProxyTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854) {
+                                    digest: '406714064'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:3706)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:228449
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+                                    at NoopContextManager.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+                                    at ContextAPI.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+                                    at NoopTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+                                    at ProxyTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854) {
+                                    digest: '406714064'
+                                    }
+                                    TypeError: Failed to parse URL from undefined/about
+                                    at new Request (node:internal/deps/undici/undici:9588:19)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:2050
+                                    ... 3 lines matching cause stack trace ...
+                                    at async d (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:3847) {
+                                    digest: '3309564382',
+                                    [cause]: TypeError: Invalid URL
+                                    at new URL (node:internal/url:825:25)
+                                    at new Request (node:internal/deps/undici/undici:9586:25)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:2050
+                                    at B (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:8941)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:11303
+                                    at async i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6253)
+                                    at async d (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:3847) {
+                                    code: 'ERR_INVALID_URL',
+                                    input: 'undefined/about'
+                                    }
+                                    }
+                                    TypeError: Failed to parse URL from undefined/about
+                                    at new Request (node:internal/deps/undici/undici:9588:19)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:2050
+                                    ... 3 lines matching cause stack trace ...
+                                    at async d (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:3847) {
+                                    digest: '3309564382',
+                                    [cause]: TypeError: Invalid URL
+                                    at new URL (node:internal/url:825:25)
+                                    at new Request (node:internal/deps/undici/undici:9586:25)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:2050
+                                    at B (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:8941)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/.next/server/chunks/8948.js:2:11303
+                                    at async i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6253)
+                                    at async d (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:3847) {
+                                    code: 'ERR_INVALID_URL',
+                                    input: 'undefined/about'
+                                    }
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:3706)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:228449
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+                                    at NoopContextManager.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+                                    at ContextAPI.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+                                    at NoopTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+                                    at ProxyTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854) {
+                                    digest: '406714064'
+                                    }
+                                    Error occurred prerendering page "/about". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:3706)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:228449
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+                                    at NoopContextManager.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+                                    at ContextAPI.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+                                    at NoopTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+                                    at ProxyTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+2026-02-05T04:59:30.004Z [WARNING]: Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12669)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12796)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12973)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '208881278'
+                                    }
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12669)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12796)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12973)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '208881278'
+                                    }
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12669)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12796)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12973)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '208881278'
+                                    }
+                                    Error occurred prerendering page "/journal/forest-hill-kitchen". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12669)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12796)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12973)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467)
+2026-02-05T04:59:30.004Z [WARNING]: Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7616)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7743)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7920)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '1895159590'
+                                    }
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7616)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7743)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7920)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '1895159590'
+                                    }
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7616)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7743)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7920)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '1895159590'
+                                    }
+                                    Error occurred prerendering page "/journal/dewey-beach-vacation-home". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7616)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7743)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7920)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467)
+2026-02-05T04:59:30.017Z [WARNING]: Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8123)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8250)
+                                    at u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8427)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '3789920354'
+                                    }
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8123)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8250)
+                                    at u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8427)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '3789920354'
+                                    }
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8123)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8250)
+                                    at u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8427)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '3789920354'
+                                    }
+                                    Error occurred prerendering page "/journal/deep-creek-lake-project". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8123)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8250)
+                                    at u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8427)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467)
+2026-02-05T04:59:30.056Z [WARNING]: Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12669)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12796)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12973)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '208881278'
+                                    }
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12669)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12796)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12973)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '208881278'
+                                    }
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12669)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12796)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12973)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '208881278'
+                                    }
+                                    Error occurred prerendering page "/journal/modern-staircase-renovation". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12669)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12796)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:12973)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467)
+2026-02-05T04:59:30.056Z [WARNING]: Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8123)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8250)
+                                    at u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8427)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '3789920354'
+                                    }
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8123)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8250)
+                                    at u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8427)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '3789920354'
+                                    }
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8123)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8250)
+                                    at u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8427)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '3789920354'
+                                    }
+                                    Error occurred prerendering page "/journal/grand-foyer-transformation". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8123)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8250)
+                                    at u (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:8427)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467)
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7616)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7743)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7920)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '1895159590'
+                                    }
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7616)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7743)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7920)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '1895159590'
+                                    }
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7616)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7743)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7920)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467) {
+                                    digest: '1895159590'
+                                    }
+                                    Error occurred prerendering page "/journal/living-room-refresh". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    Error: Photo management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7616)
+                                    at c (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7743)
+                                    at l (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:7920)
+                                    at f (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/[slug]/page.js:1:6467)
+2026-02-05T04:59:30.268Z [WARNING]: Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11701)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11827)
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11996)
+                                    at Module.d (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/work/page.js:1:4151)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:228449
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+                                    at NoopContextManager.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+                                    at ContextAPI.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+                                    at NoopTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+                                    at ProxyTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854) {
+                                    digest: '4274024676'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11701)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11827)
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11996)
+                                    at Module.d (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/work/page.js:1:4151)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:228449
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+                                    at NoopContextManager.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+                                    at ContextAPI.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+                                    at NoopTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+                                    at ProxyTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854) {
+                                    digest: '4274024676'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11701)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11827)
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11996)
+                                    at Module.d (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/work/page.js:1:4151)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:228449
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+                                    at NoopContextManager.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+                                    at ContextAPI.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+                                    at NoopTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+                                    at ProxyTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854) {
+                                    digest: '4274024676'
+                                    }
+                                    Error occurred prerendering page "/work". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11701)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11827)
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11996)
+                                    at Module.d (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/work/page.js:1:4151)
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:228449
+                                    at /codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+                                    at NoopContextManager.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+                                    at ContextAPI.with (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+                                    at NoopTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+                                    at ProxyTracer.startActiveSpan (/codebuild/output/src2656023274/src/sgoodie-platform/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+2026-02-05T04:59:30.269Z [WARNING]: Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7155)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7281)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7450)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433)
+                                    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+                                    at runNextTicks (node:internal/process/task_queues:69:3)
+                                    at listOnTimeout (node:internal/timers:549:9)
+                                    at process.processTimers (node:internal/timers:523:7) {
+                                    digest: '2784482309'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7155)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7281)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7450)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433) {
+                                    digest: '3504672258'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7155)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7281)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7450)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433) {
+                                    digest: '3504672258'
+                                    }
+                                    Error occurred prerendering page "/portfolio/hotels". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7155)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7281)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7450)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433)
+                                    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+                                    at runNextTicks (node:internal/process/task_queues:69:3)
+                                    at listOnTimeout (node:internal/timers:549:9)
+                                    at process.processTimers (node:internal/timers:523:7)
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433)
+                                    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+                                    at runNextTicks (node:internal/process/task_queues:69:3)
+                                    at listOnTimeout (node:internal/timers:549:9)
+                                    at process.processTimers (node:internal/timers:523:7) {
+                                    digest: '159339621'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433) {
+                                    digest: '4280589858'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433) {
+                                    digest: '4280589858'
+                                    }
+                                    Error occurred prerendering page "/portfolio/restaurants". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433)
+                                    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+                                    at runNextTicks (node:internal/process/task_queues:69:3)
+                                    at listOnTimeout (node:internal/timers:549:9)
+                                    at process.processTimers (node:internal/timers:523:7)
+2026-02-05T04:59:30.269Z [INFO]: Generating static pages (50/67)
+2026-02-05T04:59:30.319Z [WARNING]: Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7155)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7281)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7450)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433) {
+                                    digest: '3504672258'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7155)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7281)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7450)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433)
+                                    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+                                    at runNextTicks (node:internal/process/task_queues:69:3)
+                                    at listOnTimeout (node:internal/timers:549:9)
+                                    at process.processTimers (node:internal/timers:523:7) {
+                                    digest: '2784482309'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7155)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7281)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7450)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433)
+                                    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+                                    at runNextTicks (node:internal/process/task_queues:69:3)
+                                    at listOnTimeout (node:internal/timers:549:9)
+                                    at process.processTimers (node:internal/timers:523:7) {
+                                    digest: '2784482309'
+                                    }
+                                    Error occurred prerendering page "/portfolio/travel". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7155)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7281)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/journal/page.js:1:7450)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433)
+2026-02-05T04:59:30.320Z [WARNING]: Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433)
+                                    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+                                    at runNextTicks (node:internal/process/task_queues:69:3)
+                                    at listOnTimeout (node:internal/timers:549:9)
+                                    at process.processTimers (node:internal/timers:523:7) {
+                                    digest: '159339621'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433) {
+                                    digest: '4280589858'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433) {
+                                    digest: '4280589858'
+                                    }
+                                    Error occurred prerendering page "/portfolio/brand". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6648)
+                                    at s (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6774)
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/about/page.js:1:6943)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433)
+                                    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+                                    at runNextTicks (node:internal/process/task_queues:69:3)
+                                    at listOnTimeout (node:internal/timers:549:9)
+                                    at process.processTimers (node:internal/timers:523:7)
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11701)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11827)
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11996)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433)
+                                    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+                                    at runNextTicks (node:internal/process/task_queues:69:3)
+                                    at listOnTimeout (node:internal/timers:549:9)
+                                    at process.processTimers (node:internal/timers:523:7) {
+                                    digest: '2606454959'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11701)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11827)
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11996)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433) {
+                                    digest: '4224250888'
+                                    }
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11701)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11827)
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11996)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433) {
+                                    digest: '4224250888'
+                                    }
+                                    Error occurred prerendering page "/portfolio/home-garden". Read more: https://nextjs.org/docs/messages/prerender-error
+                                    Error: Page management is only implemented for local mock data right now. Set USE_MOCK_DATA=true.
+                                    at n (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11701)
+                                    at o (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11827)
+                                    at i (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/contact/page.js:1:11996)
+                                    at Module.m (/codebuild/output/src2656023274/src/sgoodie-platform/.next/server/app/(public)/portfolio/[category]/page.js:1:4433)
+                                    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+                                    at runNextTicks (node:internal/process/task_queues:69:3)
+                                    at listOnTimeout (node:internal/timers:549:9)
+                                    at process.processTimers (node:internal/timers:523:7)
+2026-02-05T04:59:30.563Z [INFO]: ✓ Generating static pages (67/67)
+2026-02-05T04:59:30.576Z [WARNING]: 
+2026-02-05T04:59:30.576Z [WARNING]: > Export encountered errors on following paths:
+                                    /(public)/about/page: /about
+                                    /(public)/contact/page: /contact
+                                    /(public)/journal/[slug]/page: /journal/deep-creek-lake-project
+                                    /(public)/journal/[slug]/page: /journal/dewey-beach-vacation-home
+                                    /(public)/journal/[slug]/page: /journal/forest-hill-kitchen
+                                    /(public)/journal/[slug]/page: /journal/grand-foyer-transformation
+                                    /(public)/journal/[slug]/page: /journal/living-room-refresh
+                                    /(public)/journal/[slug]/page: /journal/modern-staircase-renovation
+                                    /(public)/journal/page: /journal
+                                    /(public)/page: /
+                                    /(public)/portfolio/[category]/page: /portfolio/brand
+                                    /(public)/portfolio/[category]/page: /portfolio/home-garden
+                                    /(public)/portfolio/[category]/page: /portfolio/hotels
+                                    /(public)/portfolio/[category]/page: /portfolio/restaurants
+                                    /(public)/portfolio/[category]/page: /portfolio/travel
+                                    /(public)/work/page: /work
+2026-02-05T04:59:30.606Z [ERROR]: !!! Build failed
+2026-02-05T04:59:30.606Z [INFO]: Please read more about Amplify Hosting's support for SSR frameworks to find if your build failure is related to an unsupported feature: https://docs.aws.amazon.com/amplify/latest/userguide/amplify-ssr-framework-support.html. You may also find this troubleshooting guide useful: https://docs.aws.amazon.com/amplify/latest/userguide/troubleshooting-ssr-deployment.html
+2026-02-05T04:59:30.606Z [ERROR]: !!! Error: Command failed with exit code 1
+2026-02-05T04:59:30.606Z [INFO]: # Starting environment caching...
+2026-02-05T04:59:30.606Z [INFO]: # Environment caching completed
+

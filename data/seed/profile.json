@@ -1,0 +1,23 @@
+{
+  "name": "S.Goodie",
+  "title": "Architecture & Interiors Photographer",
+  "email": "hello@sgoodie.com",
+  "phone": "(202) 555-0194",
+  "address": {
+    "street": "",
+    "city": "Washington",
+    "state": "DC",
+    "zip": ""
+  },
+  "availability": {
+    "regions": ["DC", "MD", "VA", "PA", "NY"],
+    "note": "Available for travel and select commissions."
+  },
+  "social": {
+    "instagram": { "handle": "@sgoodiephoto", "url": "https://instagram.com/sgoodiephoto" },
+    "linkedin": { "name": "S.Goodie Studio", "url": "https://linkedin.com/company/sgoodie-studio" },
+    "twitter": { "handle": "", "url": "" },
+    "facebook": { "name": "", "url": "" }
+  },
+  "photoId": "about-bio"
+}
