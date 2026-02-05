@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server';
+import { createHash } from 'crypto';
 import { getAdminAuthRecord, verifyAdminCredentials } from '@/lib/auth/admin-store';
 import { getTableName, isMockMode } from '@/lib/data/db';
 
@@ -14,24 +15,40 @@ function getDebugToken(request: NextRequest) {
 }
 
 function getExpectedToken() {
-  return (
-    process.env.ADMIN_DEBUG_TOKEN ||
-    process.env.REVALIDATE_TOKEN ||
-    process.env.NEXTAUTH_SECRET ||
-    ''
-  );
+  if (process.env.ADMIN_DEBUG_TOKEN) return { value: process.env.ADMIN_DEBUG_TOKEN, source: 'ADMIN_DEBUG_TOKEN' };
+  if (process.env.REVALIDATE_TOKEN) return { value: process.env.REVALIDATE_TOKEN, source: 'REVALIDATE_TOKEN' };
+  if (process.env.NEXTAUTH_SECRET) return { value: process.env.NEXTAUTH_SECRET, source: 'NEXTAUTH_SECRET' };
+  return { value: '', source: 'NONE' };
+}
+
+function hashValue(value: string) {
+  if (!value) return '';
+  return createHash('sha256').update(value).digest('hex');
 }
 
 export async function GET(request: NextRequest) {
   const providedToken = getDebugToken(request);
   const expectedToken = getExpectedToken();
+  const expectedTokenHash = hashValue(expectedToken.value);
+  const providedTokenHash = hashValue(providedToken);
 
-  if (!expectedToken || providedToken !== expectedToken) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authorized = Boolean(expectedToken.value && providedToken === expectedToken.value);
 
   const email = request.nextUrl.searchParams.get('email') || '';
   const password = request.nextUrl.searchParams.get('password') || '';
+
+  if (!authorized) {
+    return Response.json(
+      {
+        ok: false,
+        authorized: false,
+        expectedTokenSource: expectedToken.source,
+        expectedTokenHash,
+        providedTokenHash
+      },
+      { status: 401 }
+    );
+  }
 
   const record = await getAdminAuthRecord();
   const credentialsMatch =
