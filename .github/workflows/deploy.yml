@@ -2,7 +2,8 @@
 # S.Goodie Platform - Production Deployment
 # =============================================================================
 # Triggered only when merging to main branch (develop -> main PR merge)
-# Runs Terraform to ensure infrastructure exists, then triggers Amplify build
+# Runs Terraform to ensure infrastructure exists
+# Amplify auto-builds on push (no need to trigger manually)
 # =============================================================================
 
 name: Deploy to Production
@@ -81,7 +82,7 @@ jobs:
           echo "cloudfront_id=$(terraform output -raw cloudfront_distribution_id)" >> $GITHUB_OUTPUT
 
   # ---------------------------------------------------------------------------
-  # Build: Validate the build succeeds
+  # Build: Validate the build succeeds (Amplify builds automatically on push)
   # ---------------------------------------------------------------------------
   build:
     name: Validate Build
@@ -111,10 +112,10 @@ jobs:
         run: npm run build
 
   # ---------------------------------------------------------------------------
-  # Deploy: Trigger Amplify build
+  # Post-Deploy: Invalidate CloudFront cache after Amplify build completes
   # ---------------------------------------------------------------------------
-  deploy:
-    name: Deploy to Amplify
+  invalidate-cache:
+    name: Invalidate CDN Cache
     runs-on: ubuntu-latest
     needs: [terraform, build]
     permissions:
@@ -128,36 +129,11 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/sgoodie-github-actions-prod
           aws-region: us-east-1
 
-      - name: Trigger Amplify Build
-        run: |
-          aws amplify start-job \
-            --app-id ${{ needs.terraform.outputs.amplify_app_id }} \
-            --branch-name main \
-            --job-type RELEASE
-
       - name: Wait for Amplify Build
         run: |
-          echo "Amplify build triggered successfully!"
-          echo "Monitor build status in AWS Amplify Console:"
-          echo "https://us-east-1.console.aws.amazon.com/amplify/apps/${{ needs.terraform.outputs.amplify_app_id }}"
-
-  # ---------------------------------------------------------------------------
-  # Post-Deploy: Invalidate CloudFront cache
-  # ---------------------------------------------------------------------------
-  invalidate-cache:
-    name: Invalidate CDN Cache
-    runs-on: ubuntu-latest
-    needs: [terraform, deploy]
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/sgoodie-github-actions-prod
-          aws-region: us-east-1
+          echo "Amplify builds automatically on push to main."
+          echo "Waiting 60 seconds for Amplify build to progress..."
+          sleep 60
 
       - name: Invalidate CloudFront Cache
         run: |
@@ -168,4 +144,5 @@ jobs:
       - name: Deployment Complete
         run: |
           echo "🚀 Deployment complete!"
-          echo "Production site is being updated."
+          echo "Amplify is building automatically from the push."
+          echo "Monitor: https://us-east-1.console.aws.amazon.com/amplify/apps/${{ needs.terraform.outputs.amplify_app_id }}"
