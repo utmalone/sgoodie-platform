@@ -15,6 +15,8 @@ resource "aws_amplify_app" "main" {
   access_token = var.github_access_token
 
   # Build settings for Next.js SSR
+  # Note: USE_MOCK_DATA=true during build so we don't need DynamoDB access
+  # Runtime will use the branch environment variables (USE_MOCK_DATA=false)
   build_spec = <<-EOT
     version: 1
     frontend:
@@ -24,7 +26,7 @@ resource "aws_amplify_app" "main" {
             - npm ci
         build:
           commands:
-            - npm run build
+            - USE_MOCK_DATA=true npm run build
       artifacts:
         baseDirectory: .next
         files:
