@@ -21,11 +21,14 @@ github_access_token = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 # Custom domain (optional - leave empty to use Amplify default domain)
 domain_name = ""
 
+# Amplify CloudFront distribution ID (required to enable WAF rate limiting)
+amplify_cloudfront_distribution_id = ""
+
 # Application Secrets
 nextauth_secret     = "your-random-32-char-secret-here"
 admin_email         = "admin@example.com"
-admin_password_hash = "sha256-hash-of-your-password"
+admin_password_hash = "argon2id-hash-of-your-password"
 
-# Optional API Keys
+# Optional API Keys (stored in Secrets Manager)
 openai_api_key         = ""
 instagram_access_token = ""

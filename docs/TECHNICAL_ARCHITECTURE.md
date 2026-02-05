@@ -159,6 +159,8 @@ types/
 - Admin record stored in `admins` table
 - `ADMIN_EMAIL` + `ADMIN_PASSWORD_HASH` seed DynamoDB on first run
 - Admin email/password updates persist to DynamoDB
+- Passwords are stored as Argon2id hashes (legacy SHA256 is auto-upgraded on login)
+- AWS WAF rate-limits `/api/auth/*` and `/api/admin/*` to reduce brute-force attempts
 
 ### Admin UX
 - Master "Save All" collects pending changes
@@ -200,8 +202,8 @@ USE_MOCK_DATA=false
 
 ### Optional
 ```
-OPENAI_API_KEY
-INSTAGRAM_ACCESS_TOKEN
+OPENAI_API_KEY_SECRET_ID
+INSTAGRAM_ACCESS_TOKEN_SECRET_ID
 USE_LOCALSTACK=true
 DYNAMODB_ACCESS_KEY_ID
 DYNAMODB_SECRET_ACCESS_KEY
@@ -212,6 +214,7 @@ REVALIDATE_TOKEN
 Notes:
 - Amplify build writes selected env vars to `.env.production` for SSR access
 - `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH` are **seed values**, not the live auth store
+- OpenAI/Instagram tokens are stored in AWS Secrets Manager and referenced via secret IDs
 
 ---
 

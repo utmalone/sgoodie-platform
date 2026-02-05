@@ -1,3 +1,5 @@
+import { getSecretString } from '@/lib/aws/secrets';
+
 type OpenAiResponse = {
   output_text?: string;
   output?: Array<{
@@ -14,16 +16,21 @@ type PhotoSeoResult = {
   alt: string;
 };
 
-export function getOpenAiKey() {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) {
-    throw new Error('OPENAI_API_KEY is not set.');
+export async function getOpenAiKey() {
+  const envKey = process.env.OPENAI_API_KEY?.trim();
+  if (envKey) return envKey;
+
+  const secretId = process.env.OPENAI_API_KEY_SECRET_ID?.trim();
+  if (secretId) {
+    const secret = await getSecretString(secretId);
+    if (secret) return secret;
   }
-  return key;
+
+  throw new Error('OpenAI API key is not configured.');
 }
 
 export async function fetchOpenAiModels() {
-  const key = getOpenAiKey();
+  const key = await getOpenAiKey();
   const response = await fetch('https://api.openai.com/v1/models', {
     headers: {
       Authorization: `Bearer ${key}`
@@ -85,7 +92,7 @@ export async function createOpenAiResponse({
   systemPrompt: string;
   userPrompt: string;
 }) {
-  const key = getOpenAiKey();
+  const key = await getOpenAiKey();
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: {
@@ -172,7 +179,7 @@ export async function analyzePhotoForSeo({
   imageUrl: string;
   model?: string;
 }): Promise<PhotoSeoResult> {
-  const key = getOpenAiKey();
+  const key = await getOpenAiKey();
 
   // Build image content - use URL directly if it's a full URL, otherwise we need base URL
   let fullImageUrl = imageUrl;

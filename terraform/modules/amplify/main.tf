@@ -45,6 +45,17 @@ data "aws_iam_policy_document" "amplify_service_role" {
       resources = local.dynamodb_resources
     }
   }
+
+  dynamic "statement" {
+    for_each = length(var.service_role_secret_arns) > 0 ? [1] : []
+    content {
+      sid = "SecretsManagerAccess"
+      actions = [
+        "secretsmanager:GetSecretValue"
+      ]
+      resources = var.service_role_secret_arns
+    }
+  }
 }
 
 resource "aws_iam_role" "amplify_service_role" {
@@ -88,7 +99,7 @@ resource "aws_amplify_app" "main" {
         build:
           commands:
             - rm -f .env.production
-            - env | grep -E '^(NEXTAUTH_URL|NEXTAUTH_SECRET|ADMIN_EMAIL|ADMIN_PASSWORD_HASH|DYNAMODB_TABLE_PREFIX|DYNAMODB_TABLE_ENV|DYNAMODB_REGION|DYNAMODB_ACCESS_KEY_ID|DYNAMODB_SECRET_ACCESS_KEY|DYNAMODB_SESSION_TOKEN|AWS_REGION|USE_MOCK_DATA|USE_LOCALSTACK|ADMIN_DEBUG_TOKEN|REVALIDATE_TOKEN)=' >> .env.production
+            - env | grep -E '^(NEXTAUTH_URL|NEXTAUTH_SECRET|ADMIN_EMAIL|ADMIN_PASSWORD_HASH|DYNAMODB_TABLE_PREFIX|DYNAMODB_TABLE_ENV|DYNAMODB_REGION|DYNAMODB_ACCESS_KEY_ID|DYNAMODB_SECRET_ACCESS_KEY|DYNAMODB_SESSION_TOKEN|OPENAI_API_KEY_SECRET_ID|INSTAGRAM_ACCESS_TOKEN_SECRET_ID|AWS_REGION|USE_MOCK_DATA|USE_LOCALSTACK|ADMIN_DEBUG_TOKEN|REVALIDATE_TOKEN)=' >> .env.production
             - npm run build
       artifacts:
         baseDirectory: .next

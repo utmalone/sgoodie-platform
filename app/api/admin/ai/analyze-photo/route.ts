@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getOpenAiKey } from '@/lib/ai/openai';
 
 const PHOTO_SEO_PROMPT = `You are helping a professional photographer organize their portfolio website. 
 
@@ -27,10 +28,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
+    let apiKey: string;
+    try {
+      apiKey = await getOpenAiKey();
+    } catch (error) {
       return NextResponse.json(
-        { error: 'OpenAI API key not configured' },
+        { error: error instanceof Error ? error.message : 'OpenAI API key not configured' },
         { status: 500 }
       );
     }

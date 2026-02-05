@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getSecretString } from '@/lib/aws/secrets';
 
 /**
  * Instagram API endpoint for fetching latest posts.
@@ -25,7 +26,9 @@ export async function GET(request: Request) {
   }
 
   // Check if Instagram access token is configured
-  const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
+  const envToken = process.env.INSTAGRAM_ACCESS_TOKEN?.trim();
+  const secretId = process.env.INSTAGRAM_ACCESS_TOKEN_SECRET_ID?.trim();
+  const accessToken = envToken || (secretId ? await getSecretString(secretId) : null);
 
   if (!accessToken) {
     // Return empty posts - component will use placeholder images

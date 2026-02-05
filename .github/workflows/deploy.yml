@@ -69,6 +69,7 @@ jobs:
             -var="admin_password_hash=${{ secrets.ADMIN_PASSWORD_HASH }}" \
             -var="openai_api_key=${{ secrets.OPENAI_API_KEY }}" \
             -var="instagram_access_token=${{ secrets.INSTAGRAM_ACCESS_TOKEN }}" \
+            -var="amplify_cloudfront_distribution_id=${{ secrets.AMPLIFY_CLOUDFRONT_DISTRIBUTION_ID }}" \
             -out=tfplan
 
       - name: Terraform Apply

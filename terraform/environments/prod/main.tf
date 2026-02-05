@@ -109,6 +109,18 @@ module "database" {
 }
 
 # -----------------------------------------------------------------------------
+# Secrets Manager Module (third-party API tokens)
+# -----------------------------------------------------------------------------
+module "secrets" {
+  source = "../../modules/secrets"
+
+  environment            = var.environment
+  project_name           = local.project_name
+  openai_api_key         = var.openai_api_key
+  instagram_access_token = var.instagram_access_token
+}
+
+# -----------------------------------------------------------------------------
 # CDN Module (CloudFront distribution)
 # -----------------------------------------------------------------------------
 module "cdn" {
@@ -151,31 +163,59 @@ module "amplify" {
 
   # Environment variables for the Next.js app
   # Note: AWS_ prefix is reserved by Amplify, so we use different names
-  environment_variables = merge({
-    USE_MOCK_DATA          = "false"
-    NEXTAUTH_URL           = var.nextauth_url
-    NEXTAUTH_SECRET        = var.nextauth_secret
-    ADMIN_EMAIL            = var.admin_email
-    ADMIN_PASSWORD_HASH    = var.admin_password_hash
-    OPENAI_API_KEY         = var.openai_api_key
-    INSTAGRAM_ACCESS_TOKEN = var.instagram_access_token
+  environment_variables = merge(
+    {
+      USE_MOCK_DATA       = "false"
+      NEXTAUTH_URL        = var.nextauth_url
+      NEXTAUTH_SECRET     = var.nextauth_secret
+      ADMIN_EMAIL         = var.admin_email
+      ADMIN_PASSWORD_HASH = var.admin_password_hash
 
-    # S3/CloudFront Resources (using non-AWS prefix for Amplify compatibility)
-    S3_PHOTOS_BUCKET       = module.storage.photos_bucket_name
-    S3_UPLOADS_BUCKET      = module.storage.uploads_bucket_name
-    CLOUDFRONT_URL         = module.cdn.distribution_domain
-    DYNAMODB_REGION        = var.aws_region
-    DYNAMODB_TABLE_PREFIX  = local.project_name
-    DYNAMODB_TABLE_ENV     = var.environment
-  },
-  var.dynamodb_access_key_id != "" ? {
-    DYNAMODB_ACCESS_KEY_ID = var.dynamodb_access_key_id
-  } : {},
-  var.dynamodb_secret_access_key != "" ? {
-    DYNAMODB_SECRET_ACCESS_KEY = var.dynamodb_secret_access_key
-  } : {},
-  var.dynamodb_session_token != "" ? {
-    DYNAMODB_SESSION_TOKEN = var.dynamodb_session_token
-  } : {}
+      # S3/CloudFront Resources (using non-AWS prefix for Amplify compatibility)
+      S3_PHOTOS_BUCKET      = module.storage.photos_bucket_name
+      S3_UPLOADS_BUCKET     = module.storage.uploads_bucket_name
+      CLOUDFRONT_URL        = module.cdn.distribution_domain
+      DYNAMODB_REGION       = var.aws_region
+      DYNAMODB_TABLE_PREFIX = local.project_name
+      DYNAMODB_TABLE_ENV    = var.environment
+    },
+    var.openai_api_key != "" ? {
+      OPENAI_API_KEY_SECRET_ID = module.secrets.openai_api_key_secret_arn
+    } : {},
+    var.instagram_access_token != "" ? {
+      INSTAGRAM_ACCESS_TOKEN_SECRET_ID = module.secrets.instagram_access_token_secret_arn
+    } : {},
+    var.dynamodb_access_key_id != "" ? {
+      DYNAMODB_ACCESS_KEY_ID = var.dynamodb_access_key_id
+    } : {},
+    var.dynamodb_secret_access_key != "" ? {
+      DYNAMODB_SECRET_ACCESS_KEY = var.dynamodb_secret_access_key
+    } : {},
+    var.dynamodb_session_token != "" ? {
+      DYNAMODB_SESSION_TOKEN = var.dynamodb_session_token
+    } : {}
   )
+
+  service_role_secret_arns = [
+    module.secrets.openai_api_key_secret_arn,
+    module.secrets.instagram_access_token_secret_arn
+  ]
+}
+
+# -----------------------------------------------------------------------------
+# WAF Module (rate limiting for auth/admin endpoints)
+# -----------------------------------------------------------------------------
+module "waf" {
+  source = "../../modules/waf"
+  count  = var.amplify_cloudfront_distribution_id != "" ? 1 : 0
+
+  providers = {
+    aws = aws.us_east_1
+  }
+
+  environment                   = var.environment
+  project_name                  = local.project_name
+  cloudfront_distribution_id    = var.amplify_cloudfront_distribution_id
+  rate_limit_auth               = 100
+  rate_limit_admin              = 300
 }

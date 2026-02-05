@@ -34,23 +34,24 @@ Click "New repository secret" for each of the following:
 - **Value:** Seed admin login email (e.g., `admin@sgoodiephoto.com`)
 
 ### 6. ADMIN_PASSWORD_HASH
-- **How to create:** SHA256 hash of your desired password
-- **Command (PowerShell):**
+- **How to create:** Argon2id hash of your desired password (preferred)
+- **Command (PowerShell, from repo root after `npm install`):**
   ```powershell
-  $password = "your-secure-password"
-  $bytes = [System.Text.Encoding]::UTF8.GetBytes($password)
-  $hash = [System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes)
-  [System.BitConverter]::ToString($hash).Replace("-", "").ToLower()
+  node -e "const argon2 = require('argon2'); argon2.hash('your-secure-password', { type: argon2.argon2id }).then(console.log)"
   ```
-- **Value:** The generated hash
+- **Value:** The generated hash string
 
 ### 7. OPENAI_API_KEY (Optional)
 - **How to get:** From https://platform.openai.com/api-keys
-- **Value:** Your OpenAI API key (starts with `sk-`)
+- **Value:** Your OpenAI API key (stored in AWS Secrets Manager via Terraform)
 
 ### 8. INSTAGRAM_ACCESS_TOKEN (Optional)
 - **How to get:** From Facebook Developer Console
-- **Value:** Your Instagram access token
+- **Value:** Your Instagram access token (stored in AWS Secrets Manager via Terraform)
+
+### 9. AMPLIFY_CLOUDFRONT_DISTRIBUTION_ID (Required for WAF rate limiting)
+- **How to get:** From CloudFront console or CLI
+- **Value:** CloudFront distribution ID (e.g., `E2Y76CUV9MZ8N3`)
 
 ## Notes
 
@@ -70,6 +71,7 @@ ADMIN_EMAIL            ********
 ADMIN_PASSWORD_HASH    ********
 OPENAI_API_KEY         ********
 INSTAGRAM_ACCESS_TOKEN ********
+AMPLIFY_CLOUDFRONT_DISTRIBUTION_ID ********
 ```
 
 ## Testing the Setup

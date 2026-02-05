@@ -46,3 +46,9 @@ variable "service_role_dynamodb_arns" {
   type        = list(string)
   default     = []
 }
+
+variable "service_role_secret_arns" {
+  description = "Secrets Manager ARNs the Amplify service role can access"
+  type        = list(string)
+  default     = []
+}

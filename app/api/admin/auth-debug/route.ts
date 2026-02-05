@@ -111,7 +111,9 @@ export async function GET(request: NextRequest) {
         hasAdminPasswordHashEnv: Boolean(process.env.ADMIN_PASSWORD_HASH),
         hasRevalidateTokenEnv: Boolean(process.env.REVALIDATE_TOKEN),
         hasAdminDebugTokenEnv: Boolean(process.env.ADMIN_DEBUG_TOKEN),
-        hasNextAuthSecretEnv: Boolean(process.env.NEXTAUTH_SECRET)
+        hasNextAuthSecretEnv: Boolean(process.env.NEXTAUTH_SECRET),
+        hasOpenAiSecretIdEnv: Boolean(process.env.OPENAI_API_KEY_SECRET_ID),
+        hasInstagramSecretIdEnv: Boolean(process.env.INSTAGRAM_ACCESS_TOKEN_SECRET_ID)
       },
       record: record
         ? {

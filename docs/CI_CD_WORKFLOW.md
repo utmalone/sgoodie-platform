@@ -75,6 +75,7 @@ feature branch -> develop -> PR -> main -> deploy
 | CloudFront | CDN for fast image delivery |
 | DynamoDB (6 tables) | Content + analytics + admin auth |
 | IAM Role (OIDC) | Secure GitHub Actions auth |
+| WAFv2 Web ACL | Rate limiting for auth/admin endpoints |
 
 ### Amplify Runtime Details
 - **Compute role** grants DynamoDB access for SSR
@@ -95,8 +96,9 @@ Required secrets in **Settings -> Secrets and variables -> Actions**:
 | `NEXTAUTH_SECRET` | JWT encryption secret |
 | `ADMIN_EMAIL` | Seed admin login email |
 | `ADMIN_PASSWORD_HASH` | Seed admin password hash |
-| `OPENAI_API_KEY` | OpenAI API key (optional) |
-| `INSTAGRAM_ACCESS_TOKEN` | Instagram token (optional) |
+| `OPENAI_API_KEY` | OpenAI API key (optional, stored in Secrets Manager) |
+| `INSTAGRAM_ACCESS_TOKEN` | Instagram token (optional, stored in Secrets Manager) |
+| `AMPLIFY_CLOUDFRONT_DISTRIBUTION_ID` | CloudFront distribution ID for WAF rate limiting |
 
 Notes:
 - `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH` seed the DynamoDB admin record on first run.
@@ -114,6 +116,8 @@ Common variables:
 - `NEXTAUTH_SECRET`
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD_HASH`
+- `OPENAI_API_KEY_SECRET_ID` (optional)
+- `INSTAGRAM_ACCESS_TOKEN_SECRET_ID` (optional)
 - `DYNAMODB_TABLE_PREFIX`
 - `DYNAMODB_TABLE_ENV`
 - `DYNAMODB_REGION`

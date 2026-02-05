@@ -44,6 +44,12 @@ variable "domain_name" {
   default     = ""
 }
 
+variable "amplify_cloudfront_distribution_id" {
+  description = "CloudFront distribution ID for the Amplify app (used for WAF association)"
+  type        = string
+  default     = ""
+}
+
 # -----------------------------------------------------------------------------
 # Application Secrets (stored in GitHub Secrets, passed via CI/CD)
 # -----------------------------------------------------------------------------
@@ -60,20 +66,20 @@ variable "admin_email" {
 }
 
 variable "admin_password_hash" {
-  description = "SHA256 hash of admin password"
+  description = "Admin password hash (argon2id or legacy SHA256)"
   type        = string
   sensitive   = true
 }
 
 variable "openai_api_key" {
-  description = "OpenAI API key for AI features"
+  description = "OpenAI API key for AI features (stored in Secrets Manager)"
   type        = string
   sensitive   = true
   default     = ""
 }
 
 variable "instagram_access_token" {
-  description = "Instagram API access token"
+  description = "Instagram API access token (stored in Secrets Manager)"
   type        = string
   sensitive   = true
   default     = ""

@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from 'crypto';
+import argon2 from 'argon2';
 import { getItem, isMockMode, putItem } from '@/lib/data/db';
 
 export type AdminAuthRecord = {
@@ -11,12 +12,24 @@ export type AdminAuthRecord = {
 
 const TABLE_NAME = 'admins';
 const ADMIN_ID = 'primary';
+const LEGACY_SHA256_REGEX = /^[a-f0-9]{64}$/i;
+
+const ARGON2_OPTIONS = {
+  type: argon2.argon2id,
+  memoryCost: 19456,
+  timeCost: 2,
+  parallelism: 1
+};
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
 export function hashPassword(password: string) {
+  return argon2.hash(password, ARGON2_OPTIONS);
+}
+
+function hashPasswordLegacy(password: string) {
   return createHash('sha256').update(password).digest('hex');
 }
 
@@ -27,7 +40,7 @@ function safeEqualHash(a: string, b: string) {
 
 function getEnvAdminRecord(): AdminAuthRecord | null {
   const email = process.env.ADMIN_EMAIL?.trim();
-  const passwordHash = process.env.ADMIN_PASSWORD_HASH?.trim()?.toLowerCase();
+  const passwordHash = process.env.ADMIN_PASSWORD_HASH?.trim();
   if (!email || !passwordHash) return null;
   return {
     id: ADMIN_ID,
@@ -67,7 +80,7 @@ export async function getAdminAuthRecord(): Promise<AdminAuthRecord | null> {
       return {
         ...record,
         email: normalizeEmail(record.email),
-        passwordHash: record.passwordHash.trim().toLowerCase()
+        passwordHash: record.passwordHash.trim()
       };
     }
   } catch (error) {
@@ -77,6 +90,43 @@ export async function getAdminAuthRecord(): Promise<AdminAuthRecord | null> {
   return seedAdminFromEnv();
 }
 
+function isLegacySha256(hash: string) {
+  return LEGACY_SHA256_REGEX.test(hash);
+}
+
+async function verifyPasswordHash(hash: string, password: string) {
+  if (!hash) return false;
+  if (hash.startsWith('$argon2')) {
+    return argon2.verify(hash, password);
+  }
+
+  if (isLegacySha256(hash)) {
+    const inputHash = hashPasswordLegacy(password);
+    return safeEqualHash(hash.toLowerCase(), inputHash.toLowerCase());
+  }
+
+  return false;
+}
+
+async function upgradeLegacyHash(record: AdminAuthRecord, password: string) {
+  if (!isLegacySha256(record.passwordHash)) return record;
+
+  try {
+    const nextHash = await hashPassword(password);
+    const now = new Date().toISOString();
+    const updated: AdminAuthRecord = {
+      ...record,
+      passwordHash: nextHash,
+      updatedAt: now
+    };
+    await putItem(TABLE_NAME, updated);
+    return updated;
+  } catch (error) {
+    console.error('Failed to upgrade legacy password hash:', error);
+    return record;
+  }
+}
+
 export async function verifyAdminCredentials(email: string, password: string) {
   const record = await getAdminAuthRecord();
   if (!record) return null;
@@ -84,10 +134,11 @@ export async function verifyAdminCredentials(email: string, password: string) {
   const normalizedEmail = normalizeEmail(email);
   if (normalizedEmail !== record.email) return null;
 
-  const inputHash = hashPassword(password);
-  if (!safeEqualHash(record.passwordHash, inputHash)) return null;
+  const matches = await verifyPasswordHash(record.passwordHash, password);
+  if (!matches) return null;
 
-  return record;
+  const upgraded = await upgradeLegacyHash(record, password);
+  return upgraded;
 }
 
 export async function updateAdminEmail(email: string) {
@@ -114,12 +165,12 @@ export async function updateAdminPassword(currentPassword: string, newPassword: 
     return { ok: false, error: 'Admin account is not initialized.' };
   }
 
-  const currentHash = hashPassword(currentPassword);
-  if (!safeEqualHash(record.passwordHash, currentHash)) {
+  const matches = await verifyPasswordHash(record.passwordHash, currentPassword);
+  if (!matches) {
     return { ok: false, error: 'Current password is incorrect.' };
   }
 
-  const nextHash = hashPassword(newPassword);
+  const nextHash = await hashPassword(newPassword);
   const now = new Date().toISOString();
   const updated: AdminAuthRecord = {
     ...record,
