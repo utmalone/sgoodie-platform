@@ -140,7 +140,7 @@ jobs:
       - name: Invalidate CloudFront Cache
         run: |
           aws cloudfront create-invalidation \
-            --distribution-id ${{ needs.terraform.outputs.cloudfront_id }} \
+            --distribution-id ${{ secrets.AMPLIFY_CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
 
       - name: Deployment Complete
