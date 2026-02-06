@@ -16,6 +16,7 @@ export function AdminPreviewModal({
   refreshKey = 0
 }: AdminPreviewModalProps) {
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const [toastMessage] = useState<string>('Preview refreshed');
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
@@ -43,6 +44,7 @@ export function AdminPreviewModal({
   const previewUrl = `${initialPath}${separator}preview=draft&refresh=${refreshKey}`;
   const iframeKey = previewUrl;
   const isLoading = isOpen && loadedKey !== iframeKey;
+  const showToast = isOpen && refreshKey > 0;
 
   return (
     <Activity mode={isOpen ? 'visible' : 'hidden'} name="AdminPreviewModal">
@@ -94,6 +96,32 @@ export function AdminPreviewModal({
             backgroundColor: '#fff'
           }}
         >
+          {showToast && (
+            <div
+              key={`toast-${refreshKey}`}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                zIndex: 20,
+                padding: '0.5rem 0.75rem',
+                backgroundColor: 'rgba(17, 24, 39, 0.92)',
+                color: '#fff',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                borderRadius: '999px',
+                boxShadow: '0 10px 24px rgba(0,0,0,0.2)',
+                animation: 'toastFade 2.2s ease-out',
+                animationFillMode: 'forwards',
+                pointerEvents: 'none'
+              }}
+              aria-live="polite"
+            >
+              {toastMessage}
+            </div>
+          )}
           {isLoading && (
             <div 
               style={{
@@ -140,6 +168,12 @@ export function AdminPreviewModal({
           @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
+          }
+          @keyframes toastFade {
+            0% { opacity: 0; transform: translateY(-6px); }
+            15% { opacity: 1; transform: translateY(0); }
+            70% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-6px); }
           }
         `}</style>
       </div>

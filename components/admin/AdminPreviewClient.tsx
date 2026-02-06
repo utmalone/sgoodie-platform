@@ -121,6 +121,7 @@ export function AdminPreviewClient() {
   const workIndex = workQuery.data ?? null;
   const journalPosts = journalQuery.data ?? EMPTY_JOURNAL;
   const profile = profileQuery.data ?? null;
+  const hasDraftPreview = Boolean(draftPages);
 
   const isLoading =
     pagesQuery.isLoading ||
@@ -206,8 +207,11 @@ export function AdminPreviewClient() {
   return (
     <div className="min-h-screen bg-paper">
       <div className="border-b border-line bg-white/80">
-        <div className="container-page flex items-center justify-between py-3 text-xs uppercase tracking-[0.3em] text-ink/50">
-          <span>Preview Mode (Draft)</span>
+        <div className="container-page flex items-center justify-between gap-4 py-3 text-xs uppercase tracking-[0.3em] text-ink/50">
+          <span>{hasDraftPreview ? 'Preview Mode (Draft)' : 'Preview Mode (Live)'}</span>
+          <span className="rounded-full border border-ink/20 px-3 py-1 text-[10px] font-semibold tracking-[0.3em] text-ink/70">
+            {hasDraftPreview ? 'Draft Preview' : 'Live Preview'}
+          </span>
         </div>
       </div>
 
