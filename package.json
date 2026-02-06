@@ -23,14 +23,14 @@
     "bcryptjs": "^3.0.3",
     "next": "^16.1.6",
     "next-auth": "^4.24.7",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20.12.7",
-    "@types/react": "^18.2.79",
-    "@types/react-dom": "^18.2.25",
+    "@types/react": "^19.2.13",
+    "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.19",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.6",
