@@ -1,5 +1,5 @@
 import { createHash, timingSafeEqual } from 'crypto';
-import argon2 from 'argon2';
+import bcrypt from 'bcryptjs';
 import { getItem, isMockMode, putItem } from '@/lib/data/db';
 
 export type AdminAuthRecord = {
@@ -15,18 +15,42 @@ const ADMIN_ID = 'primary';
 const LEGACY_SHA256_REGEX = /^[a-f0-9]{64}$/i;
 
 const ARGON2_OPTIONS = {
-  type: argon2.argon2id,
   memoryCost: 19456,
   timeCost: 2,
   parallelism: 1
 };
 
+const BCRYPT_COST = 12;
+
+type Argon2Module = typeof import('argon2');
+let argon2Module: Argon2Module | null | 'failed' = null;
+
+async function loadArgon2(): Promise<Argon2Module | null> {
+  if (argon2Module === 'failed') return null;
+  if (!argon2Module) {
+    try {
+      argon2Module = await import('argon2');
+    } catch (error) {
+      console.warn('[auth] Argon2 unavailable; falling back to bcryptjs.', error);
+      argon2Module = 'failed';
+    }
+  }
+  return argon2Module === 'failed' ? null : argon2Module;
+}
+
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
-export function hashPassword(password: string) {
-  return argon2.hash(password, ARGON2_OPTIONS);
+export async function hashPassword(password: string) {
+  const argon2 = await loadArgon2();
+  if (argon2) {
+    return argon2.hash(password, {
+      ...ARGON2_OPTIONS,
+      type: argon2.argon2id
+    });
+  }
+  return bcrypt.hashSync(password, BCRYPT_COST);
 }
 
 function hashPasswordLegacy(password: string) {
@@ -97,7 +121,16 @@ function isLegacySha256(hash: string) {
 async function verifyPasswordHash(hash: string, password: string) {
   if (!hash) return false;
   if (hash.startsWith('$argon2')) {
+    const argon2 = await loadArgon2();
+    if (!argon2) {
+      console.error('[auth] Argon2 hash present but argon2 is unavailable.');
+      return false;
+    }
     return argon2.verify(hash, password);
+  }
+
+  if (hash.startsWith('$2a$') || hash.startsWith('$2b$') || hash.startsWith('$2y$')) {
+    return bcrypt.compareSync(password, hash);
   }
 
   if (isLegacySha256(hash)) {
@@ -128,17 +161,22 @@ async function upgradeLegacyHash(record: AdminAuthRecord, password: string) {
 }
 
 export async function verifyAdminCredentials(email: string, password: string) {
-  const record = await getAdminAuthRecord();
-  if (!record) return null;
+  try {
+    const record = await getAdminAuthRecord();
+    if (!record) return null;
 
-  const normalizedEmail = normalizeEmail(email);
-  if (normalizedEmail !== record.email) return null;
+    const normalizedEmail = normalizeEmail(email);
+    if (normalizedEmail !== record.email) return null;
 
-  const matches = await verifyPasswordHash(record.passwordHash, password);
-  if (!matches) return null;
+    const matches = await verifyPasswordHash(record.passwordHash, password);
+    if (!matches) return null;
 
-  const upgraded = await upgradeLegacyHash(record, password);
-  return upgraded;
+    const upgraded = await upgradeLegacyHash(record, password);
+    return upgraded;
+  } catch (error) {
+    console.error('Failed to verify admin credentials:', error);
+    return null;
+  }
 }
 
 export async function updateAdminEmail(email: string) {
