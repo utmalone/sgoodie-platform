@@ -20,6 +20,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
 
   const openPreview = useCallback((path: string = '/') => {
     setInitialPath(path);
+    setRefreshKey((prev) => prev + 1);
     setIsOpen(true);
   }, []);
 
@@ -29,6 +30,11 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
 
   const refreshPreview = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
+    try {
+      window.localStorage.setItem('admin-preview-refresh', String(Date.now()));
+    } catch {
+      // Ignore storage access errors.
+    }
   }, []);
 
   return (

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import layoutStyles from '@/styles/public/layout.module.css';
 import styles from '@/styles/public/SiteHeader.module.css';
 import {
@@ -32,11 +32,58 @@ interface SiteHeaderProps {
   socialLinks?: SocialLinks;
 }
 
+function useHeroPresence(enabled: boolean) {
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      if (!enabled || typeof document === 'undefined') {
+        return () => {};
+      }
+
+      const observer = new MutationObserver(() => onStoreChange());
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['data-hero']
+      });
+
+      return () => observer.disconnect();
+    },
+    () => {
+      if (!enabled || typeof document === 'undefined') return false;
+      return Boolean(document.querySelector('[data-hero="true"]'));
+    },
+    () => false
+  );
+}
+
+function useScrollY(enabled: boolean) {
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      if (!enabled || typeof window === 'undefined') {
+        return () => {};
+      }
+
+      const handleScroll = () => onStoreChange();
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      window.addEventListener('resize', handleScroll);
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+        window.removeEventListener('resize', handleScroll);
+      };
+    },
+    () => {
+      if (!enabled || typeof window === 'undefined') return 0;
+      return window.scrollY;
+    },
+    () => 0
+  );
+}
+
 export function SiteHeader({ socialLinks }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [portfolioOpen, setPortfolioOpen] = useState(false);
   const [mobilePortfolioOpen, setMobilePortfolioOpen] = useState(false);
-  const [hasHeroMedia, setHasHeroMedia] = useState(false);
   const portfolioRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
@@ -52,40 +99,10 @@ export function SiteHeader({ socialLinks }: SiteHeaderProps) {
     return false;
   }, [pathname]);
 
-  useEffect(() => {
-    if (!isHeroPage) {
-      setHasHeroMedia(false);
-      return;
-    }
-
-    const checkHero = () => {
-      const heroEl = document.querySelector('[data-hero="true"]');
-      setHasHeroMedia(Boolean(heroEl));
-    };
-
-    checkHero();
-    const timeout = window.setTimeout(checkHero, 100);
-
-    return () => window.clearTimeout(timeout);
-  }, [isHeroPage, pathname]);
-
+  const hasHeroMedia = useHeroPresence(isHeroPage);
   const heroMode = isHeroPage && hasHeroMedia;
-  const [isScrolled, setIsScrolled] = useState(!heroMode);
-
-  useEffect(() => {
-    if (!heroMode) {
-      setIsScrolled(true);
-      return;
-    }
-
-    function handleScroll() {
-      setIsScrolled(window.scrollY > 12);
-    }
-
-    handleScroll();
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [heroMode]);
+  const scrollY = useScrollY(heroMode);
+  const isScrolled = !heroMode || scrollY > 12;
 
   // Close portfolio dropdown when clicking outside
   useEffect(() => {

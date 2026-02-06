@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useEffectEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   HomeLayout,
   JournalPost,
@@ -31,6 +32,19 @@ const navLinks: NavLink[] = [
   { label: 'Contact', path: '/contact' }
 ];
 
+const EMPTY_PAGES: PageContent[] = [];
+const EMPTY_PHOTOS: PhotoAsset[] = [];
+const EMPTY_PROJECTS: Project[] = [];
+const EMPTY_JOURNAL: JournalPost[] = [];
+
+async function fetchJson<T>(url: string): Promise<T> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to load ${url}`);
+  }
+  return (await response.json()) as T;
+}
+
 function mapPathToSlug(path: string) {
   if (path === '/about') return 'about';
   if (path === '/work') return 'work';
@@ -50,83 +64,87 @@ function formatDate(date: string) {
 export function AdminPreviewClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialPath = searchParams.get('path') || '/';
+  const queryClient = useQueryClient();
+  const [draftPages, setDraftPages] = useState<PageContent[] | null>(() => loadDraftPages());
 
-  const [activePath, setActivePath] = useState(initialPath);
-  const [pages, setPages] = useState<PageContent[]>([]);
-  const [photos, setPhotos] = useState<PhotoAsset[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [profile, setProfile] = useState<SiteProfile | null>(null);
-  const [homeLayout, setHomeLayout] = useState<HomeLayout | null>(null);
-  const [workIndex, setWorkIndex] = useState<WorkIndex | null>(null);
-  const [journalPosts, setJournalPosts] = useState<JournalPost[]>([]);
-  const [status, setStatus] = useState('Loading preview...');
+  const pagesQuery = useQuery({
+    queryKey: ['admin', 'pages'],
+    queryFn: () => fetchJson<PageContent[]>('/api/admin/pages')
+  });
+  const photosQuery = useQuery({
+    queryKey: ['admin', 'photos'],
+    queryFn: () => fetchJson<PhotoAsset[]>('/api/admin/photos')
+  });
+  const projectsQuery = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => fetchJson<Project[]>('/api/projects')
+  });
+  const homeQuery = useQuery({
+    queryKey: ['admin', 'layout', 'home'],
+    queryFn: () => fetchJson<HomeLayout>('/api/admin/layout/home')
+  });
+  const workQuery = useQuery({
+    queryKey: ['admin', 'layout', 'work'],
+    queryFn: () => fetchJson<WorkIndex>('/api/admin/layout/work')
+  });
+  const journalQuery = useQuery({
+    queryKey: ['journal'],
+    queryFn: () => fetchJson<JournalPost[]>('/api/journal')
+  });
+  const profileQuery = useQuery({
+    queryKey: ['admin', 'profile'],
+    queryFn: () => fetchJson<SiteProfile>('/api/admin/profile')
+  });
+
+  const refreshPreviewData = useEffectEvent(() => {
+    setDraftPages(loadDraftPages());
+    queryClient.invalidateQueries({ queryKey: ['admin'] });
+    queryClient.invalidateQueries({ queryKey: ['projects'] });
+    queryClient.invalidateQueries({ queryKey: ['journal'] });
+  });
+
+  const handleStorage = useEffectEvent((event: StorageEvent) => {
+    if (event.key === 'admin-preview-refresh') {
+      refreshPreviewData();
+    }
+  });
 
   useEffect(() => {
-    const path = searchParams.get('path') || '/';
-    if (path !== activePath) {
-      setActivePath(path);
-    }
-  }, [searchParams, activePath]);
-
-  const loadData = useCallback(async () => {
-    const [pagesRes, photosRes, projectsRes, homeRes, workRes, journalRes, profileRes] =
-      await Promise.all([
-        fetch('/api/admin/pages'),
-        fetch('/api/admin/photos'),
-        fetch('/api/projects'),
-        fetch('/api/admin/layout/home'),
-        fetch('/api/admin/layout/work'),
-        fetch('/api/journal'),
-        fetch('/api/admin/profile')
-      ]);
-
-    if (
-      !pagesRes.ok ||
-      !photosRes.ok ||
-      !projectsRes.ok ||
-      !homeRes.ok ||
-      !workRes.ok ||
-      !journalRes.ok ||
-      !profileRes.ok
-    ) {
-      setStatus('Unable to load preview data.');
-      return;
-    }
-
-    const pagesData = (await pagesRes.json()) as PageContent[];
-    const photosData = (await photosRes.json()) as PhotoAsset[];
-    const projectsData = (await projectsRes.json()) as Project[];
-    const homeData = (await homeRes.json()) as HomeLayout;
-    const workData = (await workRes.json()) as WorkIndex;
-    const journalData = (await journalRes.json()) as JournalPost[];
-    const profileData = (await profileRes.json()) as SiteProfile;
-
-    const draft = loadDraftPages();
-    setPages(draft ?? pagesData);
-    setPhotos(photosData);
-    setProjects(projectsData);
-    setHomeLayout(homeData);
-    setWorkIndex(workData);
-    setJournalPosts(journalData);
-    setProfile(profileData);
-    setStatus('');
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  useEffect(() => {
-    function handleStorage(event: StorageEvent) {
-      if (event.key === 'admin-preview-refresh') {
-        loadData();
-      }
-    }
-
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
-  }, [loadData]);
+  }, []);
+
+  const pages = draftPages ?? pagesQuery.data ?? EMPTY_PAGES;
+  const photos = photosQuery.data ?? EMPTY_PHOTOS;
+  const projects = projectsQuery.data ?? EMPTY_PROJECTS;
+  const homeLayout = homeQuery.data ?? null;
+  const workIndex = workQuery.data ?? null;
+  const journalPosts = journalQuery.data ?? EMPTY_JOURNAL;
+  const profile = profileQuery.data ?? null;
+
+  const isLoading =
+    pagesQuery.isLoading ||
+    photosQuery.isLoading ||
+    projectsQuery.isLoading ||
+    homeQuery.isLoading ||
+    workQuery.isLoading ||
+    journalQuery.isLoading ||
+    profileQuery.isLoading;
+
+  const hasError =
+    pagesQuery.isError ||
+    photosQuery.isError ||
+    projectsQuery.isError ||
+    homeQuery.isError ||
+    workQuery.isError ||
+    journalQuery.isError ||
+    profileQuery.isError;
+
+  const status = isLoading
+    ? 'Loading preview...'
+    : hasError
+      ? 'Unable to load preview data.'
+      : '';
 
   const photosById = useMemo(() => {
     return new Map(photos.map((photo) => [photo.id, photo]));
@@ -140,13 +158,13 @@ export function AdminPreviewClient() {
       .filter(Boolean) as PhotoAsset[];
   }
 
-  function handleNav(path: string) {
-    setActivePath(path);
+  const handleNav = useCallback((path: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('path', path);
     router.replace(`/admin/preview?${params.toString()}`);
-  }
+  }, [router, searchParams]);
 
+  const activePath = searchParams.get('path') || '/';
   const slug = mapPathToSlug(activePath);
   const currentPage = pages.find((page) => page.slug === slug);
 
@@ -160,7 +178,7 @@ export function AdminPreviewClient() {
     ? journalPosts.find((post) => post.slug === journalSlug)
     : null;
 
-  const orderedProjects = useMemo(() => {
+  const orderedProjects = (() => {
     if (!workIndex) return projects;
     const projectMap = new Map(projects.map((project) => [project.id, project]));
     const ordered = workIndex.projectIds
@@ -168,7 +186,7 @@ export function AdminPreviewClient() {
       .filter(Boolean) as Project[];
     const remaining = projects.filter((project) => !workIndex.projectIds.includes(project.id));
     return [...ordered, ...remaining];
-  }, [projects, workIndex]);
+  })();
 
   if (status) {
     return <p className="text-sm text-ink/60">{status}</p>;

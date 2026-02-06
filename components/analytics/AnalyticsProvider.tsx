@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useEffectEvent } from 'react';
 import { usePathname } from 'next/navigation';
 
 const VISITOR_KEY = 'sgoodie.analytics.visitor';
@@ -47,7 +47,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const pathRef = useRef<string>('');
   const referrerRef = useRef<string>('');
 
-  function sendEvent(path: string, durationMs: number, referrer?: string) {
+  const sendEvent = useEffectEvent((path: string, durationMs: number, referrer?: string) => {
     const payload = {
       type: 'page_view' as const,
       path,
@@ -71,7 +71,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
         keepalive: true
       }).catch(() => {});
     }
-  }
+  });
 
   useEffect(() => {
     const now = Date.now();
@@ -93,11 +93,11 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    function handleUnload() {
+    const handleUnload = () => {
       if (!pathRef.current || !shouldTrack(pathRef.current)) return;
       const duration = Date.now() - startRef.current;
       sendEvent(pathRef.current, duration, referrerRef.current);
-    }
+    };
 
     window.addEventListener('beforeunload', handleUnload);
     return () => window.removeEventListener('beforeunload', handleUnload);
