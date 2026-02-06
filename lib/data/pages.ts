@@ -1,4 +1,6 @@
+import { unstable_cache } from 'next/cache';
 import type { PageContent } from '@/types';
+import { CacheTags } from '@/lib/cache-tags';
 import { readJson, writeJson } from './local-store';
 import { isMockMode, getAllItems, putItem, getItem } from './db';
 
@@ -26,7 +28,7 @@ function createDefaultPage(slug: string): PageContent {
   };
 }
 
-export async function getAllPages(): Promise<PageContent[]> {
+async function loadAllPages(): Promise<PageContent[]> {
   if (isMockMode()) {
     const pages = await readJson<PageContent[]>(PAGES_FILE);
     return pages.map((page) => ({
@@ -47,24 +49,44 @@ export async function getAllPages(): Promise<PageContent[]> {
   }));
 }
 
+const getAllPagesCached = unstable_cache(
+  async (): Promise<PageContent[]> => {
+    return loadAllPages();
+  },
+  ['pages'],
+  { tags: [CacheTags.pages], revalidate: false }
+);
+
+export async function getAllPages(): Promise<PageContent[]> {
+  return getAllPagesCached();
+}
+
+const getPageBySlugCached = unstable_cache(
+  async (slug: string): Promise<PageContent> => {
+    if (isMockMode()) {
+      const pages = await loadAllPages();
+      const page = pages.find((item) => item.slug === slug);
+      return page || createDefaultPage(slug);
+    }
+
+    // DynamoDB mode
+    const page = await getItem<PageContent>(TABLE_NAME, { slug });
+    return page || createDefaultPage(slug);
+  },
+  ['page-by-slug'],
+  { tags: [CacheTags.pages], revalidate: false }
+);
+
 /**
  * Get a page by slug. Returns a default empty page if not found.
  */
 export async function getPageBySlug(slug: string): Promise<PageContent> {
-  if (isMockMode()) {
-    const pages = await getAllPages();
-    const page = pages.find((item) => item.slug === slug);
-    return page || createDefaultPage(slug);
-  }
-
-  // DynamoDB mode
-  const page = await getItem<PageContent>(TABLE_NAME, { slug });
-  return page || createDefaultPage(slug);
+  return getPageBySlugCached(slug);
 }
 
 export async function updatePage(updated: PageContent): Promise<PageContent> {
   if (isMockMode()) {
-    const pages = await getAllPages();
+    const pages = await loadAllPages();
     const index = pages.findIndex((page) => page.slug === updated.slug);
 
     if (index >= 0) {
@@ -82,7 +104,7 @@ export async function updatePage(updated: PageContent): Promise<PageContent> {
 }
 
 export async function removePhotoFromPages(photoId: string) {
-  const pages = await getAllPages();
+  const pages = await loadAllPages();
   const nextPages = pages.map((page) => ({
     ...page,
     gallery: page.gallery.filter((id) => id !== photoId)

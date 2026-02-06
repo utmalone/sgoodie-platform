@@ -1,18 +1,32 @@
 import { randomUUID } from 'crypto';
+import { unstable_cache } from 'next/cache';
 import { readJson, writeJson } from './local-store';
 import type { Project, ProjectCategory } from '@/types';
+import { CacheTags } from '@/lib/cache-tags';
 import { isMockMode, getAllItems, getItem, putItem, deleteItem } from './db';
 
 const PROJECTS_FILE = 'projects.json';
 const TABLE_NAME = 'projects';
 
-export async function getAllProjects(): Promise<Project[]> {
+async function loadAllProjects(): Promise<Project[]> {
   if (isMockMode()) {
     return readJson<Project[]>(PROJECTS_FILE);
   }
 
   // DynamoDB mode - return empty array if no data
   return getAllItems<Project>(TABLE_NAME);
+}
+
+const getAllProjectsCached = unstable_cache(
+  async (): Promise<Project[]> => {
+    return loadAllProjects();
+  },
+  ['projects'],
+  { tags: [CacheTags.projects], revalidate: false }
+);
+
+export async function getAllProjects(): Promise<Project[]> {
+  return getAllProjectsCached();
 }
 
 export async function getProjectsByCategory(category: ProjectCategory): Promise<Project[]> {
@@ -53,7 +67,7 @@ export async function getPublishedProjects(): Promise<Project[]> {
 export async function createProject(
   input: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>
 ): Promise<Project> {
-  const projects = await getAllProjects();
+  const projects = await loadAllProjects();
 
   // Ensure unique slug
   const existingSlug = projects.find((p) => p.slug === input.slug);
@@ -82,7 +96,7 @@ export async function updateProject(
   id: string,
   updates: Partial<Omit<Project, 'id' | 'createdAt'>>
 ): Promise<Project> {
-  const projects = await getAllProjects();
+  const projects = await loadAllProjects();
   const existing = projects.find((p) => p.id === id);
 
   if (!existing) {
@@ -116,7 +130,7 @@ export async function updateProject(
 
 export async function deleteProject(id: string): Promise<void> {
   if (isMockMode()) {
-    const projects = await getAllProjects();
+    const projects = await loadAllProjects();
     const filtered = projects.filter((p) => p.id !== id);
 
     if (filtered.length === projects.length) {

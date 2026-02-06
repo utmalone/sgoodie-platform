@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     });
     
     // Revalidate journal pages
-    revalidateJournalPages(post.slug);
+    revalidateJournalPages();
 
     return Response.json(post, { status: 201 });
   } catch (error) {

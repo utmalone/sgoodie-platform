@@ -1,5 +1,7 @@
 import { randomUUID } from 'crypto';
+import { unstable_cache } from 'next/cache';
 import type { PhotoAsset } from '@/types';
+import { CacheTags } from '@/lib/cache-tags';
 import { readJson, writeJson } from './local-store';
 import { removePhotoFromPages } from './pages';
 import { isMockMode, getAllItems, getItem, putItem, deleteItem } from './db';
@@ -7,7 +9,7 @@ import { isMockMode, getAllItems, getItem, putItem, deleteItem } from './db';
 const PHOTOS_FILE = 'photos.json';
 const TABLE_NAME = 'photos';
 
-export async function getAllPhotos(): Promise<PhotoAsset[]> {
+async function loadAllPhotos(): Promise<PhotoAsset[]> {
   if (isMockMode()) {
     const photos = await readJson<PhotoAsset[]>(PHOTOS_FILE);
     return photos.map((photo) => ({
@@ -28,6 +30,35 @@ export async function getAllPhotos(): Promise<PhotoAsset[]> {
   }));
 }
 
+const getAllPhotosCached = unstable_cache(
+  async (): Promise<PhotoAsset[]> => {
+    return loadAllPhotos();
+  },
+  ['photos'],
+  { tags: [CacheTags.photos], revalidate: false }
+);
+
+export async function getAllPhotos(): Promise<PhotoAsset[]> {
+  return getAllPhotosCached();
+}
+
+const getPhotoByIdCached = unstable_cache(
+  async (id: string): Promise<PhotoAsset | null> => {
+    if (!id || id.trim() === '') {
+      return null;
+    }
+    if (isMockMode()) {
+      const photos = await loadAllPhotos();
+      return photos.find((photo) => photo.id === id) ?? null;
+    }
+
+    // DynamoDB mode
+    return getItem<PhotoAsset>(TABLE_NAME, { id });
+  },
+  ['photo-by-id'],
+  { tags: [CacheTags.photos], revalidate: false }
+);
+
 export async function getPhotosByIds(ids: string[]): Promise<PhotoAsset[]> {
   const filteredIds = ids.filter((id) => typeof id === 'string' && id.trim() !== '');
   if (filteredIds.length === 0) {
@@ -39,16 +70,7 @@ export async function getPhotosByIds(ids: string[]): Promise<PhotoAsset[]> {
 }
 
 export async function getPhotoById(id: string): Promise<PhotoAsset | null> {
-  if (!id || id.trim() === '') {
-    return null;
-  }
-  if (isMockMode()) {
-    const photos = await getAllPhotos();
-    return photos.find((photo) => photo.id === id) ?? null;
-  }
-
-  // DynamoDB mode
-  return getItem<PhotoAsset>(TABLE_NAME, { id });
+  return getPhotoByIdCached(id);
 }
 
 export async function createPhoto(input: Omit<PhotoAsset, 'id' | 'createdAt'>) {
@@ -62,7 +84,7 @@ export async function createPhoto(input: Omit<PhotoAsset, 'id' | 'createdAt'>) {
   };
 
   if (isMockMode()) {
-    const photos = await getAllPhotos();
+    const photos = await loadAllPhotos();
     photos.push(photo);
     await writeJson(PHOTOS_FILE, photos);
     return photo;
@@ -74,7 +96,7 @@ export async function createPhoto(input: Omit<PhotoAsset, 'id' | 'createdAt'>) {
 
 export async function updatePhoto(updated: PhotoAsset) {
   if (isMockMode()) {
-    const photos = await getAllPhotos();
+    const photos = await loadAllPhotos();
     const index = photos.findIndex((photo) => photo.id === updated.id);
     if (index >= 0) {
       photos[index] = updated;
@@ -91,7 +113,7 @@ export async function updatePhoto(updated: PhotoAsset) {
 
 export async function deletePhoto(photoId: string) {
   if (isMockMode()) {
-    const photos = await getAllPhotos();
+    const photos = await loadAllPhotos();
     const nextPhotos = photos.filter((photo) => photo.id !== photoId);
     await writeJson(PHOTOS_FILE, nextPhotos);
   } else {

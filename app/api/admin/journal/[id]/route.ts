@@ -44,7 +44,7 @@ export async function PUT(request: Request, context: RouteContext) {
     const post = await updateJournalPost(id, payload);
     
     // Revalidate journal pages
-    revalidateJournalPages(post.slug);
+    revalidateJournalPages();
     
     return Response.json(post);
   } catch (error) {
@@ -67,7 +67,7 @@ export async function DELETE(_: Request, context: RouteContext) {
     await deleteJournalPost(id);
     
     // Revalidate journal pages
-    revalidateJournalPages(existing?.slug);
+    revalidateJournalPages();
     
     return Response.json({ ok: true });
   } catch (error) {

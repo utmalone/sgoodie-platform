@@ -1,19 +1,46 @@
 /** @type {import('next').NextConfig} */
 const imageHost = process.env.NEXT_PUBLIC_IMAGE_HOSTNAME;
-const domains = [];
+const remotePatterns = [];
 
 if (imageHost) {
-  domains.push(imageHost);
+  try {
+    const normalized = imageHost.startsWith('http')
+      ? imageHost
+      : `https://${imageHost}`;
+    const url = new URL(normalized);
+    remotePatterns.push({
+      protocol: url.protocol.replace(':', ''),
+      hostname: url.hostname,
+      port: url.port || undefined,
+      pathname: '/**'
+    });
+  } catch {
+    remotePatterns.push({
+      protocol: 'https',
+      hostname: imageHost,
+      pathname: '/**'
+    });
+  }
 }
 
-domains.push('sgoodie-photos-prod.s3.amazonaws.com');
-domains.push('images.unsplash.com');
+remotePatterns.push(
+  {
+    protocol: 'https',
+    hostname: 'sgoodie-photos-prod.s3.amazonaws.com',
+    pathname: '/**'
+  },
+  {
+    protocol: 'https',
+    hostname: 'images.unsplash.com',
+    pathname: '/**'
+  }
+);
 
 const nextConfig = {
   output: 'standalone',
   images: {
     unoptimized: true,
-    domains,
+    remotePatterns,
     formats: ['image/avif', 'image/webp']
   }
 };

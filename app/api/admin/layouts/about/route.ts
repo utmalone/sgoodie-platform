@@ -1,6 +1,7 @@
+import { revalidateTag } from 'next/cache';
 import { requireAdminApi } from '@/lib/auth/require-admin-api';
+import { CacheTags } from '@/lib/cache-tags';
 import { getAboutContent, updateAboutContent } from '@/lib/data/about';
-import { revalidatePath } from 'next/cache';
 
 export async function GET() {
   const session = await requireAdminApi();
@@ -21,7 +22,7 @@ export async function PUT(request: Request) {
   try {
     const updates = await request.json();
     const updated = await updateAboutContent(updates);
-    revalidatePath('/about');
+    revalidateTag(CacheTags.layoutAbout, 'max');
     return Response.json(updated);
   } catch {
     return Response.json({ error: 'Failed to update about content' }, { status: 500 });

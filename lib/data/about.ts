@@ -1,4 +1,6 @@
+import { unstable_cache } from 'next/cache';
 import type { AboutPageContent } from '@/types';
+import { CacheTags } from '@/lib/cache-tags';
 import { readJson, writeJson } from './local-store';
 import { isMockMode, getItem, putItem } from './db';
 
@@ -24,7 +26,7 @@ const defaultAboutContent: AboutPageContent = {
 /**
  * Fetch the structured About page content.
  */
-export async function getAboutContent(): Promise<AboutPageContent> {
+async function loadAboutContent(): Promise<AboutPageContent> {
   if (isMockMode()) {
     try {
       return await readJson<AboutPageContent>('about.json');
@@ -38,11 +40,23 @@ export async function getAboutContent(): Promise<AboutPageContent> {
   return content || defaultAboutContent;
 }
 
+const getAboutContentCached = unstable_cache(
+  async (): Promise<AboutPageContent> => {
+    return loadAboutContent();
+  },
+  ['about-content'],
+  { tags: [CacheTags.layoutAbout], revalidate: false }
+);
+
+export async function getAboutContent(): Promise<AboutPageContent> {
+  return getAboutContentCached();
+}
+
 /**
  * Update the About page content.
  */
 export async function updateAboutContent(updates: Partial<AboutPageContent>): Promise<AboutPageContent> {
-  const current = await getAboutContent();
+  const current = await loadAboutContent();
   const updated = { ...current, ...updates };
 
   if (isMockMode()) {

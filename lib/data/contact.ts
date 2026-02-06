@@ -1,4 +1,6 @@
+import { unstable_cache } from 'next/cache';
 import type { ContactPageContent } from '@/types';
+import { CacheTags } from '@/lib/cache-tags';
 import { readJson, writeJson } from './local-store';
 import { isMockMode, getItem, putItem } from './db';
 
@@ -22,7 +24,7 @@ const defaultContactContent: ContactPageContent = {
 /**
  * Fetch the structured Contact page content.
  */
-export async function getContactContent(): Promise<ContactPageContent> {
+async function loadContactContent(): Promise<ContactPageContent> {
   if (isMockMode()) {
     try {
       return await readJson<ContactPageContent>('contact.json');
@@ -36,11 +38,23 @@ export async function getContactContent(): Promise<ContactPageContent> {
   return content || defaultContactContent;
 }
 
+const getContactContentCached = unstable_cache(
+  async (): Promise<ContactPageContent> => {
+    return loadContactContent();
+  },
+  ['contact-content'],
+  { tags: [CacheTags.layoutContact], revalidate: false }
+);
+
+export async function getContactContent(): Promise<ContactPageContent> {
+  return getContactContentCached();
+}
+
 /**
  * Update the Contact page content.
  */
 export async function updateContactContent(updates: Partial<ContactPageContent>): Promise<ContactPageContent> {
-  const current = await getContactContent();
+  const current = await loadContactContent();
   const updated = { ...current, ...updates };
 
   if (isMockMode()) {

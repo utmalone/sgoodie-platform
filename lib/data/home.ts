@@ -1,4 +1,6 @@
+import { unstable_cache } from 'next/cache';
 import type { HomeLayout } from '@/types';
+import { CacheTags } from '@/lib/cache-tags';
 import { readJson, writeJson } from './local-store';
 import { isMockMode, getItem, putItem } from './db';
 
@@ -11,7 +13,7 @@ const defaultHomeLayout: HomeLayout = {
   featurePhotoIds: []
 };
 
-export async function getHomeLayout(): Promise<HomeLayout> {
+async function loadHomeLayout(): Promise<HomeLayout> {
   if (isMockMode()) {
     try {
       return await readJson<HomeLayout>(HOME_FILE);
@@ -25,8 +27,20 @@ export async function getHomeLayout(): Promise<HomeLayout> {
   return layout || defaultHomeLayout;
 }
 
+const getHomeLayoutCached = unstable_cache(
+  async (): Promise<HomeLayout> => {
+    return loadHomeLayout();
+  },
+  ['home-layout'],
+  { tags: [CacheTags.layoutHome], revalidate: false }
+);
+
+export async function getHomeLayout(): Promise<HomeLayout> {
+  return getHomeLayoutCached();
+}
+
 export async function updateHomeLayout(updates: Partial<HomeLayout>): Promise<HomeLayout> {
-  const current = await getHomeLayout();
+  const current = await loadHomeLayout();
   const updated = { ...current, ...updates };
 
   if (isMockMode()) {

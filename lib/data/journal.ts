@@ -1,12 +1,14 @@
 import { randomUUID } from 'crypto';
+import { unstable_cache } from 'next/cache';
 import type { JournalPost } from '@/types';
+import { CacheTags } from '@/lib/cache-tags';
 import { readJson, writeJson } from './local-store';
 import { isMockMode, getAllItems, getItem, putItem, deleteItem } from './db';
 
 const JOURNAL_FILE = 'journal.json';
 const TABLE_NAME = 'journal';
 
-export async function getAllJournalPosts(): Promise<JournalPost[]> {
+async function loadAllJournalPosts(): Promise<JournalPost[]> {
   if (isMockMode()) {
     return readJson<JournalPost[]>(JOURNAL_FILE);
   }
@@ -15,14 +17,26 @@ export async function getAllJournalPosts(): Promise<JournalPost[]> {
   return getAllItems<JournalPost>(TABLE_NAME);
 }
 
+const getAllJournalPostsCached = unstable_cache(
+  async (): Promise<JournalPost[]> => {
+    return loadAllJournalPosts();
+  },
+  ['journal'],
+  { tags: [CacheTags.journal], revalidate: false }
+);
+
+export async function getAllJournalPosts(): Promise<JournalPost[]> {
+  return getAllJournalPostsCached();
+}
+
 export async function getJournalPostBySlug(slug: string): Promise<JournalPost | null> {
-  const posts = await getAllJournalPosts();
+  const posts = await getAllJournalPostsCached();
   return posts.find((post) => post.slug === slug) || null;
 }
 
 export async function getJournalPostById(id: string): Promise<JournalPost | null> {
   if (isMockMode()) {
-    const posts = await getAllJournalPosts();
+    const posts = await loadAllJournalPosts();
     return posts.find((post) => post.id === id) || null;
   }
 
@@ -33,7 +47,7 @@ export async function getJournalPostById(id: string): Promise<JournalPost | null
 export async function createJournalPost(
   input: Omit<JournalPost, 'id'>
 ): Promise<JournalPost> {
-  const posts = await getAllJournalPosts();
+  const posts = await loadAllJournalPosts();
 
   // Ensure unique slug
   const existingSlug = posts.find((p) => p.slug === input.slug);
@@ -60,7 +74,7 @@ export async function updateJournalPost(
   id: string,
   updates: Partial<Omit<JournalPost, 'id'>>
 ): Promise<JournalPost> {
-  const posts = await getAllJournalPosts();
+  const posts = await loadAllJournalPosts();
   const existing = posts.find((p) => p.id === id);
 
   if (!existing) {
@@ -93,7 +107,7 @@ export async function updateJournalPost(
 
 export async function deleteJournalPost(id: string): Promise<void> {
   if (isMockMode()) {
-    const posts = await getAllJournalPosts();
+    const posts = await loadAllJournalPosts();
     const filtered = posts.filter((p) => p.id !== id);
 
     if (filtered.length === posts.length) {

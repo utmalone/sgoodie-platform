@@ -7,25 +7,28 @@ import { revalidateAllPages } from '@/lib/admin/revalidate';
 
 export const runtime = 'nodejs';
 
+type RouteContext = { params: Promise<{ id: string }> };
+
 function toUploadPath(src: string) {
   if (!src.startsWith('/uploads/')) return null;
   return path.join(process.cwd(), 'public', src);
 }
 
-export async function PATCH(request: Request, context: { params: { id: string } }) {
+export async function PATCH(request: Request, context: RouteContext) {
   const session = await requireAdminApi();
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
+    const { id } = await context.params;
     const payload = (await request.json()) as Partial<PhotoAsset> | null;
     if (!payload) {
       return Response.json({ error: 'Missing payload.' }, { status: 400 });
     }
 
     const photos = await getAllPhotos();
-    const existing = photos.find((photo) => photo.id === context.params.id);
+    const existing = photos.find((photo) => photo.id === id);
     if (!existing) {
       return Response.json({ error: 'Photo not found.' }, { status: 404 });
     }
@@ -49,15 +52,16 @@ export async function PATCH(request: Request, context: { params: { id: string } 
   }
 }
 
-export async function DELETE(_: Request, context: { params: { id: string } }) {
+export async function DELETE(_: Request, context: RouteContext) {
   const session = await requireAdminApi();
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
+    const { id } = await context.params;
     const photos = await getAllPhotos();
-    const existing = photos.find((photo) => photo.id === context.params.id);
+    const existing = photos.find((photo) => photo.id === id);
     if (!existing) {
       return Response.json({ error: 'Photo not found.' }, { status: 404 });
     }

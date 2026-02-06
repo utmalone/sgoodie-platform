@@ -41,7 +41,7 @@ export async function PUT(request: Request, context: RouteContext) {
     const project = await updateProject(id, payload);
     
     // Revalidate portfolio pages
-    revalidatePortfolioPages(project.slug, project.category);
+    revalidatePortfolioPages();
     
     return Response.json(project);
   } catch (error) {
@@ -65,7 +65,7 @@ export async function DELETE(_: Request, context: RouteContext) {
     await removeProjectFromWorkIndex(id);
     
     // Revalidate portfolio pages
-    revalidatePortfolioPages(existing?.slug, existing?.category);
+    revalidatePortfolioPages();
     
     return Response.json({ ok: true });
   } catch (error) {

@@ -1,6 +1,6 @@
 import { requireAdminApi } from '@/lib/auth/require-admin-api';
 import { getWorkIndex, updateWorkIndex } from '@/lib/data/work';
-import { revalidateWorkPages } from '@/lib/admin/revalidate';
+import { revalidatePortfolioPages } from '@/lib/admin/revalidate';
 
 export const runtime = 'nodejs';
 
@@ -24,8 +24,8 @@ export async function PUT(request: Request) {
 
     const workIndex = await updateWorkIndex(payload.projectIds);
     
-    // Revalidate work page (order changed)
-    revalidateWorkPages();
+    // Revalidate work/portfolio pages (order changed)
+    revalidatePortfolioPages();
     
     return Response.json(workIndex);
   } catch (error) {

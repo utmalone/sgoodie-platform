@@ -1,6 +1,7 @@
+import { revalidateTag } from 'next/cache';
 import { requireAdminApi } from '@/lib/auth/require-admin-api';
+import { CacheTags } from '@/lib/cache-tags';
 import { getHomeLayout, updateHomeLayout } from '@/lib/data/home';
-import { revalidatePath } from 'next/cache';
 
 export async function GET() {
   const session = await requireAdminApi();
@@ -21,7 +22,7 @@ export async function PUT(request: Request) {
   try {
     const updates = await request.json();
     const updated = await updateHomeLayout(updates);
-    revalidatePath('/');
+    revalidateTag(CacheTags.layoutHome, 'max');
     return Response.json(updated);
   } catch {
     return Response.json({ error: 'Failed to update home layout' }, { status: 500 });

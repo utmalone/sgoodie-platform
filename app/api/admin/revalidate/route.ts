@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   }
 
   (body.paths || []).forEach((path) => revalidatePath(path));
-  (body.tags || []).forEach((tag) => revalidateTag(tag));
+  (body.tags || []).forEach((tag) => revalidateTag(tag, 'max'));
 
   return Response.json({ revalidated: true });
 }

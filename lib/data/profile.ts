@@ -1,4 +1,6 @@
+import { unstable_cache } from 'next/cache';
 import type { SiteProfile } from '@/types';
+import { CacheTags } from '@/lib/cache-tags';
 import { readJson, writeJson } from './local-store';
 import { isMockMode, getItem, putItem } from './db';
 
@@ -30,7 +32,7 @@ const defaultProfile: SiteProfile = {
   photoId: 'about-bio'
 };
 
-export async function getProfile(): Promise<SiteProfile> {
+async function loadProfile(): Promise<SiteProfile> {
   if (isMockMode()) {
     try {
       const profile = await readJson<SiteProfile>(PROFILE_FILE);
@@ -48,8 +50,20 @@ export async function getProfile(): Promise<SiteProfile> {
   return defaultProfile;
 }
 
+const getProfileCached = unstable_cache(
+  async (): Promise<SiteProfile> => {
+    return loadProfile();
+  },
+  ['profile'],
+  { tags: [CacheTags.profile], revalidate: false }
+);
+
+export async function getProfile(): Promise<SiteProfile> {
+  return getProfileCached();
+}
+
 export async function updateProfile(updates: Partial<SiteProfile>): Promise<SiteProfile> {
-  const current = await getProfile();
+  const current = await loadProfile();
   const updated = { ...current, ...updates };
 
   if (isMockMode()) {

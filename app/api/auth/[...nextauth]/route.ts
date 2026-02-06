@@ -48,9 +48,9 @@ function ensureNextAuthUrl(request: NextRequest) {
 const handler = NextAuth(authOptions);
 
 type RouteContext = {
-  params: {
+  params: Promise<{
     nextauth?: string[];
-  };
+  }>;
 };
 
 export async function GET(request: NextRequest, context: RouteContext) {

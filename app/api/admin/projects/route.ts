@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     await addProjectToWorkIndex(project.id);
     
     // Revalidate portfolio pages
-    revalidatePortfolioPages(project.slug, project.category);
+    revalidatePortfolioPages();
 
     return Response.json(project, { status: 201 });
   } catch (error) {

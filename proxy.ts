@@ -17,10 +17,10 @@ const protectedPaths = [
 // Paths that should redirect to dashboard if already authenticated
 const authPaths = ['/admin/login'];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip middleware for API routes to let NextAuth handle them directly
+  // Skip proxy for API routes to let NextAuth handle them directly
   if (pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest) {
       secret: process.env.NEXTAUTH_SECRET
     });
   } catch (error) {
-    console.error('Error getting token in middleware:', error);
+    console.error('Error getting token in proxy:', error);
     // Continue without token - protected routes will redirect to login
   }
 
