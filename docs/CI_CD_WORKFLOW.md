@@ -73,9 +73,8 @@ feature branch -> develop -> PR -> main -> deploy
 | S3 (photos) | Optimized images via CloudFront |
 | S3 (uploads) | Original photo uploads |
 | CloudFront | CDN for fast image delivery |
-| DynamoDB (6 tables) | Content + analytics + admin auth |
-| IAM Role (OIDC) | Secure GitHub Actions auth |
-| WAFv2 Web ACL | Rate limiting for auth/admin endpoints |
+  | DynamoDB (6 tables) | Content + analytics + admin auth |
+  | IAM Role (OIDC) | Secure GitHub Actions auth |
 
 ### Amplify Runtime Details
 - **Compute role** grants DynamoDB access for SSR
@@ -98,7 +97,7 @@ Required secrets in **Settings -> Secrets and variables -> Actions**:
 | `ADMIN_PASSWORD_HASH` | Seed admin password hash |
 | `OPENAI_API_KEY` | OpenAI API key (optional, stored in Secrets Manager) |
 | `INSTAGRAM_ACCESS_TOKEN` | Instagram token (optional, stored in Secrets Manager) |
-| `AMPLIFY_CLOUDFRONT_DISTRIBUTION_ID` | CloudFront distribution ID for WAF rate limiting |
+  | `AMPLIFY_CLOUDFRONT_DISTRIBUTION_ID` | CloudFront distribution ID for cache invalidation |
 
 Notes:
 - `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH` seed the DynamoDB admin record on first run.

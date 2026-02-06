@@ -160,7 +160,6 @@ types/
 - `ADMIN_EMAIL` + `ADMIN_PASSWORD_HASH` seed DynamoDB on first run
 - Admin email/password updates persist to DynamoDB
 - Passwords are stored as Argon2id hashes (legacy SHA256 is auto-upgraded on login)
-- AWS WAF rate-limits `/api/auth/*` and `/api/admin/*` to reduce brute-force attempts
 
 ### Admin UX
 - Master "Save All" collects pending changes

@@ -44,12 +44,6 @@ variable "domain_name" {
   default     = ""
 }
 
-variable "amplify_cloudfront_distribution_id" {
-  description = "CloudFront distribution ID for the Amplify app (used for WAF association)"
-  type        = string
-  default     = ""
-}
-
 # -----------------------------------------------------------------------------
 # Application Secrets (stored in GitHub Secrets, passed via CI/CD)
 # -----------------------------------------------------------------------------

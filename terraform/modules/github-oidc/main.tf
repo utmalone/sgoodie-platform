@@ -149,24 +149,6 @@ data "aws_iam_policy_document" "github_actions" {
     resources = ["*"]
   }
 
-  # WAFv2 (rate limiting on auth/admin endpoints)
-  statement {
-    effect = "Allow"
-    actions = [
-      "wafv2:CreateWebACL",
-      "wafv2:UpdateWebACL",
-      "wafv2:DeleteWebACL",
-      "wafv2:GetWebACL",
-      "wafv2:ListWebACLs",
-      "wafv2:AssociateWebACL",
-      "wafv2:DisassociateWebACL",
-      "wafv2:ListResourcesForWebACL",
-      "wafv2:TagResource",
-      "wafv2:UntagResource",
-      "wafv2:ListTagsForResource"
-    ]
-    resources = ["*"]
-  }
 }
 
 resource "aws_iam_policy" "github_actions" {

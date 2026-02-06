@@ -205,25 +205,3 @@ module "amplify" {
     module.secrets.instagram_access_token_secret_arn
   ]
 }
-
-# -----------------------------------------------------------------------------
-# WAF Module (rate limiting for auth/admin endpoints)
-# -----------------------------------------------------------------------------
-module "waf" {
-  source = "../../modules/waf"
-  count  = var.amplify_cloudfront_distribution_id != "" ? 1 : 0
-
-  providers = {
-    aws = aws.us_east_1
-  }
-
-  environment                   = var.environment
-  project_name                  = local.project_name
-  cloudfront_distribution_id    = var.amplify_cloudfront_distribution_id
-  rate_limit_auth               = 100
-  rate_limit_admin              = 300
-}
-
-# NOTE: Amplify WAF association is not supported by the Terraform AWS provider,
-# and the current AWS CLI/SDK in CI does not accept wafConfiguration yet.
-# Manually attach the WebACL in the Amplify console (App > Hosting > Firewall).

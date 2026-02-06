@@ -49,7 +49,7 @@ Click "New repository secret" for each of the following:
 - **How to get:** From Facebook Developer Console
 - **Value:** Your Instagram access token (stored in AWS Secrets Manager via Terraform)
 
-### 9. AMPLIFY_CLOUDFRONT_DISTRIBUTION_ID (Required for WAF rate limiting)
+### 9. AMPLIFY_CLOUDFRONT_DISTRIBUTION_ID (Required for cache invalidation)
 - **How to get:** From CloudFront console or CLI
 - **Value:** CloudFront distribution ID (e.g., `E2Y76CUV9MZ8N3`)
 
