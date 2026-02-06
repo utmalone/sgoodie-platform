@@ -175,7 +175,7 @@ function AdminShellInner({ children }: { children: React.ReactNode }) {
   }
 
   function handleLogout() {
-    signOut({ callbackUrl: '/admin/login' });
+    signOut({ callbackUrl: '/' });
   }
 
   return (
@@ -209,6 +209,30 @@ function AdminShellInner({ children }: { children: React.ReactNode }) {
 
             {/* Divider */}
             <div className={styles.divider} />
+
+            {/* Public Site Button */}
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className={styles.previewBtn}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M8 2.5a5.5 5.5 0 1 1-5.5 5.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M2.5 8H8V2.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span>Public Home</span>
+            </button>
 
             {/* Logout Button */}
             <button type="button" onClick={handleLogout} className={styles.logoutBtn}>
