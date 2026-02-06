@@ -161,6 +161,7 @@ function useInactivityTimeout() {
 function AdminShellInner({ children }: { children: React.ReactNode }) {
   const { isOpen, initialPath, refreshKey, openPreview, closePreview } = usePreview();
   const pathname = usePathname();
+  const router = useRouter();
 
   // Inactivity timeout hook
   useInactivityTimeout();

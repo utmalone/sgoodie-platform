@@ -35,11 +35,25 @@
 }
 
 .grid {
-  @apply grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
 }
 
 .gridItem {
-  @apply group relative aspect-square overflow-hidden rounded-xl border-2 transition;
+  @apply relative aspect-square overflow-hidden rounded-xl border-2 transition;
 }
 
 .gridItemSelected {
@@ -63,7 +77,11 @@
 }
 
 .hoverLabel {
-  @apply absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 transition group-hover:opacity-100;
+  @apply absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 transition;
+}
+
+.gridItem:hover .hoverLabel {
+  opacity: 1;
 }
 
 .hoverText {

@@ -357,7 +357,7 @@
 }
 
 .photoCard {
-  @apply group rounded-2xl border bg-white p-3 shadow-sm transition-all;
+  @apply rounded-2xl border bg-white p-3 shadow-sm transition-all;
 }
 
 .photoCardDraggable {
@@ -413,11 +413,16 @@
 }
 
 .truncate {
-  @apply truncate;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .truncateMuted {
-  @apply truncate text-black/60;
+  @apply text-black/60;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .warningBox {
@@ -489,5 +494,5 @@
 }
 
 .block {
-  @apply block;
+  display: block;
 }

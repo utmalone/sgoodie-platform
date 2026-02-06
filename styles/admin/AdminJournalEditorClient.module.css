@@ -111,7 +111,7 @@
 }
 
 .galleryItem {
-  @apply group relative aspect-square overflow-hidden rounded-xl border border-black/10;
+  @apply relative aspect-square overflow-hidden rounded-xl border border-black/10;
 }
 
 .galleryItemDragging {
@@ -119,7 +119,11 @@
 }
 
 .galleryRemove {
-  @apply absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100;
+  @apply absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition;
+}
+
+.galleryItem:hover .galleryRemove {
+  opacity: 1;
 }
 
 .emptyText {
