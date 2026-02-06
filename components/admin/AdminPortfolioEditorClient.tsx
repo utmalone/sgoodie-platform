@@ -6,6 +6,7 @@ import type { PhotoAsset, Project, ProjectCategory, EditorialRowCaption } from '
 import { AdminPhotoSelector } from './AdminPhotoSelector';
 import { AdminCreditsEditor } from './AdminCreditsEditor';
 import { AiFixButton } from './AiFixButton';
+import { PhotoGuidelineTooltip } from './PhotoGuidelines';
 import { loadAiModel } from '@/lib/admin/ai-model';
 import { getApiErrorMessage } from '@/lib/admin/api-error';
 import { usePreview } from '@/lib/admin/preview-context';
@@ -15,6 +16,8 @@ import {
   portfolioCategoryLabels,
   type PortfolioCategory
 } from '@/lib/admin/portfolio-config';
+import { editorialGalleryGuideline, heroFullBleedGuideline } from '@/lib/admin/photo-guidelines';
+import guidelineStyles from '@/styles/admin/PhotoGuidelines.module.css';
 import styles from '@/styles/admin/AdminShared.module.css';
 
 type AdminPortfolioEditorClientProps = {
@@ -498,7 +501,13 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
       <section className={styles.card}>
         <div className={styles.quickLinkCard}>
           <div>
-            <h2 className={styles.cardTitle}>Hero Photo *</h2>
+            <div className={guidelineStyles.headingRow}>
+              <h2 className={styles.cardTitle}>Hero Photo *</h2>
+              <PhotoGuidelineTooltip
+                label={heroFullBleedGuideline.label}
+                lines={heroFullBleedGuideline.lines}
+              />
+            </div>
             <p className={styles.cardDescription}>Main image shown on the portfolio page.</p>
           </div>
           <button
@@ -524,7 +533,13 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
       <section className={styles.card}>
         <div className={styles.quickLinkCard}>
           <div>
-            <h2 className={styles.cardTitle}>Gallery Photos</h2>
+            <div className={guidelineStyles.headingRow}>
+              <h2 className={styles.cardTitle}>Gallery Photos</h2>
+              <PhotoGuidelineTooltip
+                label={editorialGalleryGuideline.label}
+                lines={editorialGalleryGuideline.lines}
+              />
+            </div>
             <p className={styles.cardDescription}>
               Drag to reorder. These appear in the editorial gallery.
             </p>

@@ -1,0 +1,47 @@
+.wrapper {
+  @apply space-y-4;
+}
+
+.list {
+  @apply space-y-2;
+}
+
+.row {
+  @apply flex items-center gap-2 rounded-xl border border-black/10 bg-white/60 p-2;
+}
+
+.labelInput {
+  @apply w-32 rounded-lg border border-black/20 px-3 py-1.5 text-sm;
+}
+
+.valueInput {
+  @apply flex-1 rounded-lg border border-black/20 px-3 py-1.5 text-sm;
+}
+
+.actionRow {
+  @apply flex items-center gap-1;
+}
+
+.iconButton {
+  @apply rounded-lg p-1.5 text-black/40 hover:bg-black/5 hover:text-black/70 disabled:opacity-30;
+}
+
+.iconButtonDanger {
+  @apply rounded-lg p-1.5 text-black/40 hover:bg-red-50 hover:text-red-600;
+}
+
+.addRow {
+  @apply flex items-center gap-2;
+}
+
+.addLabelInput {
+  @apply w-40 rounded-xl border border-black/20 px-3 py-2 text-sm;
+}
+
+.addValueInput {
+  @apply flex-1 rounded-xl border border-black/20 px-3 py-2 text-sm;
+}
+
+.addButton {
+  @apply rounded-full border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.25em] text-black/70 hover:border-black/40 hover:text-black disabled:opacity-40;
+}

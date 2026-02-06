@@ -1,5 +1,7 @@
 'use client';
 
+import styles from '@/styles/admin/AiFixButton.module.css';
+
 type AiFixButtonProps = {
   onClick: () => void;
   disabled?: boolean;
@@ -12,7 +14,7 @@ export function AiFixButton({ onClick, disabled, label = 'AI Fix' }: AiFixButton
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="rounded-full border border-black/20 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-black/60 transition hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
+      className={styles.button}
     >
       {label}
     </button>

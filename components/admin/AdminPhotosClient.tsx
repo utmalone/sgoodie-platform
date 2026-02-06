@@ -8,7 +8,11 @@ import { pageLabels, photoPageOrder } from '@/lib/admin/page-config';
 import { loadAiModel } from '@/lib/admin/ai-model';
 import { getApiErrorMessage } from '@/lib/admin/api-error';
 import { AiFixButton } from '@/components/admin/AiFixButton';
+import { PhotoGuidelineRow } from '@/components/admin/PhotoGuidelines';
 import { usePreview } from '@/lib/admin/preview-context';
+import { pagePhotoGuidelinesBySlug } from '@/lib/admin/photo-guidelines';
+import guidelineStyles from '@/styles/admin/PhotoGuidelines.module.css';
+import styles from '@/styles/admin/AdminPhotosClient.module.css';
 
 type PageLayouts = {
   home: HomeLayout | null;
@@ -64,6 +68,10 @@ export function AdminPhotosClient() {
   const [expandedPhotoId, setExpandedPhotoId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const pageGuidelines = useMemo(
+    () => pagePhotoGuidelinesBySlug[activeSlug] || [],
+    [activeSlug]
+  );
 
   // Check if any photos have unsaved metadata changes
   const hasPhotoChanges = useMemo(() => {
@@ -749,40 +757,38 @@ export function AdminPhotosClient() {
   }
 
   if (isLoading) {
-    return <p className="text-sm text-black/60">Loading admin content...</p>;
+    return <p className={styles.statusMessage}>Loading admin content...</p>;
   }
 
   // Enable reordering for pages with photos
   const canReorder = activeSlug === 'home' || activeSlug === 'about' || activeSlug === 'contact';
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className={styles.page}>
+      <div className={styles.header}>
         <div>
-          <h1 className="text-3xl font-semibold">Photos</h1>
-          <p className="mt-2 text-sm text-black/60">
+          <h1 className={styles.title}>Photos</h1>
+          <p className={styles.cardDescription}>
             Manage photos for each page. {canReorder ? 'Drag to reorder.' : ''}
           </p>
         </div>
         <button
           type="button"
           onClick={handleSavePhotos}
-          className="rounded-full border border-black/20 bg-black px-5 py-2 text-xs uppercase tracking-[0.35em] text-white"
+          className={styles.saveButton}
         >
           Save Metadata
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-black/10 bg-white/60 p-3">
+      <div className={styles.tabBar}>
         {photoPageOrder.map((slug) => (
           <button
             key={slug}
             type="button"
             onClick={() => setActiveSlug(slug)}
-            className={`rounded-full px-4 py-2 text-xs uppercase tracking-[0.25em] ${
-              activeSlug === slug
-                ? 'bg-black text-white'
-                : 'border border-black/10 text-black/60 hover:border-black/30'
+            className={`${styles.tabButton} ${
+              activeSlug === slug ? styles.tabButtonActive : styles.tabButtonInactive
             }`}
           >
             {pageLabels[slug]}
@@ -790,22 +796,31 @@ export function AdminPhotosClient() {
         ))}
       </div>
 
-      {status && <p className="text-sm text-black/60">{status}</p>}
-      {aiStatus && <p className="text-sm text-black/60">{aiStatus}</p>}
+      {pageGuidelines.length > 0 && (
+        <section className={guidelineStyles.guidanceCard}>
+          <div className={guidelineStyles.guidanceTitle}>Photo size guidance</div>
+          <div className={guidelineStyles.guidanceList}>
+            {pageGuidelines.map((guideline) => (
+              <PhotoGuidelineRow key={guideline.label} guideline={guideline} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {status && <p className={styles.statusMessage}>{status}</p>}
+      {aiStatus && <p className={styles.statusMessage}>{aiStatus}</p>}
 
       {/* Upload Section */}
-      <section className="space-y-6 rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+      <section className={`${styles.section} ${styles.sectionStack6}`}>
         <div>
-          <h2 className="text-lg font-semibold">Upload Photos</h2>
+          <h2 className={styles.cardTitle}>Upload Photos</h2>
           {/* Upload Mode Tabs */}
-          <div className="mt-4 flex gap-2">
+          <div className={styles.uploadTabs}>
             <button
               type="button"
               onClick={() => setUploadMode('single')}
-              className={`rounded-full px-4 py-2 text-xs uppercase tracking-[0.2em] transition-all ${
-                uploadMode === 'single'
-                  ? 'bg-black text-white'
-                  : 'border border-black/20 text-black/60 hover:border-black/40'
+              className={`${styles.modeButton} ${
+                uploadMode === 'single' ? styles.modeButtonActive : styles.modeButtonInactive
               }`}
             >
               Single Photo
@@ -813,10 +828,8 @@ export function AdminPhotosClient() {
             <button
               type="button"
               onClick={() => setUploadMode('bulk')}
-              className={`rounded-full px-4 py-2 text-xs uppercase tracking-[0.2em] transition-all ${
-                uploadMode === 'bulk'
-                  ? 'bg-black text-white'
-                  : 'border border-black/20 text-black/60 hover:border-black/40'
+              className={`${styles.modeButton} ${
+                uploadMode === 'bulk' ? styles.modeButtonActive : styles.modeButtonInactive
               }`}
             >
               Bulk Upload
@@ -827,70 +840,70 @@ export function AdminPhotosClient() {
         {/* Single Photo Upload */}
         {uploadMode === 'single' && (
           <>
-            <p className="text-sm text-black/60">
+            <p className={styles.statusMessage}>
               Upload a single photo. AI will automatically generate metadata.
             </p>
             {isAnalyzingUpload && (
-              <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-                <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+              <div className={styles.warningBox}>
+                <svg className={styles.spinner} viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
                   <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 </svg>
                 <span>AI is analyzing the photo and generating metadata...</span>
               </div>
             )}
-            <form onSubmit={handleUpload} className="grid gap-4 md:grid-cols-[1fr_auto]">
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="block md:col-span-2">
-                  <span className="text-xs font-medium text-black/60 uppercase tracking-wide">Select Photo</span>
+            <form onSubmit={handleUpload} className={styles.formGridAuto}>
+              <div className={styles.formGridTwo}>
+                <label className={styles.labelSpan2}>
+                  <span className={styles.labelTiny}>Select Photo</span>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={(event) => handleFileSelect(event.target.files?.[0] || null)}
-                    className="mt-1 w-full rounded-2xl border border-black/20 px-4 py-2 text-sm file:mr-4 file:rounded-full file:border-0 file:bg-black/5 file:px-4 file:py-1 file:text-sm file:font-medium"
+                    className={styles.fileInput}
                     disabled={isAnalyzingUpload}
                   />
                 </label>
-                <label className="block">
-                  <span className="text-xs font-medium text-black/60 uppercase tracking-wide">Alt Text (Accessibility)</span>
+                <label className={styles.block}>
+                  <span className={styles.labelTiny}>Alt Text (Accessibility)</span>
                   <input
                     type="text"
                     placeholder="Describe the image for screen readers"
                     value={uploadAlt}
                     onChange={(event) => setUploadAlt(event.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-black/20 px-4 py-2 text-sm disabled:bg-black/5 disabled:text-black/40"
+                    className={styles.input}
                     disabled={isAnalyzingUpload}
                   />
                 </label>
-                <label className="block">
-                  <span className="text-xs font-medium text-black/60 uppercase tracking-wide">SEO Title</span>
+                <label className={styles.block}>
+                  <span className={styles.labelTiny}>SEO Title</span>
                   <input
                     type="text"
                     placeholder="Page title for search engines"
                     value={uploadMetaTitle}
                     onChange={(event) => setUploadMetaTitle(event.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-black/20 px-4 py-2 text-sm disabled:bg-black/5 disabled:text-black/40"
+                    className={styles.input}
                     disabled={isAnalyzingUpload}
                   />
                 </label>
-                <label className="block">
-                  <span className="text-xs font-medium text-black/60 uppercase tracking-wide">SEO Keywords</span>
+                <label className={styles.block}>
+                  <span className={styles.labelTiny}>SEO Keywords</span>
                   <input
                     type="text"
                     placeholder="Comma-separated keywords"
                     value={uploadMetaKeywords}
                     onChange={(event) => setUploadMetaKeywords(event.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-black/20 px-4 py-2 text-sm disabled:bg-black/5 disabled:text-black/40"
+                    className={styles.input}
                     disabled={isAnalyzingUpload}
                   />
                 </label>
-                <label className="md:col-span-2 block">
-                  <span className="text-xs font-medium text-black/60 uppercase tracking-wide">SEO Description</span>
+                <label className={styles.labelSpan2}>
+                  <span className={styles.labelTiny}>SEO Description</span>
                   <textarea
                     placeholder="Brief description for search results"
                     value={uploadMetaDescription}
                     onChange={(event) => setUploadMetaDescription(event.target.value)}
-                    className="mt-1 min-h-[80px] w-full rounded-2xl border border-black/20 px-4 py-2 text-sm disabled:bg-black/5 disabled:text-black/40"
+                    className={styles.textarea}
                     disabled={isAnalyzingUpload}
                   />
                 </label>
@@ -898,7 +911,7 @@ export function AdminPhotosClient() {
               <button
                 type="submit"
                 disabled={isAnalyzingUpload || !uploadFile}
-                className="rounded-full border border-black/20 bg-black px-5 py-2 text-xs uppercase tracking-[0.35em] text-white h-fit disabled:opacity-50 disabled:cursor-not-allowed"
+                className={styles.primaryButtonOutline}
               >
                 {isAnalyzingUpload ? 'Analyzing...' : 'Upload'}
               </button>
@@ -908,19 +921,19 @@ export function AdminPhotosClient() {
 
         {/* Bulk Upload */}
         {uploadMode === 'bulk' && (
-          <div className="space-y-4">
+          <div className={styles.sectionStack4}>
             {/* Info Banner */}
-            <div className="rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800">
-              <p className="font-medium">Bulk Photo Upload (Max {MAX_BULK_PHOTOS} photos)</p>
-              <p className="mt-1">
+            <div className={styles.infoBox}>
+              <p className={styles.fontMedium}>Bulk Photo Upload (Max {MAX_BULK_PHOTOS} photos)</p>
+              <p className={styles.marginTop1}>
                 Select multiple photos and AI will automatically generate metadata for each one. 
                 This process may take <strong>several minutes</strong> depending on the number of photos.
               </p>
             </div>
 
             {/* File Select */}
-            <label className="block">
-              <span className="text-xs font-medium text-black/60 uppercase tracking-wide">
+            <label className={styles.block}>
+              <span className={styles.labelTiny}>
                 Select Photos ({bulkItems.length}/{MAX_BULK_PHOTOS})
               </span>
               <input
@@ -928,21 +941,21 @@ export function AdminPhotosClient() {
                 accept="image/*"
                 multiple
                 onChange={(event) => handleBulkFileSelect(event.target.files)}
-                className="mt-1 w-full rounded-2xl border border-black/20 px-4 py-2 text-sm file:mr-4 file:rounded-full file:border-0 file:bg-black/5 file:px-4 file:py-1 file:text-sm file:font-medium"
+                className={styles.fileInput}
                 disabled={isBulkProcessing || bulkItems.length >= MAX_BULK_PHOTOS}
               />
             </label>
 
             {/* Apply to Page Checkbox */}
             {bulkItems.length > 0 && (
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className={styles.checkboxRow}>
                 <input
                   type="checkbox"
                   checked={bulkApplyToPage}
                   onChange={(e) => setBulkApplyToPage(e.target.checked)}
-                  className="h-4 w-4 rounded border-black/30 text-black focus:ring-black"
+                  className={styles.checkbox}
                 />
-                <span className="text-sm text-black/70">
+                <span className={styles.cardDescriptionSoft}>
                   Apply photos to current page ({pageLabels[activeSlug]})
                 </span>
               </label>
@@ -950,13 +963,13 @@ export function AdminPhotosClient() {
 
             {/* Action Buttons */}
             {bulkItems.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className={styles.buttonRowWrap}>
                 {bulkItems.some(item => item.status === 'pending') && (
                   <button
                     type="button"
                     onClick={processBulkWithAi}
                     disabled={isBulkProcessing}
-                    className="rounded-full bg-black px-5 py-2 text-xs uppercase tracking-[0.2em] text-white disabled:opacity-50"
+                    className={styles.primaryButton}
                   >
                     {isBulkProcessing ? 'Processing...' : `Analyze ${bulkItems.filter(i => i.status === 'pending').length} Photos with AI`}
                   </button>
@@ -966,7 +979,7 @@ export function AdminPhotosClient() {
                     type="button"
                     onClick={uploadBulkItems}
                     disabled={isBulkProcessing}
-                    className="rounded-full bg-green-600 px-5 py-2 text-xs uppercase tracking-[0.2em] text-white disabled:opacity-50"
+                    className={styles.successButton}
                   >
                     Upload {bulkItems.filter(i => i.status === 'ready').length} Ready Photos
                   </button>
@@ -975,7 +988,7 @@ export function AdminPhotosClient() {
                   type="button"
                   onClick={clearAllBulkItems}
                   disabled={isBulkProcessing}
-                  className="rounded-full border border-black/20 px-5 py-2 text-xs uppercase tracking-[0.2em] text-black/60 disabled:opacity-50"
+                  className={styles.outlineButton}
                 >
                   Clear All
                 </button>
@@ -984,8 +997,8 @@ export function AdminPhotosClient() {
 
             {/* Processing Status */}
             {isBulkProcessing && (
-              <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-                <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+              <div className={styles.warningBox}>
+                <svg className={styles.spinner} viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
                   <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 </svg>
@@ -995,27 +1008,29 @@ export function AdminPhotosClient() {
 
             {/* Bulk Items Accordion */}
             {bulkItems.length > 0 && (
-              <div className="rounded-2xl border border-black/10 overflow-hidden">
+              <div className={styles.bulkPanel}>
                 <button
                   type="button"
                   onClick={() => setBulkAccordionOpen(!bulkAccordionOpen)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-black/5 hover:bg-black/10 transition-colors"
+                  className={styles.accordionHeader}
                 >
-                  <span className="text-sm font-medium">
+                  <span className={styles.textSmMedium}>
                     Queued Photos ({bulkItems.length})
                     {bulkItems.some(i => i.status === 'ready') && (
-                      <span className="ml-2 text-green-600">
+                      <span className={styles.inlineSuccess}>
                         • {bulkItems.filter(i => i.status === 'ready').length} ready
                       </span>
                     )}
                     {bulkItems.some(i => i.status === 'error') && (
-                      <span className="ml-2 text-red-600">
+                      <span className={styles.inlineError}>
                         • {bulkItems.filter(i => i.status === 'error').length} failed
                       </span>
                     )}
                   </span>
                   <svg
-                    className={`w-5 h-5 transition-transform ${bulkAccordionOpen ? 'rotate-180' : ''}`}
+                    className={`${styles.accordionIcon} ${
+                      bulkAccordionOpen ? styles.accordionIconOpen : ''
+                    }`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -1025,31 +1040,31 @@ export function AdminPhotosClient() {
                 </button>
 
                 {bulkAccordionOpen && (
-                  <div className="p-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <div className={styles.bulkGrid}>
                     {bulkItems.map((item) => (
                       <div
                         key={item.id}
-                        className="rounded-2xl border border-black/10 bg-white p-3 shadow-sm"
+                        className={styles.bulkItem}
                       >
-                        <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-black/5">
+                        <div className={styles.photoPreview}>
                           <Image
                             src={item.preview}
                             alt={item.alt || 'Pending upload'}
                             fill
-                            className="object-cover"
+                            className={styles.photoImage}
                             sizes="(max-width: 768px) 100vw, 33vw"
                           />
                           {/* Status Badge */}
-                          <div className={`absolute top-2 right-2 rounded-full px-2 py-1 text-[10px] uppercase tracking-wider ${
-                            item.status === 'pending' ? 'bg-gray-500 text-white' :
-                            item.status === 'analyzing' ? 'bg-amber-500 text-white' :
-                            item.status === 'ready' ? 'bg-green-500 text-white' :
-                            item.status === 'uploading' ? 'bg-blue-500 text-white' :
-                            item.status === 'done' ? 'bg-green-700 text-white' :
-                            'bg-red-500 text-white'
+                          <div className={`${styles.bulkStatus} ${
+                            item.status === 'pending' ? styles.bulkStatusPending :
+                            item.status === 'analyzing' ? styles.bulkStatusAnalyzing :
+                            item.status === 'ready' ? styles.bulkStatusReady :
+                            item.status === 'uploading' ? styles.bulkStatusUploading :
+                            item.status === 'done' ? styles.bulkStatusDone :
+                            styles.bulkStatusError
                           }`}>
                             {item.status === 'analyzing' && (
-                              <svg className="inline-block h-3 w-3 mr-1 animate-spin" viewBox="0 0 24 24" fill="none">
+                              <svg className={styles.spinnerInline} viewBox="0 0 24 24" fill="none">
                                 <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
                                 <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                               </svg>
@@ -1058,20 +1073,20 @@ export function AdminPhotosClient() {
                           </div>
                         </div>
 
-                        <div className="mt-3 flex items-center justify-between gap-2 text-xs">
-                          <span className="truncate text-black/60">{item.file.name}</span>
-                          <div className="flex gap-2">
+                        <div className={styles.bulkItemRow}>
+                          <span className={styles.truncateMuted}>{item.file.name}</span>
+                          <div className={styles.rowGap2}>
                             <button
                               type="button"
                               onClick={() => setBulkExpandedId(bulkExpandedId === item.id ? null : item.id)}
-                              className="text-[10px] uppercase tracking-[0.2em] text-black/40 hover:text-black/70"
+                              className={styles.textButtonSmall}
                             >
                               {bulkExpandedId === item.id ? 'Close' : 'Edit'}
                             </button>
                             <button
                               type="button"
                               onClick={() => removeBulkItem(item.id)}
-                              className="text-[10px] uppercase tracking-[0.2em] text-red-400 hover:text-red-600"
+                              className={styles.textButtonDanger}
                             >
                               Remove
                             </button>
@@ -1079,48 +1094,48 @@ export function AdminPhotosClient() {
                         </div>
 
                         {item.error && (
-                          <p className="mt-2 text-xs text-red-500">{item.error}</p>
+                          <p className={styles.bulkError}>{item.error}</p>
                         )}
 
                         {/* Expanded Edit View */}
                         {bulkExpandedId === item.id && (
-                          <div className="mt-3 space-y-3 border-t border-black/10 pt-3">
-                            <label className="block">
-                              <span className="text-[10px] font-medium text-black/50 uppercase tracking-wide">Alt Text</span>
+                          <div className={styles.bulkExpanded}>
+                            <label className={styles.block}>
+                              <span className={styles.labelSmall}>Alt Text</span>
                               <input
                                 type="text"
                                 value={item.alt}
                                 onChange={(e) => updateBulkItemField(item.id, 'alt', e.target.value)}
-                                className="mt-1 w-full rounded-xl border border-black/20 px-3 py-2 text-xs"
+                                className={styles.inputSmall}
                                 placeholder="Describe the image"
                               />
                             </label>
-                            <label className="block">
-                              <span className="text-[10px] font-medium text-black/50 uppercase tracking-wide">SEO Title</span>
+                            <label className={styles.block}>
+                              <span className={styles.labelSmall}>SEO Title</span>
                               <input
                                 type="text"
                                 value={item.metaTitle}
                                 onChange={(e) => updateBulkItemField(item.id, 'metaTitle', e.target.value)}
-                                className="mt-1 w-full rounded-xl border border-black/20 px-3 py-2 text-xs"
+                                className={styles.inputSmall}
                                 placeholder="SEO title"
                               />
                             </label>
-                            <label className="block">
-                              <span className="text-[10px] font-medium text-black/50 uppercase tracking-wide">SEO Keywords</span>
+                            <label className={styles.block}>
+                              <span className={styles.labelSmall}>SEO Keywords</span>
                               <input
                                 type="text"
                                 value={item.metaKeywords}
                                 onChange={(e) => updateBulkItemField(item.id, 'metaKeywords', e.target.value)}
-                                className="mt-1 w-full rounded-xl border border-black/20 px-3 py-2 text-xs"
+                                className={styles.inputSmall}
                                 placeholder="keyword1, keyword2"
                               />
                             </label>
-                            <label className="block">
-                              <span className="text-[10px] font-medium text-black/50 uppercase tracking-wide">SEO Description</span>
+                            <label className={styles.block}>
+                              <span className={styles.labelSmall}>SEO Description</span>
                               <textarea
                                 value={item.metaDescription}
                                 onChange={(e) => updateBulkItemField(item.id, 'metaDescription', e.target.value)}
-                                className="mt-1 min-h-[60px] w-full rounded-xl border border-black/20 px-3 py-2 text-xs"
+                                className={styles.textareaSmall}
                                 placeholder="Brief description"
                               />
                             </label>
@@ -1137,23 +1152,33 @@ export function AdminPhotosClient() {
       </section>
 
       {/* Page Photos */}
-      <section className="space-y-4 rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+      <section className={`${styles.section} ${styles.sectionStack4}`}>
         <div>
-          <h2 className="text-lg font-semibold">Page Photos</h2>
-          <p className="mt-2 text-sm text-black/60">
+          <h2 className={styles.cardTitle}>Page Photos</h2>
+          <p className={styles.cardDescription}>
             {canReorder 
               ? 'Drag and drop to reorder. The first photo (index 0) automatically becomes the hero.' 
               : 'Photos assigned to this page.'}
           </p>
+          {pageGuidelines.length > 0 && (
+            <div className={styles.guidanceRow}>
+              <span className={styles.guidanceLabel}>
+                Recommended sizes
+              </span>
+              {pageGuidelines.map((guideline) => (
+                <PhotoGuidelineRow key={guideline.label} guideline={guideline} />
+              ))}
+            </div>
+          )}
           {canReorder && galleryPhotos.length > 1 && (
-            <p className="mt-1 text-xs text-blue-600">
+            <p className={styles.tip}>
               💡 Tip: Drag any photo to the first position to make it the hero
             </p>
           )}
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className={styles.formGridThree}>
           {galleryPhotos.length === 0 && (
-            <p className="text-sm text-black/50">No photos assigned to this page yet.</p>
+            <p className={styles.emptyTextInline}>No photos assigned to this page yet.</p>
           )}
           {galleryPhotos.map((photo, index) => (
             <div
@@ -1177,49 +1202,49 @@ export function AdminPhotosClient() {
                 setDragOverId(null);
                 handleDrop(photo.id);
               }}
-              className={`group rounded-2xl border bg-white p-3 shadow-sm transition-all ${
-                canReorder ? 'cursor-grab active:cursor-grabbing' : ''
+              className={`${styles.photoCard} ${
+                canReorder ? styles.photoCardDraggable : ''
               } ${
-                draggedId === photo.id ? 'opacity-50 scale-95 border-black/10' : 'border-black/10'
+                draggedId === photo.id ? styles.photoCardDragging : ''
               } ${
-                dragOverId === photo.id && draggedId !== photo.id ? 'ring-2 ring-blue-400' : ''
+                dragOverId === photo.id && draggedId !== photo.id ? styles.photoCardDropTarget : ''
               }`}
             >
-              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-black/5">
+              <div className={styles.photoPreviewLarge}>
                 <Image
                   src={photo.src}
                   alt={photo.alt}
                   fill
-                  className="object-cover"
+                  className={styles.photoImage}
                   sizes="(max-width: 768px) 100vw, 33vw"
                 />
-                <div className="absolute top-2 left-2 rounded-full bg-black/70 px-2 py-1 text-[10px] uppercase tracking-wider text-white">
+                <div className={styles.photoBadge}>
                   {getPhotoLabel(photo.id, index)}
                 </div>
               </div>
-              <div className="mt-3 flex items-center justify-between gap-2 text-xs text-black/60">
-                <span className="truncate">{photo.alt || 'Untitled photo'}</span>
-                <div className="flex items-center gap-2">
+              <div className={styles.photoCardMeta}>
+                <span className={styles.truncate}>{photo.alt || 'Untitled photo'}</span>
+                <div className={styles.bulkItemMeta}>
                   <button
                     type="button"
                     onClick={() => togglePhotoDetails(photo.id)}
-                    className="text-[10px] uppercase tracking-[0.3em] text-black/40 hover:text-black/70"
+                    className={styles.textButton}
                   >
                     {expandedPhotoId === photo.id ? 'Close' : 'Edit'}
                   </button>
                   <button
                     type="button"
                     onClick={() => removeFromGallery(photo.id)}
-                    className="text-[10px] uppercase tracking-[0.3em] text-black/40 hover:text-black/70"
+                    className={styles.textButton}
                   >
                     Remove
                   </button>
                 </div>
               </div>
               {expandedPhotoId === photo.id && (
-                <div className="mt-4 space-y-3 text-xs text-black/60">
-                  <label className="block">
-                    <div className="flex items-center justify-between">
+                <div className={styles.detailsPanel}>
+                  <label className={styles.block}>
+                    <div className={styles.buttonRow}>
                       <span>Alt Text</span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'alt', 'text')}
@@ -1229,11 +1254,11 @@ export function AdminPhotosClient() {
                     <input
                       value={photo.alt || ''}
                       onChange={(event) => updatePhotoField(photo.id, 'alt', event.target.value)}
-                      className="mt-2 w-full rounded-xl border border-black/20 px-3 py-2 text-xs"
+                      className={styles.inputTiny}
                     />
                   </label>
-                  <label className="block">
-                    <div className="flex items-center justify-between">
+                  <label className={styles.block}>
+                    <div className={styles.buttonRow}>
                       <span>Meta Title</span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaTitle', 'seo')}
@@ -1245,11 +1270,11 @@ export function AdminPhotosClient() {
                       onChange={(event) =>
                         updatePhotoField(photo.id, 'metaTitle', event.target.value)
                       }
-                      className="mt-2 w-full rounded-xl border border-black/20 px-3 py-2 text-xs"
+                      className={styles.inputTiny}
                     />
                   </label>
-                  <label className="block">
-                    <div className="flex items-center justify-between">
+                  <label className={styles.block}>
+                    <div className={styles.buttonRow}>
                       <span>Meta Description</span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaDescription', 'seo')}
@@ -1261,11 +1286,11 @@ export function AdminPhotosClient() {
                       onChange={(event) =>
                         updatePhotoField(photo.id, 'metaDescription', event.target.value)
                       }
-                      className="mt-2 min-h-[80px] w-full rounded-xl border border-black/20 px-3 py-2 text-xs"
+                      className={styles.textareaMedium}
                     />
                   </label>
-                  <label className="block">
-                    <div className="flex items-center justify-between">
+                  <label className={styles.block}>
+                    <div className={styles.buttonRow}>
                       <span>Meta Keywords</span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaKeywords', 'seo')}
@@ -1277,7 +1302,7 @@ export function AdminPhotosClient() {
                       onChange={(event) =>
                         updatePhotoField(photo.id, 'metaKeywords', event.target.value)
                       }
-                      className="mt-2 min-h-[60px] w-full rounded-xl border border-black/20 px-3 py-2 text-xs"
+                      className={styles.textareaShort}
                     />
                   </label>
                 </div>
@@ -1288,67 +1313,67 @@ export function AdminPhotosClient() {
       </section>
 
       {/* Photo Library */}
-      <section className="space-y-4 rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+      <section className={`${styles.section} ${styles.sectionStack4}`}>
         <div>
-          <h2 className="text-lg font-semibold">Photo Library</h2>
-          <p className="mt-2 text-sm text-black/60">
+          <h2 className={styles.cardTitle}>Photo Library</h2>
+          <p className={styles.cardDescription}>
             Add photos from the library to this page.
           </p>
         </div>
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <div className={styles.gridThreeTight}>
           {availablePhotos.length === 0 && (
-            <p className="text-sm text-black/50">All photos are already on this page.</p>
+            <p className={styles.emptyTextInline}>All photos are already on this page.</p>
           )}
           {availablePhotos.map((photo) => (
             <div
               key={photo.id}
-              className="rounded-2xl border border-black/10 bg-white/60 p-3"
+              className={styles.libraryCard}
             >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="relative h-12 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-black/5">
+              <div className={styles.libraryRow}>
+                <div className={styles.libraryInfo}>
+                  <div className={styles.photoPreviewSmall}>
                     <Image
                       src={photo.src}
                       alt={photo.alt}
                       fill
-                      className="object-cover"
+                      className={styles.photoImage}
                       sizes="64px"
                     />
                   </div>
-                  <span className="text-sm text-black/60 truncate">{photo.alt || 'Untitled'}</span>
+                  <span className={styles.libraryTitle}>{photo.alt || 'Untitled'}</span>
                 </div>
                 
                 {/* Desktop buttons - hidden on medium and smaller screens */}
-                <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                <div className={styles.libraryActions}>
                   <button
                     type="button"
                     onClick={() => togglePhotoDetails(photo.id)}
-                    className="rounded-full border border-black/20 px-2 py-1 text-[9px] uppercase tracking-[0.2em] text-black/40 hover:text-black/70"
+                    className={styles.libraryActionButton}
                   >
                     {expandedPhotoId === photo.id ? 'Close' : 'Edit'}
                   </button>
                   <button
                     type="button"
                     onClick={() => addToGallery(photo.id)}
-                    className="rounded-full border border-black/20 px-2 py-1 text-[9px] uppercase tracking-[0.2em] text-black/60 hover:text-black"
+                    className={styles.libraryActionButtonPrimary}
                   >
                     Add
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDelete(photo.id)}
-                    className="rounded-full border border-black/20 px-2 py-1 text-[9px] uppercase tracking-[0.2em] text-red-400 hover:text-red-600"
+                    className={styles.libraryActionButtonDanger}
                   >
                     Delete
                   </button>
                 </div>
 
                 {/* Mobile/tablet dropdown - visible on medium and smaller screens */}
-                <div ref={openMenuId === photo.id ? menuRef : undefined} className="relative lg:hidden flex-shrink-0">
+                <div ref={openMenuId === photo.id ? menuRef : undefined} className={styles.menuWrapper}>
                   <button
                     type="button"
                     onClick={() => setOpenMenuId(openMenuId === photo.id ? null : photo.id)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-black/20 text-black/50 hover:text-black/80"
+                    className={styles.menuButton}
                     aria-label="Actions"
                   >
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -1358,14 +1383,14 @@ export function AdminPhotosClient() {
                     </svg>
                   </button>
                   {openMenuId === photo.id && (
-                    <div className="absolute right-0 top-full z-20 mt-1 w-32 rounded-xl border border-black/10 bg-white py-1 shadow-lg">
+                    <div className={styles.menu}>
                       <button
                         type="button"
                         onClick={() => {
                           togglePhotoDetails(photo.id);
                           setOpenMenuId(null);
                         }}
-                        className="block w-full px-4 py-2 text-left text-xs uppercase tracking-wider text-black/60 hover:bg-black/5"
+                        className={styles.menuItem}
                       >
                         {expandedPhotoId === photo.id ? 'Close' : 'Edit'}
                       </button>
@@ -1375,7 +1400,7 @@ export function AdminPhotosClient() {
                           addToGallery(photo.id);
                           setOpenMenuId(null);
                         }}
-                        className="block w-full px-4 py-2 text-left text-xs uppercase tracking-wider text-black/60 hover:bg-black/5"
+                        className={styles.menuItem}
                       >
                         Add
                       </button>
@@ -1385,7 +1410,7 @@ export function AdminPhotosClient() {
                           handleDelete(photo.id);
                           setOpenMenuId(null);
                         }}
-                        className="block w-full px-4 py-2 text-left text-xs uppercase tracking-wider text-red-500 hover:bg-red-50"
+                        className={styles.menuItemDanger}
                       >
                         Delete
                       </button>
@@ -1394,9 +1419,9 @@ export function AdminPhotosClient() {
                 </div>
               </div>
               {expandedPhotoId === photo.id && (
-                <div className="mt-4 space-y-3 text-xs text-black/60">
-                  <label className="block">
-                    <div className="flex items-center justify-between">
+                <div className={styles.detailsPanel}>
+                  <label className={styles.block}>
+                    <div className={styles.buttonRow}>
                       <span>Alt Text</span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'alt', 'text')}
@@ -1406,11 +1431,11 @@ export function AdminPhotosClient() {
                     <input
                       value={photo.alt || ''}
                       onChange={(event) => updatePhotoField(photo.id, 'alt', event.target.value)}
-                      className="mt-2 w-full rounded-xl border border-black/20 px-3 py-2 text-xs"
+                      className={styles.inputTiny}
                     />
                   </label>
-                  <label className="block">
-                    <div className="flex items-center justify-between">
+                  <label className={styles.block}>
+                    <div className={styles.buttonRow}>
                       <span>Meta Title</span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaTitle', 'seo')}
@@ -1422,11 +1447,11 @@ export function AdminPhotosClient() {
                       onChange={(event) =>
                         updatePhotoField(photo.id, 'metaTitle', event.target.value)
                       }
-                      className="mt-2 w-full rounded-xl border border-black/20 px-3 py-2 text-xs"
+                      className={styles.inputTiny}
                     />
                   </label>
-                  <label className="block">
-                    <div className="flex items-center justify-between">
+                  <label className={styles.block}>
+                    <div className={styles.buttonRow}>
                       <span>Meta Description</span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaDescription', 'seo')}
@@ -1438,11 +1463,11 @@ export function AdminPhotosClient() {
                       onChange={(event) =>
                         updatePhotoField(photo.id, 'metaDescription', event.target.value)
                       }
-                      className="mt-2 min-h-[80px] w-full rounded-xl border border-black/20 px-3 py-2 text-xs"
+                      className={styles.textareaMedium}
                     />
                   </label>
-                  <label className="block">
-                    <div className="flex items-center justify-between">
+                  <label className={styles.block}>
+                    <div className={styles.buttonRow}>
                       <span>Meta Keywords</span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaKeywords', 'seo')}
@@ -1454,7 +1479,7 @@ export function AdminPhotosClient() {
                       onChange={(event) =>
                         updatePhotoField(photo.id, 'metaKeywords', event.target.value)
                       }
-                      className="mt-2 min-h-[60px] w-full rounded-xl border border-black/20 px-3 py-2 text-xs"
+                      className={styles.textareaShort}
                     />
                   </label>
                 </div>

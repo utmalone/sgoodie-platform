@@ -1,0 +1,493 @@
+.page {
+  @apply space-y-8;
+}
+
+.header {
+  @apply flex flex-wrap items-center justify-between gap-3;
+}
+
+.title {
+  @apply text-3xl font-semibold;
+}
+
+.subtitle {
+  @apply mt-2 text-sm text-black/60;
+}
+
+.saveButton {
+  @apply rounded-full border border-black/20 bg-black px-5 py-2 text-xs uppercase tracking-[0.35em] text-white;
+}
+
+.tabBar {
+  @apply flex flex-wrap items-center gap-3 rounded-2xl border border-black/10 bg-white/60 p-3;
+}
+
+.tabButton {
+  @apply rounded-full px-4 py-2 text-xs uppercase tracking-[0.25em];
+}
+
+.tabButtonActive {
+  @apply bg-black text-white;
+}
+
+.tabButtonInactive {
+  @apply border border-black/10 text-black/60 hover:border-black/30;
+}
+
+.modeButton {
+  @apply rounded-full px-4 py-2 text-xs uppercase tracking-[0.2em] transition-all;
+}
+
+.modeButtonActive {
+  @apply bg-black text-white;
+}
+
+.modeButtonInactive {
+  @apply border border-black/20 text-black/60 hover:border-black/40;
+}
+
+.statusMessage {
+  @apply text-sm text-black/60;
+}
+
+.section {
+  @apply rounded-3xl border border-black/10 bg-white p-6 shadow-sm;
+}
+
+.sectionStack4 {
+  @apply space-y-4;
+}
+
+.sectionStack6 {
+  @apply space-y-6;
+}
+
+.cardTitle {
+  @apply text-lg font-semibold;
+}
+
+.cardDescription {
+  @apply mt-2 text-sm text-black/60;
+}
+
+.cardDescriptionMuted {
+  @apply text-sm text-black/60;
+}
+
+.cardDescriptionSoft {
+  @apply text-sm text-black/70;
+}
+
+.tip {
+  @apply mt-1 text-xs text-blue-600;
+}
+
+.inlineSuccess {
+  @apply ml-2 text-green-600;
+}
+
+.inlineError {
+  @apply ml-2 text-red-600;
+}
+
+.formGridTwo {
+  @apply grid gap-4 md:grid-cols-2;
+}
+
+.formGridAuto {
+  @apply grid gap-4 md:grid-cols-[1fr_auto];
+}
+
+.formGridThree {
+  @apply grid gap-4 md:grid-cols-2 lg:grid-cols-3;
+}
+
+.formGrid {
+  @apply grid gap-4;
+}
+
+.label {
+  @apply block text-sm text-black/60;
+}
+
+.labelSpan2 {
+  @apply block md:col-span-2;
+}
+
+.labelSmall {
+  @apply text-[10px] font-medium text-black/50 uppercase tracking-wide;
+}
+
+.labelTiny {
+  @apply text-xs font-medium text-black/60 uppercase tracking-wide;
+}
+
+.input {
+  @apply mt-1 w-full rounded-2xl border border-black/20 px-4 py-2 text-sm disabled:bg-black/5 disabled:text-black/40;
+}
+
+.inputSmall {
+  @apply mt-1 w-full rounded-xl border border-black/20 px-3 py-2 text-xs;
+}
+
+.inputTiny {
+  @apply mt-2 w-full rounded-xl border border-black/20 px-3 py-2 text-xs;
+}
+
+.textarea {
+  @apply mt-1 min-h-[80px] w-full rounded-2xl border border-black/20 px-4 py-2 text-sm disabled:bg-black/5 disabled:text-black/40;
+}
+
+.textareaShort {
+  @apply mt-2 min-h-[60px] w-full rounded-xl border border-black/20 px-3 py-2 text-xs;
+}
+
+.textareaMedium {
+  @apply mt-2 min-h-[80px] w-full rounded-xl border border-black/20 px-3 py-2 text-xs;
+}
+
+.textareaSmall {
+  @apply mt-1 min-h-[60px] w-full rounded-xl border border-black/20 px-3 py-2 text-xs;
+}
+
+.fileInput {
+  @apply mt-1 w-full rounded-2xl border border-black/20 px-4 py-2 text-sm;
+}
+
+.fileInput::file-selector-button {
+  margin-right: 1rem;
+  border-radius: 9999px;
+  border: 0;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.25rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.checkboxRow {
+  @apply flex items-center gap-2 cursor-pointer;
+}
+
+.checkbox {
+  @apply h-4 w-4 rounded border-black/30 text-black focus:ring-black;
+}
+
+.checkboxText {
+  @apply text-sm font-medium;
+}
+
+.buttonRow {
+  @apply flex items-center justify-between;
+}
+
+.buttonRowGap {
+  @apply flex items-center justify-between gap-2;
+}
+
+.buttonRowWrap {
+  @apply flex flex-wrap gap-2;
+}
+
+.primaryButton {
+  @apply rounded-full bg-black px-5 py-2 text-xs uppercase tracking-[0.2em] text-white disabled:opacity-50;
+}
+
+.primaryButtonOutline {
+  @apply rounded-full border border-black/20 bg-black px-5 py-2 text-xs uppercase tracking-[0.35em] text-white h-fit disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.successButton {
+  @apply rounded-full bg-green-600 px-5 py-2 text-xs uppercase tracking-[0.2em] text-white disabled:opacity-50;
+}
+
+.outlineButton {
+  @apply rounded-full border border-black/20 px-5 py-2 text-xs uppercase tracking-[0.2em] text-black/60 disabled:opacity-50;
+}
+
+.outlineButtonTight {
+  @apply rounded-full border border-black/20 px-2 py-1 text-[9px] uppercase tracking-[0.2em] text-black/60 hover:text-black;
+}
+
+.outlineButtonMuted {
+  @apply rounded-full border border-black/20 px-2 py-1 text-[9px] uppercase tracking-[0.2em] text-black/40 hover:text-black/70;
+}
+
+.outlineButtonDanger {
+  @apply rounded-full border border-black/20 px-2 py-1 text-[9px] uppercase tracking-[0.2em] text-red-400 hover:text-red-600;
+}
+
+.textButton {
+  @apply text-[10px] uppercase tracking-[0.3em] text-black/40 hover:text-black/70;
+}
+
+.textButtonSmall {
+  @apply text-[10px] uppercase tracking-[0.2em] text-black/40 hover:text-black/70;
+}
+
+.textButtonPrimary {
+  @apply text-[10px] uppercase tracking-[0.2em] text-black/60 hover:text-black;
+}
+
+.textButtonDanger {
+  @apply text-[10px] uppercase tracking-[0.2em] text-red-400 hover:text-red-600;
+}
+
+.spinner {
+  @apply h-5 w-5 animate-spin;
+}
+
+.spinnerInline {
+  @apply inline-block h-3 w-3 mr-1 animate-spin;
+}
+
+.accordionHeader {
+  @apply w-full flex items-center justify-between px-4 py-3 bg-black/5 hover:bg-black/10 transition-colors;
+}
+
+.accordionIcon {
+  @apply w-5 h-5 transition-transform;
+}
+
+.accordionIconOpen {
+  @apply rotate-180;
+}
+
+.bulkPanel {
+  @apply rounded-2xl border border-black/10 overflow-hidden;
+}
+
+.bulkPanelInner {
+  @apply rounded-2xl border border-black/10 bg-white/60 p-3;
+}
+
+.bulkItem {
+  @apply rounded-2xl border border-black/10 bg-white p-3 shadow-sm;
+}
+
+.bulkItemHeader {
+  @apply flex items-center justify-between gap-2;
+}
+
+.bulkItemRow {
+  @apply mt-3 flex items-center justify-between gap-2 text-xs;
+}
+
+.bulkItemMeta {
+  @apply flex items-center gap-2;
+}
+
+.bulkFileName {
+  @apply truncate text-black/60;
+}
+
+.bulkStatus {
+  @apply absolute top-2 right-2 rounded-full px-2 py-1 text-[10px] uppercase tracking-wider text-white;
+}
+
+.bulkStatusPending {
+  @apply bg-gray-500;
+}
+
+.bulkStatusAnalyzing {
+  @apply bg-amber-500;
+}
+
+.bulkStatusReady {
+  @apply bg-green-500;
+}
+
+.bulkStatusUploading {
+  @apply bg-blue-500;
+}
+
+.bulkStatusDone {
+  @apply bg-green-700;
+}
+
+.bulkStatusError {
+  @apply bg-red-500;
+}
+
+.bulkError {
+  @apply mt-2 text-xs text-red-500;
+}
+
+.bulkExpanded {
+  @apply mt-3 space-y-3 border-t border-black/10 pt-3;
+}
+
+.photoPreview {
+  @apply relative aspect-[4/3] overflow-hidden rounded-xl bg-black/5;
+}
+
+.photoPreviewLarge {
+  @apply relative aspect-[4/3] overflow-hidden rounded-2xl bg-black/5;
+}
+
+.photoPreviewSmall {
+  @apply relative h-12 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-black/5;
+}
+
+.photoImage {
+  @apply object-cover;
+}
+
+.photoBadge {
+  @apply absolute top-2 left-2 rounded-full bg-black/70 px-2 py-1 text-[10px] uppercase tracking-wider text-white;
+}
+
+.menuWrapper {
+  @apply relative lg:hidden flex-shrink-0;
+}
+
+.menuButton {
+  @apply flex h-8 w-8 items-center justify-center rounded-full border border-black/20 text-black/50 hover:text-black/80;
+}
+
+.menu {
+  @apply absolute right-0 top-full z-20 mt-1 w-32 rounded-xl border border-black/10 bg-white py-1 shadow-lg;
+}
+
+.menuItem {
+  @apply block w-full px-4 py-2 text-left text-xs uppercase tracking-wider text-black/60 hover:bg-black/5;
+}
+
+.menuItemDanger {
+  @apply block w-full px-4 py-2 text-left text-xs uppercase tracking-wider text-red-500 hover:bg-red-50;
+}
+
+.photoCard {
+  @apply group rounded-2xl border bg-white p-3 shadow-sm transition-all;
+}
+
+.photoCardDraggable {
+  @apply cursor-grab active:cursor-grabbing;
+}
+
+.photoCardDragging {
+  @apply opacity-50 scale-95 border-black/10;
+}
+
+.photoCardDropTarget {
+  @apply ring-2 ring-blue-400;
+}
+
+.photoCardMeta {
+  @apply mt-3 flex items-center justify-between gap-2 text-xs text-black/60;
+}
+
+.photoCardTitle {
+  @apply truncate;
+}
+
+.libraryCard {
+  @apply rounded-2xl border border-black/10 bg-white/60 p-3;
+}
+
+.libraryRow {
+  @apply flex items-center justify-between gap-2;
+}
+
+.libraryInfo {
+  @apply flex items-center gap-3 min-w-0;
+}
+
+.libraryTitle {
+  @apply text-sm text-black/60 truncate;
+}
+
+.libraryActions {
+  @apply hidden lg:flex items-center gap-1 flex-shrink-0;
+}
+
+.libraryActionButton {
+  @apply rounded-full border border-black/20 px-2 py-1 text-[9px] uppercase tracking-[0.2em] text-black/40 hover:text-black/70;
+}
+
+.libraryActionButtonPrimary {
+  @apply rounded-full border border-black/20 px-2 py-1 text-[9px] uppercase tracking-[0.2em] text-black/60 hover:text-black;
+}
+
+.libraryActionButtonDanger {
+  @apply rounded-full border border-black/20 px-2 py-1 text-[9px] uppercase tracking-[0.2em] text-red-400 hover:text-red-600;
+}
+
+.truncate {
+  @apply truncate;
+}
+
+.truncateMuted {
+  @apply truncate text-black/60;
+}
+
+.warningBox {
+  @apply flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800;
+}
+
+.infoBox {
+  @apply rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800;
+}
+
+.infoBoxRow {
+  @apply flex items-center gap-2;
+}
+
+.infoBoxText {
+  @apply text-sm text-black/60;
+}
+
+.bulkToggleRow {
+  @apply flex items-center gap-2;
+}
+
+.fontMedium {
+  @apply font-medium;
+}
+
+.textSmMedium {
+  @apply text-sm font-medium;
+}
+
+.marginTop1 {
+  @apply mt-1;
+}
+
+.uploadTabs {
+  @apply mt-4 flex gap-2;
+}
+
+.gridThreeTight {
+  @apply grid gap-3 md:grid-cols-2 lg:grid-cols-3;
+}
+
+.bulkGrid {
+  @apply p-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3;
+}
+
+.rowGap2 {
+  @apply flex gap-2;
+}
+
+.guidanceLabel {
+  @apply text-[10px] uppercase tracking-[0.3em] text-black/40;
+}
+
+.emptyText {
+  @apply mt-4 text-sm text-black/50;
+}
+
+.emptyTextInline {
+  @apply text-sm text-black/50;
+}
+
+.detailsPanel {
+  @apply mt-4 space-y-3 text-xs text-black/60;
+}
+
+.guidanceRow {
+  @apply mt-2 flex flex-wrap items-center gap-3;
+}
+
+.block {
+  @apply block;
+}

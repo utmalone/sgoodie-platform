@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { ProjectCredit } from '@/types';
+import styles from '@/styles/admin/AdminCreditsEditor.module.css';
 
 type AdminCreditsEditorProps = {
   credits: ProjectCredit[];
@@ -46,35 +47,35 @@ export function AdminCreditsEditor({ credits, onChange }: AdminCreditsEditorProp
   }
 
   return (
-    <div className="space-y-4">
+    <div className={styles.wrapper}>
       {/* Existing Credits */}
       {credits.length > 0 && (
-        <div className="space-y-2">
+        <div className={styles.list}>
           {credits.map((credit, index) => (
             <div
               key={`${credit.label}-${index}`}
-              className="flex items-center gap-2 rounded-xl border border-black/10 bg-white/60 p-2"
+              className={styles.row}
             >
               <input
                 type="text"
                 value={credit.label}
                 onChange={(e) => handleUpdate(index, 'label', e.target.value)}
                 placeholder="Label"
-                className="w-32 rounded-lg border border-black/20 px-3 py-1.5 text-sm"
+                className={styles.labelInput}
               />
               <input
                 type="text"
                 value={credit.value}
                 onChange={(e) => handleUpdate(index, 'value', e.target.value)}
                 placeholder="Value"
-                className="flex-1 rounded-lg border border-black/20 px-3 py-1.5 text-sm"
+                className={styles.valueInput}
               />
-              <div className="flex items-center gap-1">
+              <div className={styles.actionRow}>
                 <button
                   type="button"
                   onClick={() => handleMoveUp(index)}
                   disabled={index === 0}
-                  className="rounded-lg p-1.5 text-black/40 hover:bg-black/5 hover:text-black/70 disabled:opacity-30"
+                  className={styles.iconButton}
                   title="Move up"
                 >
                   ↑
@@ -83,7 +84,7 @@ export function AdminCreditsEditor({ credits, onChange }: AdminCreditsEditorProp
                   type="button"
                   onClick={() => handleMoveDown(index)}
                   disabled={index === credits.length - 1}
-                  className="rounded-lg p-1.5 text-black/40 hover:bg-black/5 hover:text-black/70 disabled:opacity-30"
+                  className={styles.iconButton}
                   title="Move down"
                 >
                   ↓
@@ -91,7 +92,7 @@ export function AdminCreditsEditor({ credits, onChange }: AdminCreditsEditorProp
                 <button
                   type="button"
                   onClick={() => handleRemove(index)}
-                  className="rounded-lg p-1.5 text-black/40 hover:bg-red-50 hover:text-red-600"
+                  className={styles.iconButtonDanger}
                   title="Remove"
                 >
                   ×
@@ -103,27 +104,27 @@ export function AdminCreditsEditor({ credits, onChange }: AdminCreditsEditorProp
       )}
 
       {/* Add New Credit */}
-      <div className="flex items-center gap-2">
+      <div className={styles.addRow}>
         <input
           type="text"
           value={newLabel}
           onChange={(e) => setNewLabel(e.target.value)}
           placeholder="Label (e.g., Designer)"
-          className="w-40 rounded-xl border border-black/20 px-3 py-2 text-sm"
+          className={styles.addLabelInput}
         />
         <input
           type="text"
           value={newValue}
           onChange={(e) => setNewValue(e.target.value)}
           placeholder="Value (e.g., Studio Name)"
-          className="flex-1 rounded-xl border border-black/20 px-3 py-2 text-sm"
+          className={styles.addValueInput}
           onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
         />
         <button
           type="button"
           onClick={handleAdd}
           disabled={!newLabel.trim() || !newValue.trim()}
-          className="rounded-full border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.25em] text-black/70 hover:border-black/40 hover:text-black disabled:opacity-40"
+          className={styles.addButton}
         >
           Add
         </button>

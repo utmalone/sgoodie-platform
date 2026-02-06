@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { PhotoAsset } from '@/types';
+import styles from '@/styles/admin/AdminPhotoSelector.module.css';
 
 type AdminPhotoSelectorProps = {
   isOpen: boolean;
@@ -78,39 +79,39 @@ export function AdminPhotoSelector({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="flex max-h-[90vh] w-[min(900px,95vw)] flex-col rounded-3xl border border-black/10 bg-white shadow-2xl">
+    <div className={styles.overlay}>
+      <div className={styles.modal}>
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-black/10 p-5">
-          <h2 className="text-lg font-semibold">{title}</h2>
+        <div className={styles.header}>
+          <h2 className={styles.title}>{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-xs uppercase tracking-[0.3em] text-black/40 hover:text-black/70"
+            className={styles.cancel}
           >
             Cancel
           </button>
         </div>
 
         {/* Search */}
-        <div className="border-b border-black/10 p-4">
+        <div className={styles.search}>
           <input
             type="text"
             placeholder="Search by alt text..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-2xl border border-black/20 px-4 py-2 text-sm"
+            className={styles.searchInput}
           />
         </div>
 
         {/* Photo Grid */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className={styles.body}>
           {isLoading ? (
-            <p className="text-center text-sm text-black/60">Loading photos...</p>
+            <p className={styles.statusText}>Loading photos...</p>
           ) : filtered.length === 0 ? (
-            <p className="text-center text-sm text-black/60">No photos found.</p>
+            <p className={styles.statusText}>No photos found.</p>
           ) : (
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
+            <div className={styles.grid}>
               {filtered.map((photo) => {
                 const isSelected = selected.has(photo.id);
                 return (
@@ -118,27 +119,25 @@ export function AdminPhotoSelector({
                     key={photo.id}
                     type="button"
                     onClick={() => handleToggle(photo.id)}
-                    className={`group relative aspect-square overflow-hidden rounded-xl border-2 transition ${
-                      isSelected
-                        ? 'border-black ring-2 ring-black/20'
-                        : 'border-transparent hover:border-black/30'
+                    className={`${styles.gridItem} ${
+                      isSelected ? styles.gridItemSelected : styles.gridItemIdle
                     }`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={photo.src}
                       alt={photo.alt}
-                      className="h-full w-full object-cover"
+                      className={styles.image}
                     />
                     {isSelected && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                        <span className="rounded-full bg-white px-2 py-1 text-xs font-semibold">
+                      <div className={styles.selectedOverlay}>
+                        <span className={styles.selectedBadge}>
                           ✓
                         </span>
                       </div>
                     )}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 transition group-hover:opacity-100">
-                      <p className="truncate text-xs text-white">
+                    <div className={styles.hoverLabel}>
+                      <p className={styles.hoverText}>
                         {photo.alt || 'Untitled'}
                       </p>
                     </div>
@@ -151,14 +150,14 @@ export function AdminPhotoSelector({
 
         {/* Footer */}
         {multiple && (
-          <div className="flex items-center justify-between border-t border-black/10 p-4">
-            <p className="text-sm text-black/60">
+          <div className={styles.footer}>
+            <p className={styles.footerText}>
               {selected.size} photo{selected.size !== 1 ? 's' : ''} selected
             </p>
             <button
               type="button"
               onClick={handleConfirm}
-              className="rounded-full bg-black px-5 py-2 text-xs uppercase tracking-[0.35em] text-white"
+              className={styles.confirm}
             >
               Confirm Selection
             </button>

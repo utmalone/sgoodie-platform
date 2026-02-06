@@ -1,0 +1,127 @@
+.container {
+  @apply space-y-8;
+}
+
+.pageHeader {
+  @apply flex flex-wrap items-center justify-between gap-4;
+}
+
+.headerActions {
+  @apply flex items-center gap-3;
+}
+
+.pageTitle {
+  @apply text-3xl font-semibold;
+}
+
+.pageDescription {
+  @apply mt-2 text-sm text-black/60;
+}
+
+.statusMessage {
+  @apply text-sm text-black/60;
+}
+
+.btnSecondary {
+  @apply rounded-full border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.35em] text-black/60 hover:border-black/40 hover:text-black;
+}
+
+.btnSecondaryWide {
+  @apply rounded-full border border-black/20 px-5 py-2 text-xs uppercase tracking-[0.35em] text-black/60 hover:text-black;
+}
+
+.btnPrimary {
+  @apply rounded-full bg-black px-5 py-2 text-xs uppercase tracking-[0.35em] text-white disabled:opacity-60;
+}
+
+.card {
+  @apply rounded-3xl border border-black/10 bg-white p-6 shadow-sm;
+}
+
+.cardTitle {
+  @apply text-lg font-semibold;
+}
+
+.cardDescription {
+  @apply mt-1 text-sm text-black/60;
+}
+
+.formGrid {
+  @apply mt-4 grid gap-4;
+}
+
+.formRowTwo {
+  @apply grid gap-4 md:grid-cols-2;
+}
+
+.formRowThree {
+  @apply grid gap-4 md:grid-cols-3;
+}
+
+.label {
+  @apply text-sm;
+}
+
+.labelText {
+  @apply text-black/60;
+}
+
+.input {
+  @apply mt-2 w-full rounded-2xl border border-black/20 px-4 py-2;
+}
+
+.textarea {
+  @apply mt-2 w-full rounded-2xl border border-black/20 px-4 py-2;
+}
+
+.textareaShort {
+  @apply min-h-[80px];
+}
+
+.textareaBody {
+  @apply min-h-[200px];
+}
+
+.sectionHeader {
+  @apply flex items-center justify-between;
+}
+
+.heroButton {
+  @apply rounded-full border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.25em] text-black/60 hover:text-black;
+}
+
+.sectionBody {
+  @apply mt-4;
+}
+
+.heroImageWrap {
+  @apply relative aspect-[16/9] max-w-2xl overflow-hidden rounded-2xl bg-black/5;
+}
+
+.heroImage {
+  @apply h-full w-full object-cover;
+}
+
+.heroAlt {
+  @apply mt-2 text-sm text-black/60;
+}
+
+.galleryGrid {
+  @apply mt-4 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5;
+}
+
+.galleryItem {
+  @apply group relative aspect-square overflow-hidden rounded-xl border border-black/10;
+}
+
+.galleryItemDragging {
+  @apply opacity-50;
+}
+
+.galleryRemove {
+  @apply absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100;
+}
+
+.emptyText {
+  @apply mt-4 text-sm text-black/50;
+}

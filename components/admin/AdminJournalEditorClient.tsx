@@ -5,9 +5,13 @@ import { useRouter } from 'next/navigation';
 import type { JournalPost, PhotoAsset } from '@/types';
 import { AdminPhotoSelector } from './AdminPhotoSelector';
 import { AdminCreditsEditor } from './AdminCreditsEditor';
+import { PhotoGuidelineTooltip } from './PhotoGuidelines';
 import { getApiErrorMessage } from '@/lib/admin/api-error';
 import { usePreview } from '@/lib/admin/preview-context';
 import { useSave } from '@/lib/admin/save-context';
+import { journalPhotoGuideline } from '@/lib/admin/photo-guidelines';
+import guidelineStyles from '@/styles/admin/PhotoGuidelines.module.css';
+import styles from '@/styles/admin/AdminJournalEditorClient.module.css';
 
 type AdminJournalEditorClientProps = {
   postId?: string;
@@ -242,27 +246,25 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
   }
 
   if (isLoading) {
-    return <p className="text-sm text-black/60">Loading post...</p>;
+    return <p className={styles.statusMessage}>Loading post...</p>;
   }
 
   return (
-    <div className="space-y-8">
+    <div className={styles.container}>
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className={styles.pageHeader}>
         <div>
-          <h1 className="text-3xl font-semibold">
-            {isNew ? 'New Journal Post' : 'Edit Post'}
-          </h1>
-          <p className="mt-2 text-sm text-black/60">
+          <h1 className={styles.pageTitle}>{isNew ? 'New Journal Post' : 'Edit Post'}</h1>
+          <p className={styles.pageDescription}>
             {isNew ? 'Create a new journal entry.' : `Editing: ${post.title}`}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className={styles.headerActions}>
           {!isNew && post.slug && (
             <button
               type="button"
               onClick={() => openPreview(`/journal/${post.slug}`)}
-              className="rounded-full border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.35em] text-black/60 hover:border-black/40 hover:text-black"
+              className={styles.btnSecondary}
             >
               Preview
             </button>
@@ -270,7 +272,7 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
           <button
             type="button"
             onClick={() => router.push('/admin/journal')}
-            className="rounded-full border border-black/20 px-5 py-2 text-xs uppercase tracking-[0.35em] text-black/60 hover:text-black"
+            className={styles.btnSecondaryWide}
           >
             Cancel
           </button>
@@ -278,83 +280,83 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="rounded-full bg-black px-5 py-2 text-xs uppercase tracking-[0.35em] text-white disabled:opacity-60"
+            className={styles.btnPrimary}
           >
             {isSaving ? 'Saving...' : 'Save'}
           </button>
         </div>
       </div>
 
-      {status && <p className="text-sm text-black/60">{status}</p>}
+      {status && <p className={styles.statusMessage}>{status}</p>}
 
       {/* Basic Info */}
-      <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold">Basic Information</h2>
-        <div className="mt-4 grid gap-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="text-sm">
-              <span className="text-black/60">Title *</span>
+      <section className={styles.card}>
+        <h2 className={styles.cardTitle}>Basic Information</h2>
+        <div className={styles.formGrid}>
+          <div className={styles.formRowTwo}>
+            <label className={styles.label}>
+              <span className={styles.labelText}>Title *</span>
               <input
                 value={post.title || ''}
                 onChange={(e) => updateField('title', e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-black/20 px-4 py-2"
+                className={styles.input}
                 placeholder="Post title"
               />
             </label>
-            <label className="text-sm">
-              <span className="text-black/60">Slug *</span>
+            <label className={styles.label}>
+              <span className={styles.labelText}>Slug *</span>
               <input
                 value={post.slug || ''}
                 onChange={(e) => updateField('slug', e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-black/20 px-4 py-2"
+                className={styles.input}
                 placeholder="post-slug"
               />
             </label>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <label className="text-sm">
-              <span className="text-black/60">Category</span>
+          <div className={styles.formRowThree}>
+            <label className={styles.label}>
+              <span className={styles.labelText}>Category</span>
               <input
                 value={post.category || ''}
                 onChange={(e) => updateField('category', e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-black/20 px-4 py-2"
+                className={styles.input}
                 placeholder="e.g., Project Feature"
               />
             </label>
-            <label className="text-sm">
-              <span className="text-black/60">Author</span>
+            <label className={styles.label}>
+              <span className={styles.labelText}>Author</span>
               <input
                 value={post.author || ''}
                 onChange={(e) => updateField('author', e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-black/20 px-4 py-2"
+                className={styles.input}
                 placeholder="S.Goodie Studio"
               />
             </label>
-            <label className="text-sm">
-              <span className="text-black/60">Date</span>
+            <label className={styles.label}>
+              <span className={styles.labelText}>Date</span>
               <input
                 type="date"
                 value={post.date || ''}
                 onChange={(e) => updateField('date', e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-black/20 px-4 py-2"
+                className={styles.input}
               />
             </label>
           </div>
-          <label className="text-sm">
-            <span className="text-black/60">Excerpt</span>
+          <label className={styles.label}>
+            <span className={styles.labelText}>Excerpt</span>
             <textarea
               value={post.excerpt || ''}
               onChange={(e) => updateField('excerpt', e.target.value)}
-              className="mt-2 min-h-[80px] w-full rounded-2xl border border-black/20 px-4 py-2"
+              className={`${styles.textarea} ${styles.textareaShort}`}
               placeholder="Brief summary shown on the journal index page..."
             />
           </label>
-          <label className="text-sm">
-            <span className="text-black/60">Body</span>
+          <label className={styles.label}>
+            <span className={styles.labelText}>Body</span>
             <textarea
               value={post.body || ''}
               onChange={(e) => updateField('body', e.target.value)}
-              className="mt-2 min-h-[200px] w-full rounded-2xl border border-black/20 px-4 py-2"
+              className={`${styles.textarea} ${styles.textareaBody}`}
               placeholder="Full post content. Use double line breaks for paragraphs..."
             />
           </label>
@@ -362,56 +364,68 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
       </section>
 
       {/* Hero Photo */}
-      <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between">
+      <section className={styles.card}>
+        <div className={styles.sectionHeader}>
           <div>
-            <h2 className="text-lg font-semibold">Hero Photo *</h2>
-            <p className="mt-1 text-sm text-black/60">
+            <div className={guidelineStyles.headingRow}>
+              <h2 className={styles.cardTitle}>Hero Photo *</h2>
+              <PhotoGuidelineTooltip
+                label={journalPhotoGuideline.label}
+                lines={journalPhotoGuideline.lines}
+              />
+            </div>
+            <p className={styles.cardDescription}>
               Main image shown on the journal index.
             </p>
           </div>
           <button
             type="button"
             onClick={() => setShowHeroSelector(true)}
-            className="rounded-full border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.25em] text-black/60 hover:text-black"
+            className={styles.heroButton}
           >
             {heroPhoto ? 'Change' : 'Select Photo'}
           </button>
         </div>
         {heroPhoto && (
-          <div className="mt-4">
-            <div className="relative aspect-[16/9] max-w-2xl overflow-hidden rounded-2xl bg-black/5">
+          <div className={styles.sectionBody}>
+            <div className={styles.heroImageWrap}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={heroPhoto.src}
                 alt={heroPhoto.alt}
-                className="h-full w-full object-cover"
+                className={styles.heroImage}
               />
             </div>
-            <p className="mt-2 text-sm text-black/60">{heroPhoto.alt || 'No alt text'}</p>
+            <p className={styles.heroAlt}>{heroPhoto.alt || 'No alt text'}</p>
           </div>
         )}
       </section>
 
       {/* Gallery Photos */}
-      <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between">
+      <section className={styles.card}>
+        <div className={styles.sectionHeader}>
           <div>
-            <h2 className="text-lg font-semibold">Gallery Photos</h2>
-            <p className="mt-1 text-sm text-black/60">
+            <div className={guidelineStyles.headingRow}>
+              <h2 className={styles.cardTitle}>Gallery Photos</h2>
+              <PhotoGuidelineTooltip
+                label={journalPhotoGuideline.label}
+                lines={journalPhotoGuideline.lines}
+              />
+            </div>
+            <p className={styles.cardDescription}>
               Additional photos shown on the post detail page.
             </p>
           </div>
           <button
             type="button"
             onClick={() => setShowGallerySelector(true)}
-            className="rounded-full border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.25em] text-black/60 hover:text-black"
+            className={styles.heroButton}
           >
             Add Photos
           </button>
         </div>
         {galleryPhotos.length > 0 ? (
-          <div className="mt-4 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          <div className={styles.galleryGrid}>
             {galleryPhotos.map((photo) => (
               <div
                 key={photo.id}
@@ -420,20 +434,20 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
                 onDragEnd={() => setDraggedPhotoId(null)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => handleGalleryDrop(photo.id)}
-                className={`group relative aspect-square overflow-hidden rounded-xl border border-black/10 ${
-                  draggedPhotoId === photo.id ? 'opacity-50' : ''
+                className={`${styles.galleryItem} ${
+                  draggedPhotoId === photo.id ? styles.galleryItemDragging : ''
                 }`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={photo.src}
                   alt={photo.alt}
-                  className="h-full w-full object-cover"
+                  className={styles.heroImage}
                 />
                 <button
                   type="button"
                   onClick={() => removeFromGallery(photo.id)}
-                  className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                  className={styles.galleryRemove}
                 >
                   ×
                 </button>
@@ -441,17 +455,17 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
             ))}
           </div>
         ) : (
-          <p className="mt-4 text-sm text-black/50">No gallery photos added yet.</p>
+          <p className={styles.emptyText}>No gallery photos added yet.</p>
         )}
       </section>
 
       {/* Credits */}
-      <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold">Credits</h2>
-        <p className="mt-1 text-sm text-black/60">
+      <section className={styles.card}>
+        <h2 className={styles.cardTitle}>Credits</h2>
+        <p className={styles.cardDescription}>
           Credit collaborators on this project.
         </p>
-        <div className="mt-4">
+        <div className={styles.sectionBody}>
           <AdminCreditsEditor
             credits={post.credits || []}
             onChange={(credits) => updateField('credits', credits)}
