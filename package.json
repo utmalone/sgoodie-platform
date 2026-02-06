@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "setup:localstack": "tsx scripts/setup-localstack.ts",
     "localstack:start": "docker-compose up localstack -d",
     "localstack:stop": "docker-compose down",

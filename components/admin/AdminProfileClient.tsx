@@ -56,7 +56,7 @@ export function AdminProfileClient() {
     } catch {
       return false;
     }
-  }, [profile]);
+  }, [profile, refreshPreview]);
 
   useEffect(() => {
     if (isDirty && !isLoading) {

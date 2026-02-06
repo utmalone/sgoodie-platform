@@ -85,7 +85,7 @@ export function AdminPhotosClient() {
         saved.metaKeywords !== photo.metaKeywords
       );
     });
-  }, [photos, savedPhotos, refreshPreview]);
+  }, [photos, savedPhotos]);
 
   // Save function for master save
   const savePhotos = useCallback(async (): Promise<boolean> => {
@@ -125,7 +125,7 @@ export function AdminPhotosClient() {
     } catch {
       return false;
     }
-  }, [photos, savedPhotos]);
+  }, [photos, savedPhotos, refreshPreview]);
 
   // Register/unregister photo changes with master save context
   useEffect(() => {

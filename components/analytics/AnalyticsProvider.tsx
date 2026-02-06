@@ -43,7 +43,7 @@ function shouldTrack(pathname: string) {
 
 export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const startRef = useRef<number>(Date.now());
+  const startRef = useRef<number>(0);
   const pathRef = useRef<string>('');
   const referrerRef = useRef<string>('');
 
