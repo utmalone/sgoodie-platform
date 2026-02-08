@@ -126,6 +126,7 @@ resource "aws_amplify_app" "main" {
             - rm -f .env.production
             - env | grep -E '^(NEXTAUTH_URL|NEXTAUTH_SECRET|ADMIN_EMAIL|ADMIN_PASSWORD_HASH|DYNAMODB_TABLE_PREFIX|DYNAMODB_TABLE_ENV|DYNAMODB_REGION|DYNAMODB_ACCESS_KEY_ID|DYNAMODB_SECRET_ACCESS_KEY|DYNAMODB_SESSION_TOKEN|OPENAI_API_KEY_SECRET_ID|INSTAGRAM_ACCESS_TOKEN_SECRET_ID|AWS_REGION|USE_MOCK_DATA|USE_LOCALSTACK|ADMIN_DEBUG_TOKEN|REVALIDATE_TOKEN|S3_PHOTOS_BUCKET|S3_UPLOADS_BUCKET|CLOUDFRONT_URL)=' >> .env.production
             - npm run build
+            - cp .env.production .next/standalone/.env.production || true
       artifacts:
         baseDirectory: .next
         files:
