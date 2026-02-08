@@ -4,7 +4,7 @@ import imageSize from 'image-size';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { requireAdminApi } from '@/lib/auth/require-admin-api';
 import { createPhoto, getAllPhotos } from '@/lib/data/photos';
-import { revalidateAllPages } from '@/lib/admin/revalidate';
+import { revalidateAllPages, revalidatePhotosImmediate } from '@/lib/admin/revalidate';
 import { s3 } from '@/lib/aws/s3';
 
 export const runtime = 'nodejs';
@@ -123,6 +123,7 @@ export async function POST(request: Request) {
     });
 
     revalidateAllPages();
+    revalidatePhotosImmediate();
     return Response.json(photo);
   } catch (error) {
     console.error('[photos/upload] Unexpected error:', error);

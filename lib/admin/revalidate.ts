@@ -50,3 +50,12 @@ export function revalidateAllPages() {
     CacheTags.workIndex
   ]);
 }
+
+/**
+ * Immediately expire the photos cache (no stale-while-revalidate).
+ * Use when creating, updating, or deleting photos so the admin sees fresh data
+ * right away when navigating between screens.
+ */
+export function revalidatePhotosImmediate() {
+  revalidateTag(CacheTags.photos, { expire: 0 });
+}

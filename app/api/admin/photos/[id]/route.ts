@@ -4,7 +4,7 @@ import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { requireAdminApi } from '@/lib/auth/require-admin-api';
 import { deletePhoto, getAllPhotos, updatePhoto } from '@/lib/data/photos';
 import type { PhotoAsset } from '@/types';
-import { revalidateAllPages } from '@/lib/admin/revalidate';
+import { revalidateAllPages, revalidatePhotosImmediate } from '@/lib/admin/revalidate';
 import { s3 } from '@/lib/aws/s3';
 
 export const runtime = 'nodejs';
@@ -52,6 +52,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     await updatePhoto(updated);
     revalidateAllPages();
+    revalidatePhotosImmediate();
     return Response.json(updated);
   } catch (error) {
     return Response.json(
@@ -94,6 +95,7 @@ export async function DELETE(_: Request, context: RouteContext) {
 
     await deletePhoto(existing.id);
     revalidateAllPages();
+    revalidatePhotosImmediate();
     return Response.json({ ok: true });
   } catch (error) {
     return Response.json(
