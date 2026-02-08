@@ -845,7 +845,7 @@ export function AdminPhotosClient() {
           <div className={guidelineStyles.guidanceTitle}>Photo size guidance</div>
           <div className={guidelineStyles.guidanceList}>
             {pageGuidelines.map((guideline) => (
-              <PhotoGuidelineRow key={guideline.label} guideline={guideline} />
+              <PhotoGuidelineRow key={guideline.label} guideline={guideline} align="left" />
             ))}
           </div>
         </section>
@@ -1239,7 +1239,7 @@ export function AdminPhotosClient() {
                 Recommended sizes
               </span>
               {pageGuidelines.map((guideline) => (
-                <PhotoGuidelineRow key={guideline.label} guideline={guideline} />
+                <PhotoGuidelineRow key={guideline.label} guideline={guideline} align="left" />
               ))}
             </div>
           )}
