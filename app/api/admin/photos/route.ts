@@ -14,7 +14,7 @@ const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
 const S3_BUCKET = process.env.S3_PHOTOS_BUCKET;
 const CLOUDFRONT_URL = process.env.CLOUDFRONT_URL;
 
-function useS3Upload(): boolean {
+function isS3UploadEnabled(): boolean {
   return Boolean(S3_BUCKET && CLOUDFRONT_URL);
 }
 
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Missing file upload.' }, { status: 400 });
     }
 
-    const useS3 = useS3Upload();
+    const useS3 = isS3UploadEnabled();
     console.error('[photos/upload] S3_PHOTOS_BUCKET:', S3_BUCKET ? 'set' : 'NOT SET', 'CLOUDFRONT_URL:', CLOUDFRONT_URL ? 'set' : 'NOT SET', 'useS3:', useS3);
 
     const arrayBuffer = await file.arrayBuffer();
