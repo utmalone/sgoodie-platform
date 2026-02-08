@@ -1,17 +1,26 @@
 import path from 'path';
 import { promises as fs } from 'fs';
+import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { requireAdminApi } from '@/lib/auth/require-admin-api';
 import { deletePhoto, getAllPhotos, updatePhoto } from '@/lib/data/photos';
 import type { PhotoAsset } from '@/types';
 import { revalidateAllPages } from '@/lib/admin/revalidate';
+import { s3 } from '@/lib/aws/s3';
 
 export const runtime = 'nodejs';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-function toUploadPath(src: string) {
+const S3_BUCKET = process.env.S3_PHOTOS_BUCKET;
+
+function toUploadPath(src: string): string | null {
   if (!src.startsWith('/uploads/')) return null;
   return path.join(process.cwd(), 'public', src);
+}
+
+function toS3Key(src: string): string | null {
+  const match = src.match(/\/uploads\/([^/]+)$/);
+  return match ? `uploads/${match[1]}` : null;
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
@@ -67,7 +76,15 @@ export async function DELETE(_: Request, context: RouteContext) {
     }
 
     const uploadPath = toUploadPath(existing.src);
-    if (uploadPath) {
+    const s3Key = toS3Key(existing.src);
+
+    if (S3_BUCKET && s3Key) {
+      try {
+        await s3.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: s3Key }));
+      } catch {
+        // Ignore missing object.
+      }
+    } else if (uploadPath) {
       try {
         await fs.unlink(uploadPath);
       } catch {

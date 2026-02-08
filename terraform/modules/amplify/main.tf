@@ -56,6 +56,18 @@ data "aws_iam_policy_document" "amplify_service_role" {
       resources = var.service_role_secret_arns
     }
   }
+
+  dynamic "statement" {
+    for_each = length(var.service_role_s3_bucket_arns) > 0 ? [1] : []
+    content {
+      sid = "S3PhotosAccess"
+      actions = [
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ]
+      resources = [for arn in var.service_role_s3_bucket_arns : "${arn}/*"]
+    }
+  }
 }
 
 resource "aws_iam_role" "amplify_service_role" {

@@ -204,4 +204,8 @@ module "amplify" {
     module.secrets.openai_api_key_secret_arn,
     module.secrets.instagram_access_token_secret_arn
   ]
+
+  service_role_s3_bucket_arns = [
+    module.storage.photos_bucket_arn
+  ]
 }

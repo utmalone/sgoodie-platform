@@ -52,3 +52,9 @@ variable "service_role_secret_arns" {
   type        = list(string)
   default     = []
 }
+
+variable "service_role_s3_bucket_arns" {
+  description = "S3 bucket ARNs (and object ARNs) the Amplify service role can access for PutObject/DeleteObject"
+  type        = list(string)
+  default     = []
+}
