@@ -73,7 +73,7 @@ const aboutFieldHelp = {
   heroSubtitle: ['Short subtitle shown under the About hero title.'],
   introParagraphs: ['Intro paragraphs shown under the hero photo (one paragraph per block).'],
   approachTitle: ['Heading for the approach/results section.'],
-  approachItems: ['Cards displayed in the approach section (title + description).'],
+  approachItems: ['Cards displayed in the approach section (title + description).', 'Add your photos in the photo section first.'],
   featuredTitle: ['Heading for the publications list.'],
   featuredPublications: ['List of publications (one per line).'],
   bioName: ['Name used in the bio section heading (e.g., \"S.Goodie\").'],
