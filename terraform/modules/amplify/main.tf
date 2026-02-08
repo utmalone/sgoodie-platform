@@ -68,6 +68,19 @@ data "aws_iam_policy_document" "amplify_service_role" {
       resources = [for arn in var.service_role_s3_bucket_arns : "${arn}/*"]
     }
   }
+
+  # CloudWatch Logs - required for Amplify SSR compute to write runtime logs
+  statement {
+    sid = "CloudWatchLogsAccess"
+    actions = [
+      "logs:CreateLogStream",
+      "logs:CreateLogGroup",
+      "logs:DescribeLogGroups",
+      "logs:DescribeLogStreams",
+      "logs:PutLogEvents"
+    ]
+    resources = ["arn:aws:logs:*:*:*"]
+  }
 }
 
 resource "aws_iam_role" "amplify_service_role" {
@@ -111,7 +124,7 @@ resource "aws_amplify_app" "main" {
         build:
           commands:
             - rm -f .env.production
-            - env | grep -E '^(NEXTAUTH_URL|NEXTAUTH_SECRET|ADMIN_EMAIL|ADMIN_PASSWORD_HASH|DYNAMODB_TABLE_PREFIX|DYNAMODB_TABLE_ENV|DYNAMODB_REGION|DYNAMODB_ACCESS_KEY_ID|DYNAMODB_SECRET_ACCESS_KEY|DYNAMODB_SESSION_TOKEN|OPENAI_API_KEY_SECRET_ID|INSTAGRAM_ACCESS_TOKEN_SECRET_ID|AWS_REGION|USE_MOCK_DATA|USE_LOCALSTACK|ADMIN_DEBUG_TOKEN|REVALIDATE_TOKEN)=' >> .env.production
+            - env | grep -E '^(NEXTAUTH_URL|NEXTAUTH_SECRET|ADMIN_EMAIL|ADMIN_PASSWORD_HASH|DYNAMODB_TABLE_PREFIX|DYNAMODB_TABLE_ENV|DYNAMODB_REGION|DYNAMODB_ACCESS_KEY_ID|DYNAMODB_SECRET_ACCESS_KEY|DYNAMODB_SESSION_TOKEN|OPENAI_API_KEY_SECRET_ID|INSTAGRAM_ACCESS_TOKEN_SECRET_ID|AWS_REGION|USE_MOCK_DATA|USE_LOCALSTACK|ADMIN_DEBUG_TOKEN|REVALIDATE_TOKEN|S3_PHOTOS_BUCKET|S3_UPLOADS_BUCKET|CLOUDFRONT_URL)=' >> .env.production
             - npm run build
       artifacts:
         baseDirectory: .next

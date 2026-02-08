@@ -41,65 +41,77 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const formData = await request.formData();
-  const file = formData.get('file');
-  const alt = (formData.get('alt') as string) || 'Uploaded photo';
-  const metaTitle = (formData.get('metaTitle') as string) || '';
-  const metaDescription = (formData.get('metaDescription') as string) || '';
-  const metaKeywords = (formData.get('metaKeywords') as string) || '';
+  try {
+    const formData = await request.formData();
+    const file = formData.get('file');
+    const alt = (formData.get('alt') as string) || 'Uploaded photo';
+    const metaTitle = (formData.get('metaTitle') as string) || '';
+    const metaDescription = (formData.get('metaDescription') as string) || '';
+    const metaKeywords = (formData.get('metaKeywords') as string) || '';
 
-  if (!file || !(file instanceof File)) {
-    return Response.json({ error: 'Missing file upload.' }, { status: 400 });
-  }
+    if (!file || !(file instanceof File)) {
+      return Response.json({ error: 'Missing file upload.' }, { status: 400 });
+    }
 
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  const ext = path.extname(file.name) || '.jpg';
-  const baseName = path.basename(file.name, ext);
-  const safeBase = baseName.replace(/[^a-zA-Z0-9.-]/g, '') || 'upload';
-  const fileName = `${Date.now()}-${safeBase}${ext}`;
-  const s3Key = `uploads/${fileName}`;
+    const useS3 = useS3Upload();
+    console.error('[photos/upload] S3_PHOTOS_BUCKET:', S3_BUCKET ? 'set' : 'NOT SET', 'CLOUDFRONT_URL:', CLOUDFRONT_URL ? 'set' : 'NOT SET', 'useS3:', useS3);
 
-  if (useS3Upload()) {
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const ext = path.extname(file.name) || '.jpg';
+    const baseName = path.basename(file.name, ext);
+    const safeBase = baseName.replace(/[^a-zA-Z0-9.-]/g, '') || 'upload';
+    const fileName = `${Date.now()}-${safeBase}${ext}`;
+    const s3Key = `uploads/${fileName}`;
+
+    if (useS3) {
+      try {
+        await s3.send(
+          new PutObjectCommand({
+            Bucket: S3_BUCKET!,
+            Key: s3Key,
+            Body: buffer,
+            ContentType: file.type || 'image/jpeg'
+          })
+        );
+        console.error('[photos/upload] S3 upload succeeded:', s3Key);
+      } catch (err) {
+        console.error('[photos/upload] S3 upload failed:', err);
+        return Response.json(
+          { error: err instanceof Error ? err.message : 'Upload to storage failed.' },
+          { status: 500 }
+        );
+      }
+    } else {
+      try {
+        await fs.mkdir(UPLOAD_DIR, { recursive: true });
+        const filePath = path.join(UPLOAD_DIR, fileName);
+        await fs.writeFile(filePath, buffer);
+      } catch (err) {
+        console.error('[photos/upload] Local filesystem write failed:', err);
+        return Response.json(
+          { error: err instanceof Error ? err.message : 'Local upload failed (use S3 in production).' },
+          { status: 500 }
+        );
+      }
+    }
+
+    const src = useS3
+      ? `https://${CLOUDFRONT_URL!.replace(/^https?:\/\//, '')}/${s3Key}`
+      : `/uploads/${fileName}`;
+
+    let width = 1600;
+    let height = 1200;
     try {
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: S3_BUCKET!,
-          Key: s3Key,
-          Body: buffer,
-          ContentType: file.type || 'image/jpeg'
-        })
-      );
-    } catch (err) {
-      console.error('S3 upload failed:', err);
-      return Response.json(
-        { error: err instanceof Error ? err.message : 'Upload to storage failed.' },
-        { status: 500 }
-      );
+      const dimensions = imageSize(buffer);
+      if (dimensions.width && dimensions.height) {
+        width = dimensions.width;
+        height = dimensions.height;
+      }
+    } catch {
+      // Use defaults if dimension detection fails
     }
-  } else {
-    await fs.mkdir(UPLOAD_DIR, { recursive: true });
-    const filePath = path.join(UPLOAD_DIR, fileName);
-    await fs.writeFile(filePath, buffer);
-  }
 
-  const src = useS3Upload()
-    ? `https://${CLOUDFRONT_URL!.replace(/^https?:\/\//, '')}/${s3Key}`
-    : `/uploads/${fileName}`;
-
-  let width = 1600;
-  let height = 1200;
-  try {
-    const dimensions = imageSize(buffer);
-    if (dimensions.width && dimensions.height) {
-      width = dimensions.width;
-      height = dimensions.height;
-    }
-  } catch {
-    // Use defaults if dimension detection fails
-  }
-
-  try {
     const photo = await createPhoto({
       src,
       alt,
@@ -113,9 +125,10 @@ export async function POST(request: Request) {
     revalidateAllPages();
     return Response.json(photo);
   } catch (error) {
+    console.error('[photos/upload] Unexpected error:', error);
     return Response.json(
       { error: error instanceof Error ? error.message : 'Unable to create photo.' },
-      { status: 501 }
+      { status: 500 }
     );
   }
 }
