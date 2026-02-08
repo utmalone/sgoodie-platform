@@ -126,6 +126,7 @@ export function AdminPhotosClient() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [addConfirm, setAddConfirm] = useState<{ photoId: string; message: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const uploadFileInputRef = useRef<HTMLInputElement>(null);
   const pageGuidelines = useMemo(
     () => pagePhotoGuidelinesBySlug[activeSlug] || [],
     [activeSlug]
@@ -675,6 +676,7 @@ export function AdminPhotosClient() {
     setUploadMetaDescription('');
     setUploadMetaKeywords('');
     setUploadFile(null);
+    if (uploadFileInputRef.current) uploadFileInputRef.current.value = '';
     setStatus(mismatchWarning ? 'Upload complete. ' + mismatchWarning : 'Upload complete and added to page.');
     refreshPreview();
   }
@@ -985,6 +987,7 @@ export function AdminPhotosClient() {
                     <FieldInfoTooltip label="Select Photo" lines={photoFieldHelp.selectPhoto} />
                   </span>
                   <input
+                    ref={uploadFileInputRef}
                     type="file"
                     accept="image/*"
                     onChange={(event) => handleFileSelect(event.target.files?.[0] || null)}
