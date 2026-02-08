@@ -13,6 +13,7 @@ import { FieldInfoTooltip } from '@/components/admin/FieldInfoTooltip';
 import { usePreview } from '@/lib/admin/preview-context';
 import { pagePhotoGuidelinesBySlug } from '@/lib/admin/photo-guidelines';
 import guidelineStyles from '@/styles/admin/PhotoGuidelines.module.css';
+import sharedStyles from '@/styles/admin/AdminShared.module.css';
 import styles from '@/styles/admin/AdminPhotosClient.module.css';
 
 type PageLayouts = {
@@ -89,7 +90,10 @@ export function AdminPhotosClient() {
   const [activeSlug, setActiveSlug] = useState<PageSlug>('home');
   const [status, setStatus] = useState('');
   const [aiStatus, setAiStatus] = useState('');
-  const [isAiBusy, setIsAiBusy] = useState(false);
+  const [aiLoadingKey, setAiLoadingKey] = useState<string | null>(null);
+  const [aiResultKey, setAiResultKey] = useState<string | null>(null);
+  const [aiResultSuccess, setAiResultSuccess] = useState(false);
+  const aiResultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   // Single upload state
@@ -117,6 +121,28 @@ export function AdminPhotosClient() {
     () => pagePhotoGuidelinesBySlug[activeSlug] || [],
     [activeSlug]
   );
+
+  const setAiResult = useCallback((key: string, success: boolean) => {
+    if (aiResultTimeoutRef.current) clearTimeout(aiResultTimeoutRef.current);
+    setAiResultKey(key);
+    setAiResultSuccess(success);
+    aiResultTimeoutRef.current = setTimeout(() => {
+      setAiResultKey(null);
+      aiResultTimeoutRef.current = null;
+    }, 2500);
+  }, []);
+
+  const getAiFixRowClass = useCallback(
+    (key: string) => {
+      if (aiResultKey !== key) return '';
+      return aiResultSuccess ? sharedStyles.aiFixRowSuccess : sharedStyles.aiFixRowError;
+    },
+    [aiResultKey, aiResultSuccess]
+  );
+
+  useEffect(() => () => {
+    if (aiResultTimeoutRef.current) clearTimeout(aiResultTimeoutRef.current);
+  }, []);
 
   // Check if any photos have unsaved metadata changes
   const hasPhotoChanges = useMemo(() => {
@@ -296,52 +322,60 @@ export function AdminPhotosClient() {
     field: 'alt' | 'metaTitle' | 'metaDescription' | 'metaKeywords',
     mode: 'text' | 'seo'
   ) {
-    if (isAiBusy) return;
+    const key = `photo-${photoId}-${field}`;
+    if (aiLoadingKey) return;
     const photo = photosById.get(photoId);
     if (!photo) return;
 
-    setIsAiBusy(true);
+    setAiLoadingKey(key);
     setAiStatus('Optimizing with AI...');
 
-    const model = loadAiModel();
-    const response = await fetch('/api/admin/ai/optimize', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        mode,
-        target: 'photo',
-        field,
-        input: (photo[field] || '') as string,
-        model,
-        context: {
-          photo: {
-            id: photo.id,
-            src: photo.src,
-            alt: photo.alt,
-            metaTitle: photo.metaTitle || '',
-            metaDescription: photo.metaDescription || '',
-            metaKeywords: photo.metaKeywords || ''
+    try {
+      const model = loadAiModel();
+      const response = await fetch('/api/admin/ai/optimize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode,
+          target: 'photo',
+          field,
+          input: (photo[field] || '') as string,
+          model,
+          context: {
+            photo: {
+              id: photo.id,
+              src: photo.src,
+              alt: photo.alt,
+              metaTitle: photo.metaTitle || '',
+              metaDescription: photo.metaDescription || '',
+              metaKeywords: photo.metaKeywords || ''
+            }
           }
-        }
-      })
-    });
+        })
+      });
 
-    if (!response.ok) {
-      const message = await getApiErrorMessage(response, 'AI request failed.');
-      setAiStatus(message);
-      setIsAiBusy(false);
-      return;
+      if (!response.ok) {
+        const message = await getApiErrorMessage(response, 'AI request failed.');
+        setAiStatus(message);
+        setAiResult(key, false);
+        return;
+      }
+
+      const data = (await response.json()) as { output?: string };
+      if (data.output) {
+        updatePhotoField(photoId, field, data.output);
+        setAiStatus('AI update complete.');
+        setAiResult(key, true);
+      } else {
+        setAiStatus('AI did not return a result.');
+        setAiResult(key, false);
+      }
+    } catch {
+      setAiStatus('AI request failed.');
+      setAiResult(key, false);
+    } finally {
+      setAiLoadingKey(null);
     }
-
-    const data = (await response.json()) as { output?: string };
-    if (data.output) {
-      updatePhotoField(photoId, field, data.output);
-      setAiStatus('AI update complete.');
-    } else {
-      setAiStatus('AI did not return a result.');
-    }
-
-    setIsAiBusy(false);
   }
 
   function handleDragStart(photoId: string) {
@@ -1316,7 +1350,7 @@ export function AdminPhotosClient() {
               </div>
               {expandedPhotoId === photo.id && (
                 <div className={styles.detailsPanel}>
-                  <label className={styles.block}>
+                  <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-alt`)}`}>
                     <div className={styles.buttonRow}>
                       <span className={styles.inlineLabel}>
                         Alt Text
@@ -1324,7 +1358,7 @@ export function AdminPhotosClient() {
                       </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'alt', 'text')}
-                        disabled={isAiBusy}
+                        loading={aiLoadingKey === `photo-${photo.id}-alt`}
                       />
                     </div>
                     <input
@@ -1333,7 +1367,7 @@ export function AdminPhotosClient() {
                       className={styles.inputTiny}
                     />
                   </label>
-                  <label className={styles.block}>
+                  <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-metaTitle`)}`}>
                     <div className={styles.buttonRow}>
                       <span className={styles.inlineLabel}>
                         Meta Title
@@ -1341,7 +1375,7 @@ export function AdminPhotosClient() {
                       </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaTitle', 'seo')}
-                        disabled={isAiBusy}
+                        loading={aiLoadingKey === `photo-${photo.id}-metaTitle`}
                       />
                     </div>
                     <input
@@ -1352,7 +1386,7 @@ export function AdminPhotosClient() {
                       className={styles.inputTiny}
                     />
                   </label>
-                  <label className={styles.block}>
+                  <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-metaDescription`)}`}>
                     <div className={styles.buttonRow}>
                       <span className={styles.inlineLabel}>
                         Meta Description
@@ -1360,7 +1394,7 @@ export function AdminPhotosClient() {
                       </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaDescription', 'seo')}
-                        disabled={isAiBusy}
+                        loading={aiLoadingKey === `photo-${photo.id}-metaDescription`}
                       />
                     </div>
                     <textarea
@@ -1371,7 +1405,7 @@ export function AdminPhotosClient() {
                       className={styles.textareaMedium}
                     />
                   </label>
-                  <label className={styles.block}>
+                  <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-metaKeywords`)}`}>
                     <div className={styles.buttonRow}>
                       <span className={styles.inlineLabel}>
                         Meta Keywords
@@ -1379,7 +1413,7 @@ export function AdminPhotosClient() {
                       </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaKeywords', 'seo')}
-                        disabled={isAiBusy}
+                        loading={aiLoadingKey === `photo-${photo.id}-metaKeywords`}
                       />
                     </div>
                     <textarea
@@ -1505,7 +1539,7 @@ export function AdminPhotosClient() {
               </div>
               {expandedPhotoId === photo.id && (
                 <div className={styles.detailsPanel}>
-                  <label className={styles.block}>
+                  <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-alt`)}`}>
                     <div className={styles.buttonRow}>
                       <span className={styles.inlineLabel}>
                         Alt Text
@@ -1513,7 +1547,7 @@ export function AdminPhotosClient() {
                       </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'alt', 'text')}
-                        disabled={isAiBusy}
+                        loading={aiLoadingKey === `photo-${photo.id}-alt`}
                       />
                     </div>
                     <input
@@ -1522,7 +1556,7 @@ export function AdminPhotosClient() {
                       className={styles.inputTiny}
                     />
                   </label>
-                  <label className={styles.block}>
+                  <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-metaTitle`)}`}>
                     <div className={styles.buttonRow}>
                       <span className={styles.inlineLabel}>
                         Meta Title
@@ -1530,7 +1564,7 @@ export function AdminPhotosClient() {
                       </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaTitle', 'seo')}
-                        disabled={isAiBusy}
+                        loading={aiLoadingKey === `photo-${photo.id}-metaTitle`}
                       />
                     </div>
                     <input
@@ -1541,7 +1575,7 @@ export function AdminPhotosClient() {
                       className={styles.inputTiny}
                     />
                   </label>
-                  <label className={styles.block}>
+                  <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-metaDescription`)}`}>
                     <div className={styles.buttonRow}>
                       <span className={styles.inlineLabel}>
                         Meta Description
@@ -1549,7 +1583,7 @@ export function AdminPhotosClient() {
                       </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaDescription', 'seo')}
-                        disabled={isAiBusy}
+                        loading={aiLoadingKey === `photo-${photo.id}-metaDescription`}
                       />
                     </div>
                     <textarea
@@ -1560,7 +1594,7 @@ export function AdminPhotosClient() {
                       className={styles.textareaMedium}
                     />
                   </label>
-                  <label className={styles.block}>
+                  <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-metaKeywords`)}`}>
                     <div className={styles.buttonRow}>
                       <span className={styles.inlineLabel}>
                         Meta Keywords
@@ -1568,7 +1602,7 @@ export function AdminPhotosClient() {
                       </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaKeywords', 'seo')}
-                        disabled={isAiBusy}
+                        loading={aiLoadingKey === `photo-${photo.id}-metaKeywords`}
                       />
                     </div>
                     <textarea

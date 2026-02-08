@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { PhotoAsset, Project, ProjectCategory, EditorialRowCaption } from '@/types';
 import { AdminPhotoSelector } from './AdminPhotoSelector';
@@ -128,7 +128,10 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
   const [status, setStatus] = useState('');
   const [aiStatus, setAiStatus] = useState('');
-  const [isAiBusy, setIsAiBusy] = useState(false);
+  const [aiLoadingKey, setAiLoadingKey] = useState<string | null>(null);
+  const [aiResultKey, setAiResultKey] = useState<string | null>(null);
+  const [aiResultSuccess, setAiResultSuccess] = useState(false);
+  const aiResultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoading, setIsLoading] = useState(!isNew);
   const [showHeroSelector, setShowHeroSelector] = useState(false);
   const [showGallerySelector, setShowGallerySelector] = useState(false);
@@ -138,6 +141,28 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
   const isDirty = useMemo(() => {
     return JSON.stringify(project) !== JSON.stringify(savedProject);
   }, [project, savedProject]);
+
+  const setAiResult = useCallback((key: string, success: boolean) => {
+    if (aiResultTimeoutRef.current) clearTimeout(aiResultTimeoutRef.current);
+    setAiResultKey(key);
+    setAiResultSuccess(success);
+    aiResultTimeoutRef.current = setTimeout(() => {
+      setAiResultKey(null);
+      aiResultTimeoutRef.current = null;
+    }, 2500);
+  }, []);
+
+  const getAiFixRowClass = useCallback(
+    (key: string) => {
+      if (aiResultKey !== key) return '';
+      return aiResultSuccess ? styles.aiFixRowSuccess : styles.aiFixRowError;
+    },
+    [aiResultKey, aiResultSuccess]
+  );
+
+  useEffect(() => () => {
+    if (aiResultTimeoutRef.current) clearTimeout(aiResultTimeoutRef.current);
+  }, []);
 
   const photosById = useMemo(() => {
     return new Map(photos.map((photo) => [photo.id, photo]));
@@ -292,8 +317,9 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
       | 'metaKeywords',
     mode: 'text' | 'seo'
   ) {
-    if (isAiBusy) return;
-    setIsAiBusy(true);
+    const key = `portfolio-${field}`;
+    if (aiLoadingKey) return;
+    setAiLoadingKey(key);
     setAiStatus('Optimizing with AI...');
 
     try {
@@ -321,6 +347,7 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
       if (!res.ok) {
         const message = await getApiErrorMessage(res, 'AI request failed.');
         setAiStatus(message);
+        setAiResult(key, false);
         return;
       }
 
@@ -328,19 +355,23 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
       if (data.output) {
         updateField(field, data.output);
         setAiStatus('AI update complete.');
+        setAiResult(key, true);
       } else {
         setAiStatus('AI did not return a result.');
+        setAiResult(key, false);
       }
     } catch {
       setAiStatus('AI request failed.');
+      setAiResult(key, false);
     } finally {
-      setIsAiBusy(false);
+      setAiLoadingKey(null);
     }
   }
 
   async function handleAiFixCaption(index: number, field: 'title' | 'body') {
-    if (isAiBusy) return;
-    setIsAiBusy(true);
+    const key = `portfolio-caption-${index}-${field}`;
+    if (aiLoadingKey) return;
+    setAiLoadingKey(key);
     setAiStatus('Optimizing with AI...');
 
     try {
@@ -372,6 +403,7 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
       if (!res.ok) {
         const message = await getApiErrorMessage(res, 'AI request failed.');
         setAiStatus(message);
+        setAiResult(key, false);
         return;
       }
 
@@ -381,13 +413,16 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
           field === 'title' ? data.output.slice(0, CAPTION_TITLE_MAX) : data.output.slice(0, CAPTION_BODY_MAX);
         updateCaption(index, { ...caption, [field]: capped });
         setAiStatus('AI update complete.');
+        setAiResult(key, true);
       } else {
         setAiStatus('AI did not return a result.');
+        setAiResult(key, false);
       }
     } catch {
       setAiStatus('AI request failed.');
+      setAiResult(key, false);
     } finally {
-      setIsAiBusy(false);
+      setAiLoadingKey(null);
     }
   }
 
@@ -500,13 +535,13 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
         <h2 className={styles.cardTitle}>Basic Information</h2>
         <div className={styles.formGrid}>
           <div className={styles.formGrid2}>
-            <label className={styles.label}>
+            <label className={`${styles.label} ${getAiFixRowClass('portfolio-title')}`}>
               <div className={styles.fieldHeader}>
                 <span className={styles.labelText}>
                   Title *
                   <FieldInfoTooltip label="Title" lines={portfolioFieldHelp.title} />
                 </span>
-                <AiFixButton onClick={() => handleAiFix('title', 'text')} disabled={isAiBusy} />
+                <AiFixButton onClick={() => handleAiFix('title', 'text')} loading={aiLoadingKey === 'portfolio-title'} />
               </div>
               <input
                 value={project.title || ''}
@@ -529,13 +564,13 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
             </label>
           </div>
           <div className={styles.formGrid2}>
-            <label className={styles.label}>
+            <label className={`${styles.label} ${getAiFixRowClass('portfolio-subtitle')}`}>
               <div className={styles.fieldHeader}>
                 <span className={styles.labelText}>
                   Subtitle
                   <FieldInfoTooltip label="Subtitle" lines={portfolioFieldHelp.subtitle} />
                 </span>
-                <AiFixButton onClick={() => handleAiFix('subtitle', 'text')} disabled={isAiBusy} />
+                <AiFixButton onClick={() => handleAiFix('subtitle', 'text')} loading={aiLoadingKey === 'portfolio-subtitle'} />
               </div>
               <input
                 value={project.subtitle || ''}
@@ -544,13 +579,13 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
                 placeholder="e.g., Interior Photography"
               />
             </label>
-            <label className={styles.label}>
+            <label className={`${styles.label} ${getAiFixRowClass('portfolio-hoverTitle')}`}>
               <div className={styles.fieldHeader}>
                 <span className={styles.labelText}>
                   Hover Title
                   <FieldInfoTooltip label="Hover Title" lines={portfolioFieldHelp.hoverTitle} />
                 </span>
-                <AiFixButton onClick={() => handleAiFix('hoverTitle', 'text')} disabled={isAiBusy} />
+                <AiFixButton onClick={() => handleAiFix('hoverTitle', 'text')} loading={aiLoadingKey === 'portfolio-hoverTitle'} />
               </div>
               <input
                 value={project.hoverTitle || ''}
@@ -560,13 +595,13 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
               />
             </label>
           </div>
-          <label className={styles.label}>
+          <label className={`${styles.label} ${getAiFixRowClass('portfolio-intro')}`}>
             <div className={styles.fieldHeader}>
               <span className={styles.labelText}>
                 Introduction
                 <FieldInfoTooltip label="Introduction" lines={portfolioFieldHelp.intro} />
               </span>
-              <AiFixButton onClick={() => handleAiFix('intro', 'text')} disabled={isAiBusy} />
+              <AiFixButton onClick={() => handleAiFix('intro', 'text')} loading={aiLoadingKey === 'portfolio-intro'} />
             </div>
             <textarea
               value={project.intro || ''}
@@ -754,38 +789,42 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
                     <span className={styles.captionLabel}>Caption Slot {index + 1}</span>
                   </div>
                   <div className={styles.captionFields}>
-                    <div className={styles.fieldHeader}>
-                      <span className={styles.labelText}>Title</span>
-                      <div className={styles.actionsRow}>
-                        <span className={styles.charCount}>
-                          {(caption.title || '').length}/{CAPTION_TITLE_MAX}
-                        </span>
-                        <AiFixButton onClick={() => handleAiFixCaption(index, 'title')} disabled={isAiBusy} />
+                    <div className={getAiFixRowClass(`portfolio-caption-${index}-title`)}>
+                      <div className={styles.fieldHeader}>
+                        <span className={styles.labelText}>Title</span>
+                        <div className={styles.actionsRow}>
+                          <span className={styles.charCount}>
+                            {(caption.title || '').length}/{CAPTION_TITLE_MAX}
+                          </span>
+                          <AiFixButton onClick={() => handleAiFixCaption(index, 'title')} loading={aiLoadingKey === `portfolio-caption-${index}-title`} />
+                        </div>
                       </div>
+                      <input
+                        value={caption.title}
+                        onChange={(e) => updateCaption(index, { ...caption, title: e.target.value })}
+                        placeholder="Infinity Views"
+                        className={styles.input}
+                        maxLength={CAPTION_TITLE_MAX}
+                      />
                     </div>
-                    <input
-                      value={caption.title}
-                      onChange={(e) => updateCaption(index, { ...caption, title: e.target.value })}
-                      placeholder="Infinity Views"
-                      className={styles.input}
-                      maxLength={CAPTION_TITLE_MAX}
-                    />
-                    <div className={styles.fieldHeader}>
-                      <span className={styles.labelText}>Body</span>
-                      <div className={styles.actionsRow}>
-                        <span className={styles.charCount}>
-                          {(caption.body || '').length}/{CAPTION_BODY_MAX}
-                        </span>
-                        <AiFixButton onClick={() => handleAiFixCaption(index, 'body')} disabled={isAiBusy} />
+                    <div className={getAiFixRowClass(`portfolio-caption-${index}-body`)}>
+                      <div className={styles.fieldHeader}>
+                        <span className={styles.labelText}>Body</span>
+                        <div className={styles.actionsRow}>
+                          <span className={styles.charCount}>
+                            {(caption.body || '').length}/{CAPTION_BODY_MAX}
+                          </span>
+                          <AiFixButton onClick={() => handleAiFixCaption(index, 'body')} loading={aiLoadingKey === `portfolio-caption-${index}-body`} />
+                        </div>
                       </div>
-                    </div>
-                    <textarea
+                      <textarea
                       value={caption.body}
-                      onChange={(e) => updateCaption(index, { ...caption, body: e.target.value })}
-                      placeholder="The signature infinity pool creates a seamless visual connection..."
-                      className={styles.textarea}
-                      maxLength={CAPTION_BODY_MAX}
-                    />
+                        onChange={(e) => updateCaption(index, { ...caption, body: e.target.value })}
+                        placeholder="The signature infinity pool creates a seamless visual connection..."
+                        className={styles.textarea}
+                        maxLength={CAPTION_BODY_MAX}
+                      />
+                    </div>
                   </div>
                 </div>
               );
@@ -811,13 +850,13 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
         <h2 className={styles.cardTitle}>SEO Metadata</h2>
         <p className={styles.cardDescription}>Search engine metadata for this project page.</p>
         <div className={styles.formGrid}>
-          <label className={styles.label}>
+          <label className={`${styles.label} ${getAiFixRowClass('portfolio-metaTitle')}`}>
             <div className={styles.fieldHeader}>
               <span className={styles.labelText}>
                 Meta Title
                 <FieldInfoTooltip label="Meta Title" lines={portfolioFieldHelp.metaTitle} />
               </span>
-              <AiFixButton onClick={() => handleAiFix('metaTitle', 'seo')} disabled={isAiBusy} />
+              <AiFixButton onClick={() => handleAiFix('metaTitle', 'seo')} loading={aiLoadingKey === 'portfolio-metaTitle'} />
             </div>
             <input
               value={project.metaTitle || ''}
@@ -825,13 +864,13 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
               className={styles.input}
             />
           </label>
-          <label className={styles.label}>
+          <label className={`${styles.label} ${getAiFixRowClass('portfolio-metaDescription')}`}>
             <div className={styles.fieldHeader}>
               <span className={styles.labelText}>
                 Meta Description
                 <FieldInfoTooltip label="Meta Description" lines={portfolioFieldHelp.metaDescription} />
               </span>
-              <AiFixButton onClick={() => handleAiFix('metaDescription', 'seo')} disabled={isAiBusy} />
+              <AiFixButton onClick={() => handleAiFix('metaDescription', 'seo')} loading={aiLoadingKey === 'portfolio-metaDescription'} />
             </div>
             <textarea
               value={project.metaDescription || ''}
@@ -839,13 +878,13 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
               className={styles.textarea}
             />
           </label>
-          <label className={styles.label}>
+          <label className={`${styles.label} ${getAiFixRowClass('portfolio-metaKeywords')}`}>
             <div className={styles.fieldHeader}>
               <span className={styles.labelText}>
                 Meta Keywords
                 <FieldInfoTooltip label="Meta Keywords" lines={portfolioFieldHelp.metaKeywords} />
               </span>
-              <AiFixButton onClick={() => handleAiFix('metaKeywords', 'seo')} disabled={isAiBusy} />
+              <AiFixButton onClick={() => handleAiFix('metaKeywords', 'seo')} loading={aiLoadingKey === 'portfolio-metaKeywords'} />
             </div>
             <textarea
               value={project.metaKeywords || ''}

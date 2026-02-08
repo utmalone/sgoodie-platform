@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { PageContent, PageSlug, PhotoAsset, HomeLayout, AboutPageContent, ContactPageContent } from '@/types';
@@ -192,7 +192,10 @@ export function AdminPagesClient() {
   const [activePortfolioCategory, setActivePortfolioCategory] = useState<PortfolioCategory>('hotels');
   const [status, setStatus] = useState('');
   const [aiStatus, setAiStatus] = useState('');
-  const [isAiBusy, setIsAiBusy] = useState(false);
+  const [aiLoadingKey, setAiLoadingKey] = useState<string | null>(null);
+  const [aiResultKey, setAiResultKey] = useState<string | null>(null);
+  const [aiResultSuccess, setAiResultSuccess] = useState(false);
+  const aiResultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const activeSlug = useMemo<string>(() => {
@@ -228,6 +231,28 @@ export function AdminPagesClient() {
   }, [layouts.contact, savedContactLayout]);
 
   const hasUnsavedChanges = isDirty || isHomeIntroTextDirty || isAboutTextDirty || isContactTextDirty;
+
+  const setAiResult = useCallback((key: string, success: boolean) => {
+    if (aiResultTimeoutRef.current) clearTimeout(aiResultTimeoutRef.current);
+    setAiResultKey(key);
+    setAiResultSuccess(success);
+    aiResultTimeoutRef.current = setTimeout(() => {
+      setAiResultKey(null);
+      aiResultTimeoutRef.current = null;
+    }, 2500);
+  }, []);
+
+  const getAiFixRowClass = useCallback(
+    (key: string) => {
+      if (aiResultKey !== key) return '';
+      return aiResultSuccess ? styles.aiFixRowSuccess : styles.aiFixRowError;
+    },
+    [aiResultKey, aiResultSuccess]
+  );
+
+  useEffect(() => () => {
+    if (aiResultTimeoutRef.current) clearTimeout(aiResultTimeoutRef.current);
+  }, []);
 
   const savePage = useCallback(async (): Promise<boolean> => {
     try {
@@ -789,14 +814,15 @@ export function AdminPagesClient() {
   type AiMode = 'text' | 'seo';
 
   async function runAiFixRequest(args: {
+    key: string;
     mode: AiMode;
     field: string;
     input: string;
     context: Record<string, unknown>;
     apply: (output: string) => void;
   }) {
-    if (isAiBusy) return;
-    setIsAiBusy(true);
+    if (aiLoadingKey) return;
+    setAiLoadingKey(args.key);
     setAiStatus('Optimizing with AI...');
 
     try {
@@ -817,6 +843,7 @@ export function AdminPagesClient() {
       if (!response.ok) {
         const message = await getApiErrorMessage(response, 'AI request failed.');
         setAiStatus(message);
+        setAiResult(args.key, false);
         return;
       }
 
@@ -824,13 +851,16 @@ export function AdminPagesClient() {
       if (data.output) {
         args.apply(data.output);
         setAiStatus('AI update complete.');
+        setAiResult(args.key, true);
       } else {
         setAiStatus('AI did not return a result.');
+        setAiResult(args.key, false);
       }
     } catch {
       setAiStatus('AI request failed.');
+      setAiResult(args.key, false);
     } finally {
-      setIsAiBusy(false);
+      setAiLoadingKey(null);
     }
   }
 
@@ -846,6 +876,7 @@ export function AdminPagesClient() {
     mode: AiMode
   ) {
     await runAiFixRequest({
+      key: `page-${field}`,
       mode,
       field: `page.${field}`,
       input: String(activePage[field] || ''),
@@ -857,6 +888,7 @@ export function AdminPagesClient() {
   async function handleAiFixHomeLayout(field: 'introText') {
     const value = layouts.home?.[field] ?? '';
     await runAiFixRequest({
+      key: 'homeLayout-introText',
       mode: 'text',
       field: `homeLayout.${field}`,
       input: String(value || ''),
@@ -871,6 +903,7 @@ export function AdminPagesClient() {
   async function handleAiFixAboutText(field: 'heroTitle' | 'heroSubtitle' | 'approachTitle' | 'featuredTitle') {
     if (!layouts.about) return;
     await runAiFixRequest({
+      key: `about-${field}`,
       mode: 'text',
       field: `about.${field}`,
       input: String((layouts.about as AboutPageContent)[field] || ''),
@@ -886,6 +919,7 @@ export function AdminPagesClient() {
     if (!layouts.about) return;
     const input = layouts.about.introParagraphs?.[index] ?? '';
     await runAiFixRequest({
+      key: `about-introParagraph-${index}`,
       mode: 'text',
       field: `about.introParagraphs[${index}]`,
       input: String(input || ''),
@@ -902,6 +936,7 @@ export function AdminPagesClient() {
     const item = (layouts.about.approachItems || []).find((candidate) => candidate.id === itemId);
     if (!item) return;
     await runAiFixRequest({
+      key: `about-approachItem-${itemId}-${field}`,
       mode: 'text',
       field: `about.approachItems.${itemId}.${field}`,
       input: String(item[field] || ''),
@@ -918,6 +953,7 @@ export function AdminPagesClient() {
     if (!layouts.about) return;
     const input = layouts.about.bio?.name ?? '';
     await runAiFixRequest({
+      key: 'about-bioName',
       mode: 'text',
       field: 'about.bio.name',
       input: String(input || ''),
@@ -937,6 +973,7 @@ export function AdminPagesClient() {
     if (!layouts.about) return;
     const input = layouts.about.bio?.paragraphs?.[index] ?? '';
     await runAiFixRequest({
+      key: `about-bioParagraph-${index}`,
       mode: 'text',
       field: `about.bio.paragraphs[${index}]`,
       input: String(input || ''),
@@ -951,6 +988,7 @@ export function AdminPagesClient() {
   async function handleAiFixContactText(field: 'heroTitle' | 'heroSubtitle' | 'sectionTitle' | 'introParagraph' | 'companyName') {
     if (!layouts.contact) return;
     await runAiFixRequest({
+      key: `contact-${field}`,
       mode: 'text',
       field: `contact.${field}`,
       input: String((layouts.contact as ContactPageContent)[field] || ''),
@@ -1054,7 +1092,7 @@ export function AdminPagesClient() {
           </p>
           <div className={styles.formGrid}>
             {['home', 'journal'].includes(activeMainSlug) && (
-              <label className={styles.label}>
+              <label className={`${styles.label} ${getAiFixRowClass('page-title')}`}>
                 <div className={styles.fieldHeader}>
                   <span className={styles.labelText}>
                     {activeMainSlug === 'journal' ? 'Hero Title' : 'Title'}
@@ -1064,7 +1102,7 @@ export function AdminPagesClient() {
                       align="right"
                     />
                   </span>
-                  <AiFixButton onClick={() => handleAiFixPage('title', 'text')} disabled={isAiBusy} />
+                  <AiFixButton onClick={() => handleAiFixPage('title', 'text')} loading={aiLoadingKey === 'page-title'} />
                 </div>
                 <input
                   value={activePage.title}
@@ -1074,7 +1112,7 @@ export function AdminPagesClient() {
               </label>
             )}
             {activeMainSlug === 'journal' && (
-              <label className={styles.label}>
+              <label className={`${styles.label} ${getAiFixRowClass('page-intro')}`}>
                 <div className={styles.fieldHeader}>
                   <span className={styles.labelText}>
                     Hero Subtitle
@@ -1087,7 +1125,7 @@ export function AdminPagesClient() {
                       align="right"
                     />
                   </span>
-                  <AiFixButton onClick={() => handleAiFixPage('intro', 'text')} disabled={isAiBusy} />
+                  <AiFixButton onClick={() => handleAiFixPage('intro', 'text')} loading={aiLoadingKey === 'page-intro'} />
                 </div>
                 <input
                   value={activePage.intro}
@@ -1097,13 +1135,13 @@ export function AdminPagesClient() {
               </label>
             )}
             {activeMainSlug === 'home' && (
-              <label className={styles.label}>
+              <label className={`${styles.label} ${getAiFixRowClass('page-intro')}`}>
                 <div className={styles.fieldHeader}>
                   <span className={styles.labelText}>
                     Intro
                     <FieldInfoTooltip label="Intro" lines={pageFieldHelp.intro} />
                   </span>
-                  <AiFixButton onClick={() => handleAiFixPage('intro', 'text')} disabled={isAiBusy} />
+                  <AiFixButton onClick={() => handleAiFixPage('intro', 'text')} loading={aiLoadingKey === 'page-intro'} />
                 </div>
                 <textarea
                   value={activePage.intro}
@@ -1113,13 +1151,13 @@ export function AdminPagesClient() {
               </label>
             )}
             {activeMainSlug === 'home' && (
-              <label className={styles.label}>
+              <label className={`${styles.label} ${getAiFixRowClass('homeLayout-introText')}`}>
                 <div className={styles.fieldHeader}>
                   <span className={styles.labelText}>
                     Home Intro Statement
                     <FieldInfoTooltip label="Home Intro Statement" lines={homeLayoutFieldHelp.introText} />
                   </span>
-                  <AiFixButton onClick={() => handleAiFixHomeLayout('introText')} disabled={isAiBusy} />
+                  <AiFixButton onClick={() => handleAiFixHomeLayout('introText')} loading={aiLoadingKey === 'homeLayout-introText'} />
                 </div>
                 <textarea
                   value={layouts.home?.introText || ''}
@@ -1153,13 +1191,13 @@ export function AdminPagesClient() {
                 />
               </div>
               <div className={styles.formRow}>
-                <label className={styles.label}>
+                <label className={`${styles.label} ${getAiFixRowClass('about-heroTitle')}`}>
                   <div className={styles.fieldHeader}>
                     <span className={styles.labelText}>
                       Hero Title
                       <FieldInfoTooltip label="Hero Title" lines={aboutFieldHelp.heroTitle} align="right" />
                     </span>
-                    <AiFixButton onClick={() => handleAiFixAboutText('heroTitle')} disabled={isAiBusy} />
+                    <AiFixButton onClick={() => handleAiFixAboutText('heroTitle')} loading={aiLoadingKey === 'about-heroTitle'} />
                   </div>
                   <input
                     value={layouts.about.heroTitle}
@@ -1167,13 +1205,13 @@ export function AdminPagesClient() {
                     className={styles.input}
                   />
                 </label>
-                <label className={styles.label}>
+                <label className={`${styles.label} ${getAiFixRowClass('about-heroSubtitle')}`}>
                   <div className={styles.fieldHeader}>
                     <span className={styles.labelText}>
                       Hero Subtitle
                       <FieldInfoTooltip label="Hero Subtitle" lines={aboutFieldHelp.heroSubtitle} align="right" />
                     </span>
-                    <AiFixButton onClick={() => handleAiFixAboutText('heroSubtitle')} disabled={isAiBusy} />
+                    <AiFixButton onClick={() => handleAiFixAboutText('heroSubtitle')} loading={aiLoadingKey === 'about-heroSubtitle'} />
                   </div>
                   <input
                     value={layouts.about.heroSubtitle}
@@ -1197,13 +1235,12 @@ export function AdminPagesClient() {
               <p className={styles.cardDescription}>{aboutFieldHelp.introParagraphs[0]}</p>
               <div className={styles.formGrid}>
                 {(layouts.about.introParagraphs || []).map((paragraph, idx) => (
-                  <div key={idx} className={styles.label}>
+                  <div key={idx} className={`${styles.label} ${getAiFixRowClass(`about-introParagraph-${idx}`)}`}>
                     <div className={styles.fieldHeader}>
                       <span className={styles.labelText}>Paragraph {idx + 1}</span>
                       <div className={styles.actionsRow}>
                         <AiFixButton
                           onClick={() => handleAiFixAboutIntroParagraph(idx)}
-                          disabled={isAiBusy}
                         />
                         <button
                           type="button"
@@ -1237,13 +1274,13 @@ export function AdminPagesClient() {
                   example={{ src: '/admin/examples/about-approach.svg', alt: 'About approach section example' }}
                 />
               </div>
-              <label className={styles.label}>
+              <label className={`${styles.label} ${getAiFixRowClass('about-approachTitle')}`}>
                 <div className={styles.fieldHeader}>
                   <span className={styles.labelText}>
                     Section Title
                     <FieldInfoTooltip label="Approach Title" lines={aboutFieldHelp.approachTitle} align="right" />
                   </span>
-                  <AiFixButton onClick={() => handleAiFixAboutText('approachTitle')} disabled={isAiBusy} />
+                  <AiFixButton onClick={() => handleAiFixAboutText('approachTitle')} loading={aiLoadingKey === 'about-approachTitle'} />
                 </div>
                 <input
                   value={layouts.about.approachTitle}
@@ -1259,10 +1296,10 @@ export function AdminPagesClient() {
                       <p className={styles.sectionLabel}>Card</p>
                     </div>
                     <div className={styles.formRow}>
-                      <label className={styles.label}>
+                      <label className={`${styles.label} ${getAiFixRowClass(`about-approachItem-${item.id}-title`)}`}>
                         <div className={styles.fieldHeader}>
                           <span className={styles.labelText}>Title</span>
-                          <AiFixButton onClick={() => handleAiFixApproachItem(item.id, 'title')} disabled={isAiBusy} />
+                          <AiFixButton onClick={() => handleAiFixApproachItem(item.id, 'title')} loading={aiLoadingKey === `about-approachItem-${item.id}-title`} />
                         </div>
                         <input
                           value={item.title}
@@ -1270,13 +1307,10 @@ export function AdminPagesClient() {
                           className={styles.input}
                         />
                       </label>
-                      <label className={styles.label}>
+                      <label className={`${styles.label} ${getAiFixRowClass(`about-approachItem-${item.id}-description`)}`}>
                         <div className={styles.fieldHeader}>
                           <span className={styles.labelText}>Description</span>
-                          <AiFixButton
-                            onClick={() => handleAiFixApproachItem(item.id, 'description')}
-                            disabled={isAiBusy}
-                          />
+                          <AiFixButton onClick={() => handleAiFixApproachItem(item.id, 'description')} loading={aiLoadingKey === `about-approachItem-${item.id}-description`} />
                         </div>
                         <textarea
                           value={item.description}
@@ -1302,13 +1336,13 @@ export function AdminPagesClient() {
                   example={{ src: '/admin/examples/about-featured-in.svg', alt: 'Featured in list example' }}
                 />
               </div>
-              <label className={styles.label}>
+              <label className={`${styles.label} ${getAiFixRowClass('about-featuredTitle')}`}>
                 <div className={styles.fieldHeader}>
                   <span className={styles.labelText}>
                     Section Title
                     <FieldInfoTooltip label="Featured Title" lines={aboutFieldHelp.featuredTitle} align="right" />
                   </span>
-                  <AiFixButton onClick={() => handleAiFixAboutText('featuredTitle')} disabled={isAiBusy} />
+                  <AiFixButton onClick={() => handleAiFixAboutText('featuredTitle')} loading={aiLoadingKey === 'about-featuredTitle'} />
                 </div>
                 <input
                   value={layouts.about.featuredTitle}
@@ -1353,13 +1387,13 @@ export function AdminPagesClient() {
                   example={{ src: '/admin/examples/about-bio.svg', alt: 'Bio section example' }}
                 />
               </div>
-              <label className={styles.label}>
+              <label className={`${styles.label} ${getAiFixRowClass('about-bioName')}`}>
                 <div className={styles.fieldHeader}>
                   <span className={styles.labelText}>
                     Name
                     <FieldInfoTooltip label="Bio Name" lines={aboutFieldHelp.bioName} align="right" />
                   </span>
-                  <AiFixButton onClick={handleAiFixBioName} disabled={isAiBusy} />
+                  <AiFixButton onClick={handleAiFixBioName} loading={aiLoadingKey === 'about-bioName'} />
                 </div>
                 <input
                   value={layouts.about.bio?.name || ''}
@@ -1376,11 +1410,11 @@ export function AdminPagesClient() {
               <p className={styles.cardDescription}>{aboutFieldHelp.bioParagraphs[0]}</p>
               <div className={styles.formGrid}>
                 {(layouts.about.bio?.paragraphs || []).map((paragraph, idx) => (
-                  <div key={idx} className={styles.label}>
+                  <div key={idx} className={`${styles.label} ${getAiFixRowClass(`about-bioParagraph-${idx}`)}`}>
                     <div className={styles.fieldHeader}>
                       <span className={styles.labelText}>Paragraph {idx + 1}</span>
                       <div className={styles.actionsRow}>
-                        <AiFixButton onClick={() => handleAiFixBioParagraph(idx)} disabled={isAiBusy} />
+                        <AiFixButton onClick={() => handleAiFixBioParagraph(idx)} loading={aiLoadingKey === `about-bioParagraph-${idx}`} />
                         <button
                           type="button"
                           onClick={() => removeBioParagraph(idx)}
@@ -1426,13 +1460,13 @@ export function AdminPagesClient() {
                 />
               </div>
               <div className={styles.formRow}>
-                <label className={styles.label}>
+                <label className={`${styles.label} ${getAiFixRowClass('contact-heroTitle')}`}>
                   <div className={styles.fieldHeader}>
                     <span className={styles.labelText}>
                       Hero Title
                       <FieldInfoTooltip label="Hero Title" lines={contactFieldHelp.heroTitle} align="right" />
                     </span>
-                    <AiFixButton onClick={() => handleAiFixContactText('heroTitle')} disabled={isAiBusy} />
+                    <AiFixButton onClick={() => handleAiFixContactText('heroTitle')} loading={aiLoadingKey === 'contact-heroTitle'} />
                   </div>
                   <input
                     value={layouts.contact.heroTitle}
@@ -1440,13 +1474,13 @@ export function AdminPagesClient() {
                     className={styles.input}
                   />
                 </label>
-                <label className={styles.label}>
+                <label className={`${styles.label} ${getAiFixRowClass('contact-heroSubtitle')}`}>
                   <div className={styles.fieldHeader}>
                     <span className={styles.labelText}>
                       Hero Subtitle
                       <FieldInfoTooltip label="Hero Subtitle" lines={contactFieldHelp.heroSubtitle} align="right" />
                     </span>
-                    <AiFixButton onClick={() => handleAiFixContactText('heroSubtitle')} disabled={isAiBusy} />
+                    <AiFixButton onClick={() => handleAiFixContactText('heroSubtitle')} loading={aiLoadingKey === 'contact-heroSubtitle'} />
                   </div>
                   <input
                     value={layouts.contact.heroSubtitle}
@@ -1468,13 +1502,13 @@ export function AdminPagesClient() {
                 />
               </div>
 
-              <label className={styles.label}>
+              <label className={`${styles.label} ${getAiFixRowClass('contact-sectionTitle')}`}>
                 <div className={styles.fieldHeader}>
                   <span className={styles.labelText}>
                     Section Title
                     <FieldInfoTooltip label="Section Title" lines={contactFieldHelp.sectionTitle} align="right" />
                   </span>
-                  <AiFixButton onClick={() => handleAiFixContactText('sectionTitle')} disabled={isAiBusy} />
+                  <AiFixButton onClick={() => handleAiFixContactText('sectionTitle')} loading={aiLoadingKey === 'contact-sectionTitle'} />
                 </div>
                 <input
                   value={layouts.contact.sectionTitle}
@@ -1482,13 +1516,13 @@ export function AdminPagesClient() {
                   className={styles.input}
                 />
               </label>
-              <label className={styles.label}>
+              <label className={`${styles.label} ${getAiFixRowClass('contact-introParagraph')}`}>
                 <div className={styles.fieldHeader}>
                   <span className={styles.labelText}>
                     Intro Paragraph
                     <FieldInfoTooltip label="Intro Paragraph" lines={contactFieldHelp.introParagraph} align="right" />
                   </span>
-                  <AiFixButton onClick={() => handleAiFixContactText('introParagraph')} disabled={isAiBusy} />
+                  <AiFixButton onClick={() => handleAiFixContactText('introParagraph')} loading={aiLoadingKey === 'contact-introParagraph'} />
                 </div>
                 <textarea
                   value={layouts.contact.introParagraph}
@@ -1498,13 +1532,13 @@ export function AdminPagesClient() {
               </label>
 
               <div className={styles.formRow}>
-                <label className={styles.label}>
+                <label className={`${styles.label} ${getAiFixRowClass('contact-companyName')}`}>
                   <div className={styles.fieldHeader}>
                     <span className={styles.labelText}>
                       Company Name
                       <FieldInfoTooltip label="Company Name" lines={contactFieldHelp.companyName} align="right" />
                     </span>
-                    <AiFixButton onClick={() => handleAiFixContactText('companyName')} disabled={isAiBusy} />
+                    <AiFixButton onClick={() => handleAiFixContactText('companyName')} loading={aiLoadingKey === 'contact-companyName'} />
                   </div>
                   <input
                     value={layouts.contact.companyName}
@@ -1589,13 +1623,13 @@ export function AdminPagesClient() {
             Title displayed on the {portfolioCategoryLabels[activePortfolioCategory]} category page.
           </p>
           <div className={styles.formGrid}>
-            <label className={styles.label}>
+            <label className={`${styles.label} ${getAiFixRowClass('page-title')}`}>
               <div className={styles.fieldHeader}>
                 <span className={styles.labelText}>
                   Title
                   <FieldInfoTooltip label="Title" lines={pageFieldHelp.title} />
                 </span>
-                <AiFixButton onClick={() => handleAiFixPage('title', 'text')} disabled={isAiBusy} />
+                <AiFixButton onClick={() => handleAiFixPage('title', 'text')} loading={aiLoadingKey === 'page-title'} />
               </div>
               <input
                 value={activePage.title}
@@ -1631,13 +1665,13 @@ export function AdminPagesClient() {
           Search metadata for this page. Use AI Fix to optimize with keywords.
         </p>
         <div className={styles.formGrid}>
-          <label className={styles.label}>
+          <label className={`${styles.label} ${getAiFixRowClass('page-metaTitle')}`}>
             <div className={styles.fieldHeader}>
               <span className={styles.labelText}>
                 Meta Title
                 <FieldInfoTooltip label="Meta Title" lines={pageFieldHelp.metaTitle} />
               </span>
-              <AiFixButton onClick={() => handleAiFixPage('metaTitle', 'seo')} disabled={isAiBusy} />
+              <AiFixButton onClick={() => handleAiFixPage('metaTitle', 'seo')} loading={aiLoadingKey === 'page-metaTitle'} />
             </div>
             <input
               value={activePage.metaTitle || ''}
@@ -1645,13 +1679,13 @@ export function AdminPagesClient() {
               className={styles.input}
             />
           </label>
-          <label className={styles.label}>
+          <label className={`${styles.label} ${getAiFixRowClass('page-metaDescription')}`}>
             <div className={styles.fieldHeader}>
               <span className={styles.labelText}>
                 Meta Description
                 <FieldInfoTooltip label="Meta Description" lines={pageFieldHelp.metaDescription} />
               </span>
-              <AiFixButton onClick={() => handleAiFixPage('metaDescription', 'seo')} disabled={isAiBusy} />
+              <AiFixButton onClick={() => handleAiFixPage('metaDescription', 'seo')} loading={aiLoadingKey === 'page-metaDescription'} />
             </div>
             <textarea
               value={activePage.metaDescription || ''}
@@ -1659,13 +1693,13 @@ export function AdminPagesClient() {
               className={styles.textarea}
             />
           </label>
-          <label className={styles.label}>
+          <label className={`${styles.label} ${getAiFixRowClass('page-metaKeywords')}`}>
             <div className={styles.fieldHeader}>
               <span className={styles.labelText}>
                 Meta Keywords
                 <FieldInfoTooltip label="Meta Keywords" lines={pageFieldHelp.metaKeywords} />
               </span>
-              <AiFixButton onClick={() => handleAiFixPage('metaKeywords', 'seo')} disabled={isAiBusy} />
+              <AiFixButton onClick={() => handleAiFixPage('metaKeywords', 'seo')} loading={aiLoadingKey === 'page-metaKeywords'} />
             </div>
             <textarea
               value={activePage.metaKeywords || ''}

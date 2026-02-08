@@ -1344,3 +1344,20 @@
   background: rgba(0, 0, 0, 0.1);
   margin: 0.25rem 0;
 }
+
+/* AI Fix row feedback */
+.aiFixRowSuccess {
+  background: rgba(217, 180, 119, 0.12);
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+  margin: -0.25rem 0;
+  transition: background 0.3s ease;
+}
+
+.aiFixRowError {
+  background: rgba(185, 100, 100, 0.12);
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+  margin: -0.25rem 0;
+  transition: background 0.3s ease;
+}

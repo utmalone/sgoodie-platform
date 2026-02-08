@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { PhotoAsset, Project, ProjectCredit, EditorialRowCaption } from '@/types';
 import { AdminPhotoSelector } from './AdminPhotoSelector';
@@ -14,6 +14,7 @@ import { usePreview } from '@/lib/admin/preview-context';
 import { useSave } from '@/lib/admin/save-context';
 import { editorialGalleryGuideline, heroFullBleedGuideline } from '@/lib/admin/photo-guidelines';
 import guidelineStyles from '@/styles/admin/PhotoGuidelines.module.css';
+import sharedStyles from '@/styles/admin/AdminShared.module.css';
 import styles from '@/styles/admin/AdminWorkEditorClient.module.css';
 
 type AdminWorkEditorClientProps = {
@@ -102,7 +103,10 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
   const [status, setStatus] = useState('');
   const [aiStatus, setAiStatus] = useState('');
-  const [isAiBusy, setIsAiBusy] = useState(false);
+  const [aiLoadingKey, setAiLoadingKey] = useState<string | null>(null);
+  const [aiResultKey, setAiResultKey] = useState<string | null>(null);
+  const [aiResultSuccess, setAiResultSuccess] = useState(false);
+  const aiResultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoading, setIsLoading] = useState(!isNew);
   const [showHeroSelector, setShowHeroSelector] = useState(false);
   const [showGallerySelector, setShowGallerySelector] = useState(false);
@@ -112,6 +116,28 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
   const isDirty = useMemo(() => {
     return JSON.stringify(project) !== JSON.stringify(savedProject);
   }, [project, savedProject]);
+
+  const setAiResult = useCallback((key: string, success: boolean) => {
+    if (aiResultTimeoutRef.current) clearTimeout(aiResultTimeoutRef.current);
+    setAiResultKey(key);
+    setAiResultSuccess(success);
+    aiResultTimeoutRef.current = setTimeout(() => {
+      setAiResultKey(null);
+      aiResultTimeoutRef.current = null;
+    }, 2500);
+  }, []);
+
+  const getAiFixRowClass = useCallback(
+    (key: string) => {
+      if (aiResultKey !== key) return '';
+      return aiResultSuccess ? sharedStyles.aiFixRowSuccess : sharedStyles.aiFixRowError;
+    },
+    [aiResultKey, aiResultSuccess]
+  );
+
+  useEffect(() => () => {
+    if (aiResultTimeoutRef.current) clearTimeout(aiResultTimeoutRef.current);
+  }, []);
 
   // Save function for master save
   const saveProject = useCallback(async (): Promise<boolean> => {
@@ -245,8 +271,9 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
       | 'metaKeywords',
     mode: 'text' | 'seo'
   ) {
-    if (isAiBusy) return;
-    setIsAiBusy(true);
+    const key = `work-${field}`;
+    if (aiLoadingKey) return;
+    setAiLoadingKey(key);
     setAiStatus('Optimizing with AI...');
 
     try {
@@ -274,6 +301,7 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
       if (!res.ok) {
         const message = await getApiErrorMessage(res, 'AI request failed.');
         setAiStatus(message);
+        setAiResult(key, false);
         return;
       }
 
@@ -281,19 +309,23 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
       if (data.output) {
         updateField(field, data.output);
         setAiStatus('AI update complete.');
+        setAiResult(key, true);
       } else {
         setAiStatus('AI did not return a result.');
+        setAiResult(key, false);
       }
     } catch {
       setAiStatus('AI request failed.');
+      setAiResult(key, false);
     } finally {
-      setIsAiBusy(false);
+      setAiLoadingKey(null);
     }
   }
 
   async function handleAiFixCaption(index: number, field: 'title' | 'body') {
-    if (isAiBusy) return;
-    setIsAiBusy(true);
+    const key = `work-caption-${index}-${field}`;
+    if (aiLoadingKey) return;
+    setAiLoadingKey(key);
     setAiStatus('Optimizing with AI...');
 
     try {
@@ -324,6 +356,7 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
       if (!res.ok) {
         const message = await getApiErrorMessage(res, 'AI request failed.');
         setAiStatus(message);
+        setAiResult(key, false);
         return;
       }
 
@@ -331,13 +364,16 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
       if (data.output) {
         updateCaption(index, { ...caption, [field]: data.output });
         setAiStatus('AI update complete.');
+        setAiResult(key, true);
       } else {
         setAiStatus('AI did not return a result.');
+        setAiResult(key, false);
       }
     } catch {
       setAiStatus('AI request failed.');
+      setAiResult(key, false);
     } finally {
-      setIsAiBusy(false);
+      setAiLoadingKey(null);
     }
   }
 
@@ -437,13 +473,13 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
         <h2 className={styles.cardTitle}>Basic Information</h2>
         <div className={styles.formGrid}>
           <div className={styles.formRowTwo}>
-            <label className={styles.label}>
+            <label className={`${styles.label} ${getAiFixRowClass('work-title')}`}>
               <div className={styles.sectionHeader}>
                 <span className={styles.labelText}>
                   Title *
                   <FieldInfoTooltip label="Title" lines={workFieldHelp.title} />
                 </span>
-                <AiFixButton onClick={() => handleAiFix('title', 'text')} disabled={isAiBusy} />
+                <AiFixButton onClick={() => handleAiFix('title', 'text')} loading={aiLoadingKey === 'work-title'} />
               </div>
               <input
                 value={project.title || ''}
@@ -466,13 +502,13 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
             </label>
           </div>
           <div className={styles.formRowTwo}>
-            <label className={styles.label}>
+            <label className={`${styles.label} ${getAiFixRowClass('work-subtitle')}`}>
               <div className={styles.sectionHeader}>
                 <span className={styles.labelText}>
                   Subtitle
                   <FieldInfoTooltip label="Subtitle" lines={workFieldHelp.subtitle} />
                 </span>
-                <AiFixButton onClick={() => handleAiFix('subtitle', 'text')} disabled={isAiBusy} />
+                <AiFixButton onClick={() => handleAiFix('subtitle', 'text')} loading={aiLoadingKey === 'work-subtitle'} />
               </div>
               <input
                 value={project.subtitle || ''}
@@ -481,13 +517,13 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
                 placeholder="e.g., Interior Photography"
               />
             </label>
-            <label className={styles.label}>
+            <label className={`${styles.label} ${getAiFixRowClass('work-hoverTitle')}`}>
               <div className={styles.sectionHeader}>
                 <span className={styles.labelText}>
                   Hover Title
                   <FieldInfoTooltip label="Hover Title" lines={workFieldHelp.hoverTitle} />
                 </span>
-                <AiFixButton onClick={() => handleAiFix('hoverTitle', 'text')} disabled={isAiBusy} />
+                <AiFixButton onClick={() => handleAiFix('hoverTitle', 'text')} loading={aiLoadingKey === 'work-hoverTitle'} />
               </div>
               <input
                 value={project.hoverTitle || ''}
@@ -497,13 +533,13 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
               />
             </label>
           </div>
-          <label className={styles.label}>
+          <label className={`${styles.label} ${getAiFixRowClass('work-intro')}`}>
             <div className={styles.sectionHeader}>
               <span className={styles.labelText}>
                 Introduction
                 <FieldInfoTooltip label="Introduction" lines={workFieldHelp.intro} />
               </span>
-              <AiFixButton onClick={() => handleAiFix('intro', 'text')} disabled={isAiBusy} />
+              <AiFixButton onClick={() => handleAiFix('intro', 'text')} loading={aiLoadingKey === 'work-intro'} />
             </div>
             <textarea
               value={project.intro || ''}
@@ -690,30 +726,34 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
                   </button>
                 </div>
                 <div className={styles.captionFields}>
-                  <div className={styles.sectionHeader}>
-                    <span className={styles.labelText}>Title</span>
-                    <AiFixButton onClick={() => handleAiFixCaption(index, 'title')} disabled={isAiBusy} />
+                  <div className={getAiFixRowClass(`work-caption-${index}-title`)}>
+                    <div className={styles.sectionHeader}>
+                      <span className={styles.labelText}>Title</span>
+                      <AiFixButton onClick={() => handleAiFixCaption(index, 'title')} loading={aiLoadingKey === `work-caption-${index}-title`} />
+                    </div>
+                    <input
+                      value={caption.title}
+                      onChange={(e) =>
+                        updateCaption(index, { ...caption, title: e.target.value })
+                      }
+                      placeholder="Caption title"
+                      className={styles.captionInput}
+                    />
                   </div>
-                  <input
-                    value={caption.title}
-                    onChange={(e) =>
-                      updateCaption(index, { ...caption, title: e.target.value })
-                    }
-                    placeholder="Caption title"
-                    className={styles.captionInput}
-                  />
-                  <div className={styles.sectionHeader}>
-                    <span className={styles.labelText}>Body</span>
-                    <AiFixButton onClick={() => handleAiFixCaption(index, 'body')} disabled={isAiBusy} />
-                  </div>
-                  <textarea
+                  <div className={getAiFixRowClass(`work-caption-${index}-body`)}>
+                    <div className={styles.sectionHeader}>
+                      <span className={styles.labelText}>Body</span>
+                      <AiFixButton onClick={() => handleAiFixCaption(index, 'body')} loading={aiLoadingKey === `work-caption-${index}-body`} />
+                    </div>
+                    <textarea
                     value={caption.body}
-                    onChange={(e) =>
-                      updateCaption(index, { ...caption, body: e.target.value })
-                    }
-                    placeholder="Caption body text..."
-                    className={styles.captionTextarea}
-                  />
+                      onChange={(e) =>
+                        updateCaption(index, { ...caption, body: e.target.value })
+                      }
+                      placeholder="Caption body text..."
+                      className={styles.captionTextarea}
+                    />
+                  </div>
                 </div>
               </div>
             ))}
@@ -744,13 +784,13 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
           Search engine metadata for this project page.
         </p>
         <div className={styles.formGrid}>
-          <label className={styles.label}>
+          <label className={`${styles.label} ${getAiFixRowClass('work-metaTitle')}`}>
             <div className={styles.sectionHeader}>
               <span className={styles.labelText}>
                 Meta Title
                 <FieldInfoTooltip label="Meta Title" lines={workFieldHelp.metaTitle} />
               </span>
-              <AiFixButton onClick={() => handleAiFix('metaTitle', 'seo')} disabled={isAiBusy} />
+              <AiFixButton onClick={() => handleAiFix('metaTitle', 'seo')} loading={aiLoadingKey === 'work-metaTitle'} />
             </div>
             <input
               value={project.metaTitle || ''}
@@ -758,13 +798,13 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
               className={styles.input}
             />
           </label>
-          <label className={styles.label}>
+          <label className={`${styles.label} ${getAiFixRowClass('work-metaDescription')}`}>
             <div className={styles.sectionHeader}>
               <span className={styles.labelText}>
                 Meta Description
                 <FieldInfoTooltip label="Meta Description" lines={workFieldHelp.metaDescription} />
               </span>
-              <AiFixButton onClick={() => handleAiFix('metaDescription', 'seo')} disabled={isAiBusy} />
+              <AiFixButton onClick={() => handleAiFix('metaDescription', 'seo')} loading={aiLoadingKey === 'work-metaDescription'} />
             </div>
             <textarea
               value={project.metaDescription || ''}
@@ -772,13 +812,13 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
               className={`${styles.textarea} ${styles.textareaSeo}`}
             />
           </label>
-          <label className={styles.label}>
+          <label className={`${styles.label} ${getAiFixRowClass('work-metaKeywords')}`}>
             <div className={styles.sectionHeader}>
               <span className={styles.labelText}>
                 Meta Keywords
                 <FieldInfoTooltip label="Meta Keywords" lines={workFieldHelp.metaKeywords} />
               </span>
-              <AiFixButton onClick={() => handleAiFix('metaKeywords', 'seo')} disabled={isAiBusy} />
+              <AiFixButton onClick={() => handleAiFix('metaKeywords', 'seo')} loading={aiLoadingKey === 'work-metaKeywords'} />
             </div>
             <textarea
               value={project.metaKeywords || ''}

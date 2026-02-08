@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { JournalPost, PhotoAsset } from '@/types';
 import { AdminPhotoSelector } from './AdminPhotoSelector';
@@ -15,6 +15,7 @@ import { usePreview } from '@/lib/admin/preview-context';
 import { useSave } from '@/lib/admin/save-context';
 import { journalPhotoGuideline } from '@/lib/admin/photo-guidelines';
 import guidelineStyles from '@/styles/admin/PhotoGuidelines.module.css';
+import sharedStyles from '@/styles/admin/AdminShared.module.css';
 import styles from '@/styles/admin/AdminJournalEditorClient.module.css';
 
 type AdminJournalEditorClientProps = {
@@ -82,7 +83,10 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
   const [status, setStatus] = useState('');
   const [aiStatus, setAiStatus] = useState('');
-  const [isAiBusy, setIsAiBusy] = useState(false);
+  const [aiLoadingKey, setAiLoadingKey] = useState<string | null>(null);
+  const [aiResultKey, setAiResultKey] = useState<string | null>(null);
+  const [aiResultSuccess, setAiResultSuccess] = useState(false);
+  const aiResultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoading, setIsLoading] = useState(!isNew);
   const [showHeroSelector, setShowHeroSelector] = useState(false);
   const [showGallerySelector, setShowGallerySelector] = useState(false);
@@ -162,6 +166,28 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
       unregisterChange(changeId);
     };
   }, [isDirty, isLoading, postId, registerChange, unregisterChange, savePost]);
+
+  const setAiResult = useCallback((key: string, success: boolean) => {
+    if (aiResultTimeoutRef.current) clearTimeout(aiResultTimeoutRef.current);
+    setAiResultKey(key);
+    setAiResultSuccess(success);
+    aiResultTimeoutRef.current = setTimeout(() => {
+      setAiResultKey(null);
+      aiResultTimeoutRef.current = null;
+    }, 2500);
+  }, []);
+
+  const getAiFixRowClass = useCallback(
+    (key: string) => {
+      if (aiResultKey !== key) return '';
+      return aiResultSuccess ? sharedStyles.aiFixRowSuccess : sharedStyles.aiFixRowError;
+    },
+    [aiResultKey, aiResultSuccess]
+  );
+
+  useEffect(() => () => {
+    if (aiResultTimeoutRef.current) clearTimeout(aiResultTimeoutRef.current);
+  }, []);
 
   const draftSnapshot = useMemo(
     () => ({
@@ -270,8 +296,9 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
   }
 
   async function handleAiFix(field: 'title' | 'excerpt' | 'body') {
-    if (isAiBusy) return;
-    setIsAiBusy(true);
+    const key = `journal-${field}`;
+    if (aiLoadingKey) return;
+    setAiLoadingKey(key);
     setAiStatus('Optimizing with AI...');
 
     try {
@@ -302,6 +329,7 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
       if (!res.ok) {
         const message = await getApiErrorMessage(res, 'AI request failed.');
         setAiStatus(message);
+        setAiResult(key, false);
         return;
       }
 
@@ -309,13 +337,16 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
       if (data.output) {
         updateField(field, data.output);
         setAiStatus('AI update complete.');
+        setAiResult(key, true);
       } else {
         setAiStatus('AI did not return a result.');
+        setAiResult(key, false);
       }
     } catch {
       setAiStatus('AI request failed.');
+      setAiResult(key, false);
     } finally {
-      setIsAiBusy(false);
+      setAiLoadingKey(null);
     }
   }
 
@@ -372,13 +403,13 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
         <h2 className={styles.cardTitle}>Basic Information</h2>
         <div className={styles.formGrid}>
           <div className={styles.formRowTwo}>
-            <label className={styles.label}>
+            <label className={`${styles.label} ${getAiFixRowClass('journal-title')}`}>
               <div className={styles.sectionHeader}>
                 <span className={styles.labelText}>
                   Title *
                   <FieldInfoTooltip label="Title" lines={journalFieldHelp.title} />
                 </span>
-                <AiFixButton onClick={() => handleAiFix('title')} disabled={isAiBusy} />
+                <AiFixButton onClick={() => handleAiFix('title')} loading={aiLoadingKey === 'journal-title'} />
               </div>
               <input
                 value={post.title || ''}
@@ -438,13 +469,13 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
               />
             </label>
           </div>
-          <label className={styles.label}>
+          <label className={`${styles.label} ${getAiFixRowClass('journal-excerpt')}`}>
             <div className={styles.sectionHeader}>
               <span className={styles.labelText}>
                 Excerpt
                 <FieldInfoTooltip label="Excerpt" lines={journalFieldHelp.excerpt} />
               </span>
-              <AiFixButton onClick={() => handleAiFix('excerpt')} disabled={isAiBusy} />
+              <AiFixButton onClick={() => handleAiFix('excerpt')} loading={aiLoadingKey === 'journal-excerpt'} />
             </div>
             <textarea
               value={post.excerpt || ''}
@@ -453,13 +484,13 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
               placeholder="Brief summary shown on the journal index page..."
             />
           </label>
-          <label className={styles.label}>
+          <label className={`${styles.label} ${getAiFixRowClass('journal-body')}`}>
             <div className={styles.sectionHeader}>
               <span className={styles.labelText}>
                 Body
                 <FieldInfoTooltip label="Body" lines={journalFieldHelp.body} />
               </span>
-              <AiFixButton onClick={() => handleAiFix('body')} disabled={isAiBusy} />
+              <AiFixButton onClick={() => handleAiFix('body')} loading={aiLoadingKey === 'journal-body'} />
             </div>
             <textarea
               value={post.body || ''}

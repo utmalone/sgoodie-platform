@@ -1,3 +1,14 @@
 .button {
   @apply rounded-full border border-black/20 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-black/60 transition hover:text-black disabled:cursor-not-allowed disabled:opacity-40;
 }
+
+.spinner {
+  width: 0.75rem;
+  height: 0.75rem;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
