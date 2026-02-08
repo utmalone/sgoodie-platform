@@ -12,6 +12,14 @@ import { PhotoGuidelineRow } from '@/components/admin/PhotoGuidelines';
 import { FieldInfoTooltip } from '@/components/admin/FieldInfoTooltip';
 import { usePreview } from '@/lib/admin/preview-context';
 import { pagePhotoGuidelinesBySlug } from '@/lib/admin/photo-guidelines';
+import {
+  getPhotoLibraryGroup,
+  getLibraryGroupOrderForPage,
+  getSlotForAdd,
+  getMismatchWarning,
+  LIBRARY_GROUP_LABELS,
+  type LibraryGroupKey
+} from '@/lib/admin/photo-suitability';
 import guidelineStyles from '@/styles/admin/PhotoGuidelines.module.css';
 import sharedStyles from '@/styles/admin/AdminShared.module.css';
 import styles from '@/styles/admin/AdminPhotosClient.module.css';
@@ -116,6 +124,7 @@ export function AdminPhotosClient() {
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [expandedPhotoId, setExpandedPhotoId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [addConfirm, setAddConfirm] = useState<{ photoId: string; message: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const pageGuidelines = useMemo(
     () => pagePhotoGuidelinesBySlug[activeSlug] || [],
@@ -268,6 +277,17 @@ export function AdminPhotosClient() {
     const current = new Set(pagePhotoIds);
     return photos.filter((photo) => !current.has(photo.id));
   }, [photos, pagePhotoIds]);
+
+  const availablePhotosGrouped = useMemo(() => {
+    const order = getLibraryGroupOrderForPage(activeSlug);
+    const groups = new Map<LibraryGroupKey, PhotoAsset[]>();
+    order.forEach((k) => groups.set(k, []));
+    availablePhotos.forEach((photo) => {
+      const group = getPhotoLibraryGroup(photo);
+      groups.get(group)?.push(photo);
+    });
+    return order.map((key) => ({ key, photos: groups.get(key) || [] })).filter((g) => g.photos.length > 0);
+  }, [availablePhotos, activeSlug]);
 
   useEffect(() => {
     async function load() {
@@ -545,6 +565,30 @@ export function AdminPhotosClient() {
     await updatePagePhotoOrder(newIds);
   }
 
+  function handleAddToGalleryClick(photoId: string) {
+    const photo = photosById.get(photoId);
+    if (!photo) return;
+
+    const hasBio = Boolean(layouts.about?.bio?.photoId);
+    const slot = getSlotForAdd(activeSlug, pagePhotoIds, hasBio);
+    const warning = getMismatchWarning(photo, slot, activeSlug);
+
+    if (warning) {
+      setAddConfirm({ photoId, message: warning });
+      setOpenMenuId(null);
+    } else {
+      addToGallery(photoId);
+      setOpenMenuId(null);
+    }
+  }
+
+  async function confirmAddToGallery() {
+    if (!addConfirm) return;
+    const { photoId } = addConfirm;
+    setAddConfirm(null);
+    await addToGallery(photoId);
+  }
+
   async function handleFileSelect(file: File | null) {
     if (!file) {
       setUploadFile(null);
@@ -622,13 +666,16 @@ export function AdminPhotosClient() {
     
     // Add to current page
     await addToGallery(photo.id);
+    const hasBio = Boolean(layouts.about?.bio?.photoId);
+    const slot = getSlotForAdd(activeSlug, pagePhotoIds, hasBio);
+    const mismatchWarning = getMismatchWarning(photo, slot, activeSlug);
     
     setUploadAlt('');
     setUploadMetaTitle('');
     setUploadMetaDescription('');
     setUploadMetaKeywords('');
     setUploadFile(null);
-    setStatus('Upload complete and added to page.');
+    setStatus(mismatchWarning ? 'Upload complete. ' + mismatchWarning : 'Upload complete and added to page.');
     refreshPreview();
   }
 
@@ -1436,108 +1483,135 @@ export function AdminPhotosClient() {
         <div>
           <h2 className={styles.cardTitle}>Photo Library</h2>
           <p className={styles.cardDescription}>
-            Add photos from the library to this page.
+            Add photos from the library to this page. Grouped by recommended use.
           </p>
         </div>
-        <div className={styles.gridThreeTight}>
-          {availablePhotos.length === 0 && (
+        {addConfirm && (
+          <div className={styles.warningCard} role="alert">
+            <p className={styles.warningText}>{addConfirm.message}</p>
+            <div className={styles.warningActions}>
+              <button
+                type="button"
+                onClick={() => setAddConfirm(null)}
+                className={styles.libraryActionButton}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmAddToGallery}
+                className={styles.libraryActionButtonPrimary}
+              >
+                Add anyway
+              </button>
+            </div>
+          </div>
+        )}
+        <div className={styles.libraryGroups}>
+          {availablePhotos.length === 0 ? (
             <p className={styles.emptyTextInline}>All photos are already on this page.</p>
-          )}
-          {availablePhotos.map((photo) => (
-            <div
-              key={photo.id}
-              className={styles.libraryCard}
-            >
-              <div className={styles.libraryRow}>
-                <div className={styles.libraryInfo}>
-                  <div className={styles.photoPreviewSmall}>
-                    <Image
-                      src={photo.src}
-                      alt={photo.alt}
-                      fill
-                      className={styles.photoImage}
-                      sizes="64px"
-                    />
-                  </div>
-                  <span className={styles.libraryTitle}>{photo.alt || 'Untitled'}</span>
-                </div>
-                
-                {/* Desktop buttons - hidden on medium and smaller screens */}
-                <div className={styles.libraryActions}>
-                  <button
-                    type="button"
-                    onClick={() => togglePhotoDetails(photo.id)}
-                    className={styles.libraryActionButton}
-                  >
-                    {expandedPhotoId === photo.id ? 'Close' : 'Edit'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => addToGallery(photo.id)}
-                    className={styles.libraryActionButtonPrimary}
-                  >
-                    Add
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(photo.id)}
-                    className={styles.libraryActionButtonDanger}
-                  >
-                    Delete
-                  </button>
-                </div>
+          ) : (
+            <>
+            {availablePhotosGrouped.map(({ key, photos: groupPhotos }) => (
+              <div key={key} className={styles.libraryGroup}>
+                <h3 className={styles.libraryGroupTitle}>{LIBRARY_GROUP_LABELS[key]}</h3>
+                <div className={styles.gridThreeTight}>
+                  {groupPhotos.map((photo) => (
+                    <div key={photo.id} className={styles.libraryCard}>
+                      <div className={styles.libraryRow}>
+                        <div className={styles.libraryInfo}>
+                          <div className={styles.photoPreviewSmall}>
+                            <Image
+                              src={photo.src}
+                              alt={photo.alt}
+                              fill
+                              className={styles.photoImage}
+                              sizes="64px"
+                            />
+                          </div>
+                          <div className={styles.libraryMeta}>
+                            <span className={styles.libraryTitle}>{photo.alt || 'Untitled'}</span>
+                            {photo.width > 0 && photo.height > 0 && (
+                              <span className={styles.libraryDims}>{photo.width}×{photo.height}</span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Desktop buttons - hidden on medium and smaller screens */}
+                        <div className={styles.libraryActions}>
+                          <button
+                            type="button"
+                            onClick={() => togglePhotoDetails(photo.id)}
+                            className={styles.libraryActionButton}
+                          >
+                            {expandedPhotoId === photo.id ? 'Close' : 'Edit'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleAddToGalleryClick(photo.id)}
+                            className={styles.libraryActionButtonPrimary}
+                          >
+                            Add
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(photo.id)}
+                            className={styles.libraryActionButtonDanger}
+                          >
+                            Delete
+                          </button>
+                        </div>
 
-                {/* Mobile/tablet dropdown - visible on medium and smaller screens */}
-                <div ref={openMenuId === photo.id ? menuRef : undefined} className={styles.menuWrapper}>
-                  <button
-                    type="button"
-                    onClick={() => setOpenMenuId(openMenuId === photo.id ? null : photo.id)}
-                    className={styles.menuButton}
-                    aria-label="Actions"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                      <circle cx="8" cy="3" r="1.5" />
-                      <circle cx="8" cy="8" r="1.5" />
-                      <circle cx="8" cy="13" r="1.5" />
-                    </svg>
-                  </button>
-                  {openMenuId === photo.id && (
-                    <div className={styles.menu}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          togglePhotoDetails(photo.id);
-                          setOpenMenuId(null);
-                        }}
-                        className={styles.menuItem}
-                      >
-                        {expandedPhotoId === photo.id ? 'Close' : 'Edit'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          addToGallery(photo.id);
-                          setOpenMenuId(null);
-                        }}
-                        className={styles.menuItem}
-                      >
-                        Add
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleDelete(photo.id);
-                          setOpenMenuId(null);
-                        }}
-                        className={styles.menuItemDanger}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-              {expandedPhotoId === photo.id && (
+                        {/* Mobile/tablet dropdown - visible on medium and smaller screens */}
+                        <div ref={openMenuId === photo.id ? menuRef : undefined} className={styles.menuWrapper}>
+                          <button
+                            type="button"
+                            onClick={() => setOpenMenuId(openMenuId === photo.id ? null : photo.id)}
+                            className={styles.menuButton}
+                            aria-label="Actions"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                              <circle cx="8" cy="3" r="1.5" />
+                              <circle cx="8" cy="8" r="1.5" />
+                              <circle cx="8" cy="13" r="1.5" />
+                            </svg>
+                          </button>
+                          {openMenuId === photo.id && (
+                            <div className={styles.menu}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  togglePhotoDetails(photo.id);
+                                  setOpenMenuId(null);
+                                }}
+                                className={styles.menuItem}
+                              >
+                                {expandedPhotoId === photo.id ? 'Close' : 'Edit'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleAddToGalleryClick(photo.id);
+                                }}
+                                className={styles.menuItem}
+                              >
+                                Add
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleDelete(photo.id);
+                                  setOpenMenuId(null);
+                                }}
+                                className={styles.menuItemDanger}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {expandedPhotoId === photo.id && (
                 <div className={styles.detailsPanel}>
                   <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-alt`)}`}>
                     <div className={styles.buttonRow}>
@@ -1614,9 +1688,14 @@ export function AdminPhotosClient() {
                     />
                   </label>
                 </div>
-              )}
-            </div>
-          ))}
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            </>
+          )}
         </div>
       </section>
     </div>

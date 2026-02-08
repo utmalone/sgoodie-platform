@@ -392,8 +392,16 @@
   @apply flex items-center gap-3 min-w-0;
 }
 
+.libraryMeta {
+  @apply flex flex-col min-w-0 gap-0.5;
+}
+
 .libraryTitle {
   @apply text-sm text-black/60 truncate;
+}
+
+.libraryDims {
+  @apply text-[10px] text-black/40;
 }
 
 .libraryActions {
@@ -427,6 +435,30 @@
 
 .warningBox {
   @apply flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800;
+}
+
+.warningCard {
+  @apply rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800;
+}
+
+.warningText {
+  @apply mb-3;
+}
+
+.warningActions {
+  @apply flex gap-2;
+}
+
+.libraryGroups {
+  @apply space-y-6;
+}
+
+.libraryGroup {
+  @apply space-y-3;
+}
+
+.libraryGroupTitle {
+  @apply text-xs font-medium uppercase tracking-wider text-black/50;
 }
 
 .infoBox {

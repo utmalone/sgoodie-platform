@@ -1,5 +1,6 @@
 import path from 'path';
 import { promises as fs } from 'fs';
+import imageSize from 'image-size';
 import { requireAdminApi } from '@/lib/auth/require-admin-api';
 import { createPhoto, getAllPhotos } from '@/lib/data/photos';
 import { revalidateAllPages } from '@/lib/admin/revalidate';
@@ -54,6 +55,18 @@ export async function POST(request: Request) {
 
   await fs.writeFile(filePath, buffer);
 
+  let width = 1600;
+  let height = 1200;
+  try {
+    const dimensions = imageSize(buffer);
+    if (dimensions.width && dimensions.height) {
+      width = dimensions.width;
+      height = dimensions.height;
+    }
+  } catch {
+    // Use defaults if dimension detection fails
+  }
+
   try {
     const photo = await createPhoto({
       src: `/uploads/${fileName}`,
@@ -61,8 +74,8 @@ export async function POST(request: Request) {
       metaTitle,
       metaDescription,
       metaKeywords,
-      width: 1600,
-      height: 1200
+      width,
+      height
     });
 
     revalidateAllPages();
