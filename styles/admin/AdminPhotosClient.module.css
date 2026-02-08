@@ -75,7 +75,7 @@
 }
 
 .cardDescriptionSoft {
-  @apply text-sm text-black/70;
+  @apply text-sm text-black/70 flex flex-wrap items-center gap-2;
 }
 
 .tip {
@@ -115,11 +115,11 @@
 }
 
 .labelSmall {
-  @apply text-[10px] font-medium text-black/50 uppercase tracking-wide;
+  @apply text-[10px] font-medium text-black/50 uppercase tracking-wide flex flex-wrap items-center gap-2;
 }
 
 .labelTiny {
-  @apply text-xs font-medium text-black/60 uppercase tracking-wide;
+  @apply text-xs font-medium text-black/60 uppercase tracking-wide flex flex-wrap items-center gap-2;
 }
 
 .input {
@@ -487,6 +487,13 @@
 
 .detailsPanel {
   @apply mt-4 space-y-3 text-xs text-black/60;
+}
+
+.inlineLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
 }
 
 .guidanceRow {

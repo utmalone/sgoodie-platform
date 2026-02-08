@@ -6,14 +6,17 @@ import styles from '@/styles/public/JournalGrid.module.css';
 type JournalGridProps = {
   posts: JournalPost[];
   photosById: Map<string, PhotoAsset>;
+  isPreview?: boolean;
 };
 
 /**
  * Grid of journal post cards with hero photos, category labels,
  * titles, excerpts, and "Read More" links.
  */
-export function JournalGrid({ posts, photosById }: JournalGridProps) {
+export function JournalGrid({ posts, photosById, isPreview = false }: JournalGridProps) {
   if (posts.length === 0) return null;
+
+  const buildHref = (slug: string) => (isPreview ? `/journal/${slug}?preview=draft` : `/journal/${slug}`);
 
   return (
     <div className={styles.grid}>
@@ -23,7 +26,7 @@ export function JournalGrid({ posts, photosById }: JournalGridProps) {
 
         return (
           <article key={post.id} className={styles.card}>
-            <Link href={`/journal/${post.slug}`} className={styles.imageLink}>
+            <Link href={buildHref(post.slug)} className={styles.imageLink}>
               <div className={styles.imageWrap}>
                 <Image
                   src={photo.src}
@@ -37,12 +40,12 @@ export function JournalGrid({ posts, photosById }: JournalGridProps) {
             <div className={styles.content}>
               <p className={styles.category}>{post.category}</p>
               <h3 className={styles.title}>
-                <Link href={`/journal/${post.slug}`} className={styles.titleLink}>
+                <Link href={buildHref(post.slug)} className={styles.titleLink}>
                   {post.title}
                 </Link>
               </h3>
               <p className={styles.excerpt}>{post.excerpt}</p>
-              <Link href={`/journal/${post.slug}`} className={styles.readMore}>
+              <Link href={buildHref(post.slug)} className={styles.readMore}>
                 Read More
               </Link>
             </div>

@@ -9,6 +9,7 @@ import { getPageBySlug } from '@/lib/data/pages';
 import { getPhotosByIds } from '@/lib/data/photos';
 import { getWorkIndex } from '@/lib/data/work';
 import { WorkGalleryGrid } from '@/components/portfolio/WorkGalleryGrid';
+import { DraftPageText } from '@/components/preview/DraftPageText';
 import {
   portfolioCategories,
   portfolioCategoryLabels,
@@ -53,6 +54,9 @@ export default async function PortfolioCategoryPage({ params, searchParams }: Pa
   const isPreview = preview === 'draft';
   const categoryLabel = portfolioCategoryLabels[category as PortfolioCategory];
 
+  const page = await getPageBySlug(`portfolio-${category}`);
+  const liveTitle = page.title || categoryLabel;
+
   const [projects, workIndex] = await Promise.all([
     isPreview
       ? getProjectsByCategory(projectCategory)
@@ -85,7 +89,18 @@ export default async function PortfolioCategoryPage({ params, searchParams }: Pa
     <main id="main-content" className={styles.wrapper}>
       {/* Page Title */}
       <header className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>{categoryLabel}</h1>
+        <h1 className={styles.pageTitle}>
+          {isPreview ? (
+            <DraftPageText
+              slug={`portfolio-${category}`}
+              field="title"
+              fallback={liveTitle}
+              enabled
+            />
+          ) : (
+            liveTitle
+          )}
+        </h1>
       </header>
 
       {/* Projects Grid */}

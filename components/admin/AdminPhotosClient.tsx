@@ -9,6 +9,7 @@ import { loadAiModel } from '@/lib/admin/ai-model';
 import { getApiErrorMessage } from '@/lib/admin/api-error';
 import { AiFixButton } from '@/components/admin/AiFixButton';
 import { PhotoGuidelineRow } from '@/components/admin/PhotoGuidelines';
+import { FieldInfoTooltip } from '@/components/admin/FieldInfoTooltip';
 import { usePreview } from '@/lib/admin/preview-context';
 import { pagePhotoGuidelinesBySlug } from '@/lib/admin/photo-guidelines';
 import guidelineStyles from '@/styles/admin/PhotoGuidelines.module.css';
@@ -33,6 +34,50 @@ type BulkUploadItem = {
 };
 
 const MAX_BULK_PHOTOS = 50;
+const ABOUT_MAX_APPROACH_PHOTOS = 4;
+
+const photoFieldHelp = {
+  selectPhoto: [
+    'Choose an image file to upload.',
+    'Example: JPG or PNG.'
+  ],
+  selectPhotos: [
+    'Choose multiple image files to upload.',
+    'Example: Up to 50 photos.'
+  ],
+  altText: [
+    'Describe what is in the photo for accessibility.',
+    'Example: Sunlit hotel lobby with marble staircase.'
+  ],
+  seoTitle: [
+    'Short SEO title for this image.',
+    'Example: Meridian Hotel Lobby Photo.'
+  ],
+  seoKeywords: [
+    'Comma-separated keywords about the photo.',
+    'Example: hotel lobby, marble staircase, boutique hotel.'
+  ],
+  seoDescription: [
+    'Short description for search results.',
+    'Example: Warm lobby interior with marble staircase and pendant lights.'
+  ],
+  applyToPage: [
+    'Adds uploaded photos to the active page automatically.',
+    'Uncheck if you only want them in the library.'
+  ],
+  metaTitle: [
+    'SEO title for this photo.',
+    'Example: Meridian Hotel Lobby Photo.'
+  ],
+  metaDescription: [
+    'SEO description for this photo.',
+    'Example: Warm lobby interior with marble staircase and pendant lights.'
+  ],
+  metaKeywords: [
+    'Comma-separated keywords for this photo.',
+    'Example: hotel lobby, marble staircase, boutique hotel.'
+  ]
+};
 
 export function AdminPhotosClient() {
   const { registerChange, unregisterChange } = useSave();
@@ -160,10 +205,6 @@ export function AdminPhotosClient() {
   const photosById = useMemo(() => {
     return new Map(photos.map((photo) => [photo.id, photo]));
   }, [photos]);
-
-  const savedPhotosById = useMemo(() => {
-    return new Map(savedPhotos.map((photo) => [photo.id, photo]));
-  }, [savedPhotos]);
 
   // Get photo IDs for current page from the correct source (deduplicated)
   const pagePhotoIds = useMemo((): string[] => {
@@ -345,24 +386,51 @@ export function AdminPhotosClient() {
         setStatus('Failed to update order.');
       }
     } else if (activeSlug === 'about' && layouts.about) {
-      // For About: First ID is hero, then approach items maintain their structure, last is bio
-      // We need to map new photo IDs to the existing structure
       const heroPhotoId = newIds[0] || layouts.about.heroPhotoId;
-      
-      // Get the approach item photo IDs (indices 1 through length-2, since last is bio)
-      const approachPhotoIds = newIds.slice(1, newIds.length - 1);
-      const bioPhotoId = newIds[newIds.length - 1] || layouts.about.bio?.photoId;
-      
-      // Update approach items with new photo IDs while keeping their titles/descriptions
-      const updatedApproachItems = layouts.about.approachItems?.map((item, idx) => ({
-        ...item,
-        photoId: approachPhotoIds[idx] || item.photoId
-      })) || [];
-      
-      const updatedBio = layouts.about.bio ? {
-        ...layouts.about.bio,
-        photoId: bioPhotoId
-      } : undefined;
+      const existingBioId = layouts.about.bio?.photoId || '';
+      const hasBio = Boolean(existingBioId);
+      const bioCandidate = hasBio && newIds.length >= 2 ? newIds[newIds.length - 1] : '';
+      const bioPhotoId = bioCandidate || existingBioId;
+
+      const rawApproachIds = hasBio ? newIds.slice(1, newIds.length - 1) : newIds.slice(1);
+      const approachPhotoIds: string[] = [];
+      for (const id of rawApproachIds) {
+        if (!id) continue;
+        if (id === heroPhotoId) continue;
+        if (hasBio && id === bioPhotoId) continue;
+        if (approachPhotoIds.includes(id)) continue;
+        approachPhotoIds.push(id);
+        if (approachPhotoIds.length >= ABOUT_MAX_APPROACH_PHOTOS) break;
+      }
+
+      const existingByPhotoId = new Map(
+        (layouts.about.approachItems || []).map((item) => [item.photoId, item])
+      );
+
+      const createApproachItem = (photoId: string) => {
+        const uuid =
+          typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+        return {
+          id: `approach-${uuid}`,
+          title: '',
+          description: '',
+          photoId
+        };
+      };
+
+      const updatedApproachItems = approachPhotoIds.map(
+        (photoId) => existingByPhotoId.get(photoId) ?? createApproachItem(photoId)
+      );
+
+      const updatedBio = layouts.about.bio
+        ? {
+            ...layouts.about.bio,
+            photoId: bioPhotoId
+          }
+        : undefined;
       
       const response = await fetch('/api/admin/layouts/about', {
         method: 'PUT',
@@ -412,52 +480,35 @@ export function AdminPhotosClient() {
   }
 
   async function addToGallery(photoId: string) {
+    if (activeSlug === 'about' && layouts.about) {
+      const currentIds = [...pagePhotoIds];
+      const heroId = currentIds[0] || layouts.about.heroPhotoId;
+      const existingBioId = layouts.about.bio?.photoId || '';
+      const hasBio = Boolean(existingBioId);
+
+      const approachIds = (hasBio ? currentIds.slice(1, currentIds.length - 1) : currentIds.slice(1)).filter(
+        (id) => id && id !== photoId
+      );
+
+      if (approachIds.includes(photoId) || photoId === heroId || (hasBio && photoId === existingBioId)) {
+        return;
+      }
+
+      if (approachIds.length >= ABOUT_MAX_APPROACH_PHOTOS) {
+        setStatus(`Approach & Results supports up to ${ABOUT_MAX_APPROACH_PHOTOS} photos. Remove one before adding another.`);
+        return;
+      }
+
+      const nextIds = hasBio
+        ? [heroId, ...approachIds, photoId, existingBioId]
+        : [heroId, ...approachIds, photoId];
+
+      await updatePagePhotoOrder(nextIds.filter(Boolean));
+      return;
+    }
+
     const newIds = [...pagePhotoIds, photoId];
     await updatePagePhotoOrder(newIds);
-  }
-
-  async function handleSavePhotos() {
-    setStatus('Saving photo metadata...');
-
-    const changedPhotos = photos.filter((photo) => {
-      const saved = savedPhotosById.get(photo.id);
-      if (!saved) return true;
-      return (
-        saved.alt !== photo.alt ||
-        saved.metaTitle !== photo.metaTitle ||
-        saved.metaDescription !== photo.metaDescription ||
-        saved.metaKeywords !== photo.metaKeywords
-      );
-    });
-
-    if (changedPhotos.length === 0) {
-      setStatus('No changes to save.');
-      return;
-    }
-
-    const results = await Promise.all(
-      changedPhotos.map((photo) =>
-        fetch(`/api/admin/photos/${photo.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            alt: photo.alt,
-            metaTitle: photo.metaTitle || '',
-            metaDescription: photo.metaDescription || '',
-            metaKeywords: photo.metaKeywords || ''
-          })
-        })
-      )
-    );
-
-    if (results.some((res) => !res.ok)) {
-      setStatus('Some photo metadata updates failed.');
-      return;
-    }
-
-    setSavedPhotos(photos);
-    setStatus(`Saved ${changedPhotos.length} photo(s).`);
-    refreshPreview();
   }
 
   async function handleFileSelect(file: File | null) {
@@ -772,13 +823,6 @@ export function AdminPhotosClient() {
             Manage photos for each page. {canReorder ? 'Drag to reorder.' : ''}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleSavePhotos}
-          className={styles.saveButton}
-        >
-          Save Metadata
-        </button>
       </div>
 
       <div className={styles.tabBar}>
@@ -855,7 +899,10 @@ export function AdminPhotosClient() {
             <form onSubmit={handleUpload} className={styles.formGridAuto}>
               <div className={styles.formGridTwo}>
                 <label className={styles.labelSpan2}>
-                  <span className={styles.labelTiny}>Select Photo</span>
+                  <span className={styles.labelTiny}>
+                    Select Photo
+                    <FieldInfoTooltip label="Select Photo" lines={photoFieldHelp.selectPhoto} />
+                  </span>
                   <input
                     type="file"
                     accept="image/*"
@@ -865,7 +912,10 @@ export function AdminPhotosClient() {
                   />
                 </label>
                 <label className={styles.block}>
-                  <span className={styles.labelTiny}>Alt Text (Accessibility)</span>
+                  <span className={styles.labelTiny}>
+                    Alt Text (Accessibility)
+                    <FieldInfoTooltip label="Alt Text" lines={photoFieldHelp.altText} />
+                  </span>
                   <input
                     type="text"
                     placeholder="Describe the image for screen readers"
@@ -876,7 +926,10 @@ export function AdminPhotosClient() {
                   />
                 </label>
                 <label className={styles.block}>
-                  <span className={styles.labelTiny}>SEO Title</span>
+                  <span className={styles.labelTiny}>
+                    SEO Title
+                    <FieldInfoTooltip label="SEO Title" lines={photoFieldHelp.seoTitle} />
+                  </span>
                   <input
                     type="text"
                     placeholder="Page title for search engines"
@@ -887,7 +940,10 @@ export function AdminPhotosClient() {
                   />
                 </label>
                 <label className={styles.block}>
-                  <span className={styles.labelTiny}>SEO Keywords</span>
+                  <span className={styles.labelTiny}>
+                    SEO Keywords
+                    <FieldInfoTooltip label="SEO Keywords" lines={photoFieldHelp.seoKeywords} />
+                  </span>
                   <input
                     type="text"
                     placeholder="Comma-separated keywords"
@@ -898,7 +954,10 @@ export function AdminPhotosClient() {
                   />
                 </label>
                 <label className={styles.labelSpan2}>
-                  <span className={styles.labelTiny}>SEO Description</span>
+                  <span className={styles.labelTiny}>
+                    SEO Description
+                    <FieldInfoTooltip label="SEO Description" lines={photoFieldHelp.seoDescription} />
+                  </span>
                   <textarea
                     placeholder="Brief description for search results"
                     value={uploadMetaDescription}
@@ -935,6 +994,7 @@ export function AdminPhotosClient() {
             <label className={styles.block}>
               <span className={styles.labelTiny}>
                 Select Photos ({bulkItems.length}/{MAX_BULK_PHOTOS})
+                <FieldInfoTooltip label="Select Photos" lines={photoFieldHelp.selectPhotos} />
               </span>
               <input
                 type="file"
@@ -957,6 +1017,7 @@ export function AdminPhotosClient() {
                 />
                 <span className={styles.cardDescriptionSoft}>
                   Apply photos to current page ({pageLabels[activeSlug]})
+                  <FieldInfoTooltip label="Apply to Page" lines={photoFieldHelp.applyToPage} />
                 </span>
               </label>
             )}
@@ -1101,7 +1162,10 @@ export function AdminPhotosClient() {
                         {bulkExpandedId === item.id && (
                           <div className={styles.bulkExpanded}>
                             <label className={styles.block}>
-                              <span className={styles.labelSmall}>Alt Text</span>
+                              <span className={styles.labelSmall}>
+                                Alt Text
+                                <FieldInfoTooltip label="Alt Text" lines={photoFieldHelp.altText} />
+                              </span>
                               <input
                                 type="text"
                                 value={item.alt}
@@ -1111,7 +1175,10 @@ export function AdminPhotosClient() {
                               />
                             </label>
                             <label className={styles.block}>
-                              <span className={styles.labelSmall}>SEO Title</span>
+                              <span className={styles.labelSmall}>
+                                SEO Title
+                                <FieldInfoTooltip label="SEO Title" lines={photoFieldHelp.seoTitle} />
+                              </span>
                               <input
                                 type="text"
                                 value={item.metaTitle}
@@ -1121,7 +1188,10 @@ export function AdminPhotosClient() {
                               />
                             </label>
                             <label className={styles.block}>
-                              <span className={styles.labelSmall}>SEO Keywords</span>
+                              <span className={styles.labelSmall}>
+                                SEO Keywords
+                                <FieldInfoTooltip label="SEO Keywords" lines={photoFieldHelp.seoKeywords} />
+                              </span>
                               <input
                                 type="text"
                                 value={item.metaKeywords}
@@ -1131,7 +1201,10 @@ export function AdminPhotosClient() {
                               />
                             </label>
                             <label className={styles.block}>
-                              <span className={styles.labelSmall}>SEO Description</span>
+                              <span className={styles.labelSmall}>
+                                SEO Description
+                                <FieldInfoTooltip label="SEO Description" lines={photoFieldHelp.seoDescription} />
+                              </span>
                               <textarea
                                 value={item.metaDescription}
                                 onChange={(e) => updateBulkItemField(item.id, 'metaDescription', e.target.value)}
@@ -1245,7 +1318,10 @@ export function AdminPhotosClient() {
                 <div className={styles.detailsPanel}>
                   <label className={styles.block}>
                     <div className={styles.buttonRow}>
-                      <span>Alt Text</span>
+                      <span className={styles.inlineLabel}>
+                        Alt Text
+                        <FieldInfoTooltip label="Alt Text" lines={photoFieldHelp.altText} />
+                      </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'alt', 'text')}
                         disabled={isAiBusy}
@@ -1259,7 +1335,10 @@ export function AdminPhotosClient() {
                   </label>
                   <label className={styles.block}>
                     <div className={styles.buttonRow}>
-                      <span>Meta Title</span>
+                      <span className={styles.inlineLabel}>
+                        Meta Title
+                        <FieldInfoTooltip label="Meta Title" lines={photoFieldHelp.metaTitle} />
+                      </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaTitle', 'seo')}
                         disabled={isAiBusy}
@@ -1275,7 +1354,10 @@ export function AdminPhotosClient() {
                   </label>
                   <label className={styles.block}>
                     <div className={styles.buttonRow}>
-                      <span>Meta Description</span>
+                      <span className={styles.inlineLabel}>
+                        Meta Description
+                        <FieldInfoTooltip label="Meta Description" lines={photoFieldHelp.metaDescription} />
+                      </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaDescription', 'seo')}
                         disabled={isAiBusy}
@@ -1291,7 +1373,10 @@ export function AdminPhotosClient() {
                   </label>
                   <label className={styles.block}>
                     <div className={styles.buttonRow}>
-                      <span>Meta Keywords</span>
+                      <span className={styles.inlineLabel}>
+                        Meta Keywords
+                        <FieldInfoTooltip label="Meta Keywords" lines={photoFieldHelp.metaKeywords} />
+                      </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaKeywords', 'seo')}
                         disabled={isAiBusy}
@@ -1422,7 +1507,10 @@ export function AdminPhotosClient() {
                 <div className={styles.detailsPanel}>
                   <label className={styles.block}>
                     <div className={styles.buttonRow}>
-                      <span>Alt Text</span>
+                      <span className={styles.inlineLabel}>
+                        Alt Text
+                        <FieldInfoTooltip label="Alt Text" lines={photoFieldHelp.altText} />
+                      </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'alt', 'text')}
                         disabled={isAiBusy}
@@ -1436,7 +1524,10 @@ export function AdminPhotosClient() {
                   </label>
                   <label className={styles.block}>
                     <div className={styles.buttonRow}>
-                      <span>Meta Title</span>
+                      <span className={styles.inlineLabel}>
+                        Meta Title
+                        <FieldInfoTooltip label="Meta Title" lines={photoFieldHelp.metaTitle} />
+                      </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaTitle', 'seo')}
                         disabled={isAiBusy}
@@ -1452,7 +1543,10 @@ export function AdminPhotosClient() {
                   </label>
                   <label className={styles.block}>
                     <div className={styles.buttonRow}>
-                      <span>Meta Description</span>
+                      <span className={styles.inlineLabel}>
+                        Meta Description
+                        <FieldInfoTooltip label="Meta Description" lines={photoFieldHelp.metaDescription} />
+                      </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaDescription', 'seo')}
                         disabled={isAiBusy}
@@ -1468,7 +1562,10 @@ export function AdminPhotosClient() {
                   </label>
                   <label className={styles.block}>
                     <div className={styles.buttonRow}>
-                      <span>Meta Keywords</span>
+                      <span className={styles.inlineLabel}>
+                        Meta Keywords
+                        <FieldInfoTooltip label="Meta Keywords" lines={photoFieldHelp.metaKeywords} />
+                      </span>
                       <AiFixButton
                         onClick={() => handleAiFixPhoto(photo.id, 'metaKeywords', 'seo')}
                         disabled={isAiBusy}

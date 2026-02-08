@@ -1,15 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { PhotoAsset, Project, ProjectCredit, EditorialRowCaption } from '@/types';
 import { AdminPhotoSelector } from './AdminPhotoSelector';
 import { AdminCreditsEditor } from './AdminCreditsEditor';
 import { AiFixButton } from './AiFixButton';
 import { PhotoGuidelineTooltip } from './PhotoGuidelines';
+import { FieldInfoTooltip } from './FieldInfoTooltip';
 import { loadAiModel } from '@/lib/admin/ai-model';
 import { getApiErrorMessage } from '@/lib/admin/api-error';
 import { usePreview } from '@/lib/admin/preview-context';
+import { useSave } from '@/lib/admin/save-context';
 import { editorialGalleryGuideline, heroFullBleedGuideline } from '@/lib/admin/photo-guidelines';
 import guidelineStyles from '@/styles/admin/PhotoGuidelines.module.css';
 import styles from '@/styles/admin/AdminWorkEditorClient.module.css';
@@ -44,21 +46,131 @@ const emptyProject: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> = {
   metaKeywords: ''
 };
 
+const workFieldHelp = {
+  title: [
+    'Project name shown on cards and the project page.',
+    'Example: The Meridian Hotel.'
+  ],
+  slug: [
+    'URL-friendly project name. Use lowercase and hyphens.',
+    'Example: the-meridian-hotel.'
+  ],
+  subtitle: [
+    'Short descriptor shown under the title.',
+    'Example: Boutique Hotel Photography.'
+  ],
+  hoverTitle: [
+    'Short title shown when hovering on the project card.',
+    'Example: The Meridian.'
+  ],
+  intro: [
+    'Short intro shown near the top of the project page.',
+    'Example: A modern hotel in downtown DC.'
+  ],
+  category: [
+    'Where this project appears in the portfolio.',
+    'Example: Interiors.'
+  ],
+  status: [
+    'Draft hides it from the site. Published makes it visible.'
+  ],
+  featured: [
+    'Highlight this project in featured sections.'
+  ],
+  metaTitle: [
+    'SEO title shown in search results. Keep around 50-60 characters.',
+    'Example: The Meridian Hotel | Work.'
+  ],
+  metaDescription: [
+    'SEO summary shown in search results. Aim for 140-160 characters.',
+    'Example: Hotel photography project featuring The Meridian suites and lobby.'
+  ],
+  metaKeywords: [
+    'Comma-separated keywords (optional).',
+    'Example: hotel photography, interiors, hospitality branding.'
+  ]
+};
+
 export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps) {
   const router = useRouter();
   const { openPreview, refreshPreview } = usePreview();
+  const { registerChange, unregisterChange } = useSave();
   const isNew = !projectId;
 
   const [project, setProject] = useState<Partial<Project>>(emptyProject);
+  const [savedProject, setSavedProject] = useState<Partial<Project>>(emptyProject);
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
   const [status, setStatus] = useState('');
   const [aiStatus, setAiStatus] = useState('');
   const [isAiBusy, setIsAiBusy] = useState(false);
   const [isLoading, setIsLoading] = useState(!isNew);
-  const [isSaving, setIsSaving] = useState(false);
   const [showHeroSelector, setShowHeroSelector] = useState(false);
   const [showGallerySelector, setShowGallerySelector] = useState(false);
   const [draggedPhotoId, setDraggedPhotoId] = useState<string | null>(null);
+
+  // Check if project has unsaved changes
+  const isDirty = useMemo(() => {
+    return JSON.stringify(project) !== JSON.stringify(savedProject);
+  }, [project, savedProject]);
+
+  // Save function for master save
+  const saveProject = useCallback(async (): Promise<boolean> => {
+    if (!project.title || !project.slug || !project.heroPhotoId) {
+      setStatus('Please fill in title, slug, and select a hero photo.');
+      return false;
+    }
+
+    setStatus('Saving...');
+    try {
+      const url = isNew ? '/api/admin/projects' : `/api/admin/projects/${projectId}`;
+      const method = isNew ? 'POST' : 'PUT';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(project)
+      });
+
+      if (!res.ok) {
+        const message = await getApiErrorMessage(res, 'Failed to save project.');
+        setStatus(message);
+        return false;
+      }
+
+      const saved = (await res.json()) as Project;
+      setStatus('Saved successfully.');
+      setProject(saved);
+      setSavedProject(saved);
+
+      if (isNew) {
+        router.push(`/admin/work/${saved.id}`);
+      }
+
+      refreshPreview();
+      return true;
+    } catch {
+      setStatus('Failed to save project.');
+      return false;
+    }
+  }, [project, isNew, projectId, router, refreshPreview]);
+
+  // Register/unregister changes with master save context
+  useEffect(() => {
+    const changeId = `work-${projectId || 'new'}`;
+    if (isDirty && !isLoading) {
+      registerChange({
+        id: changeId,
+        type: 'project',
+        save: saveProject
+      });
+    } else {
+      unregisterChange(changeId);
+    }
+
+    return () => {
+      unregisterChange(changeId);
+    };
+  }, [isDirty, isLoading, projectId, registerChange, unregisterChange, saveProject]);
 
   const photosById = useMemo(() => {
     return new Map(photos.map((photo) => [photo.id, photo]));
@@ -91,9 +203,13 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
         if (projectRes.ok) {
           const projectData = (await projectRes.json()) as Project;
           setProject(projectData);
+          setSavedProject(projectData);
         } else {
           setStatus('Project not found.');
         }
+      } else {
+        setProject(emptyProject);
+        setSavedProject(emptyProject);
       }
     } catch {
       setStatus('Unable to load data.');
@@ -117,50 +233,16 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
     });
   }
 
-  async function handleSave() {
-    if (!project.title || !project.slug || !project.heroPhotoId) {
-      setStatus('Please fill in title, slug, and select a hero photo.');
-      return;
-    }
-
-    setIsSaving(true);
-    setStatus('Saving...');
-
-    try {
-      const url = isNew ? '/api/admin/projects' : `/api/admin/projects/${projectId}`;
-      const method = isNew ? 'POST' : 'PUT';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(project)
-      });
-
-      if (!res.ok) {
-        const message = await getApiErrorMessage(res, 'Failed to save project.');
-        setStatus(message);
-        setIsSaving(false);
-        return;
-      }
-
-      const saved = (await res.json()) as Project;
-      setStatus('Saved successfully.');
-      
-      if (isNew) {
-        router.push(`/admin/work/${saved.id}`);
-      } else {
-        setProject(saved);
-      }
-      refreshPreview();
-    } catch {
-      setStatus('Failed to save project.');
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
   async function handleAiFix(
-    field: 'intro' | 'body' | 'metaTitle' | 'metaDescription' | 'metaKeywords',
+    field:
+      | 'title'
+      | 'subtitle'
+      | 'hoverTitle'
+      | 'intro'
+      | 'body'
+      | 'metaTitle'
+      | 'metaDescription'
+      | 'metaKeywords',
     mode: 'text' | 'seo'
   ) {
     if (isAiBusy) return;
@@ -198,6 +280,56 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
       const data = (await res.json()) as { output?: string };
       if (data.output) {
         updateField(field, data.output);
+        setAiStatus('AI update complete.');
+      } else {
+        setAiStatus('AI did not return a result.');
+      }
+    } catch {
+      setAiStatus('AI request failed.');
+    } finally {
+      setIsAiBusy(false);
+    }
+  }
+
+  async function handleAiFixCaption(index: number, field: 'title' | 'body') {
+    if (isAiBusy) return;
+    setIsAiBusy(true);
+    setAiStatus('Optimizing with AI...');
+
+    try {
+      const model = loadAiModel();
+      const caption = (project.editorialCaptions || [])[index] || { title: '', body: '' };
+      const res = await fetch('/api/admin/ai/optimize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'text',
+          target: 'page',
+          field: `editorialCaptions[${index}].${field}`,
+          input: String(caption[field] || ''),
+          model,
+          context: {
+            page: {
+              slug: project.slug,
+              title: project.title,
+              subtitle: project.subtitle,
+              intro: project.intro,
+              body: project.body
+            },
+            captionIndex: index
+          }
+        })
+      });
+
+      if (!res.ok) {
+        const message = await getApiErrorMessage(res, 'AI request failed.');
+        setAiStatus(message);
+        return;
+      }
+
+      const data = (await res.json()) as { output?: string };
+      if (data.output) {
+        updateCaption(index, { ...caption, [field]: data.output });
         setAiStatus('AI update complete.');
       } else {
         setAiStatus('AI did not return a result.');
@@ -294,14 +426,6 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
           >
             Cancel
           </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className={styles.btnPrimary}
-          >
-            {isSaving ? 'Saving...' : 'Save'}
-          </button>
         </div>
       </div>
 
@@ -314,7 +438,13 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
         <div className={styles.formGrid}>
           <div className={styles.formRowTwo}>
             <label className={styles.label}>
-              <span className={styles.labelText}>Title *</span>
+              <div className={styles.sectionHeader}>
+                <span className={styles.labelText}>
+                  Title *
+                  <FieldInfoTooltip label="Title" lines={workFieldHelp.title} />
+                </span>
+                <AiFixButton onClick={() => handleAiFix('title', 'text')} disabled={isAiBusy} />
+              </div>
               <input
                 value={project.title || ''}
                 onChange={(e) => updateField('title', e.target.value)}
@@ -323,7 +453,10 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
               />
             </label>
             <label className={styles.label}>
-              <span className={styles.labelText}>Slug *</span>
+              <span className={styles.labelText}>
+                Slug *
+                <FieldInfoTooltip label="Slug" lines={workFieldHelp.slug} />
+              </span>
               <input
                 value={project.slug || ''}
                 onChange={(e) => updateField('slug', e.target.value)}
@@ -334,7 +467,13 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
           </div>
           <div className={styles.formRowTwo}>
             <label className={styles.label}>
-              <span className={styles.labelText}>Subtitle</span>
+              <div className={styles.sectionHeader}>
+                <span className={styles.labelText}>
+                  Subtitle
+                  <FieldInfoTooltip label="Subtitle" lines={workFieldHelp.subtitle} />
+                </span>
+                <AiFixButton onClick={() => handleAiFix('subtitle', 'text')} disabled={isAiBusy} />
+              </div>
               <input
                 value={project.subtitle || ''}
                 onChange={(e) => updateField('subtitle', e.target.value)}
@@ -343,7 +482,13 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
               />
             </label>
             <label className={styles.label}>
-              <span className={styles.labelText}>Hover Title</span>
+              <div className={styles.sectionHeader}>
+                <span className={styles.labelText}>
+                  Hover Title
+                  <FieldInfoTooltip label="Hover Title" lines={workFieldHelp.hoverTitle} />
+                </span>
+                <AiFixButton onClick={() => handleAiFix('hoverTitle', 'text')} disabled={isAiBusy} />
+              </div>
               <input
                 value={project.hoverTitle || ''}
                 onChange={(e) => updateField('hoverTitle', e.target.value)}
@@ -354,7 +499,10 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
           </div>
           <label className={styles.label}>
             <div className={styles.sectionHeader}>
-              <span className={styles.labelText}>Introduction</span>
+              <span className={styles.labelText}>
+                Introduction
+                <FieldInfoTooltip label="Introduction" lines={workFieldHelp.intro} />
+              </span>
               <AiFixButton onClick={() => handleAiFix('intro', 'text')} disabled={isAiBusy} />
             </div>
             <textarea
@@ -364,21 +512,12 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
               placeholder="Brief introduction..."
             />
           </label>
-          <label className={styles.label}>
-            <div className={styles.sectionHeader}>
-              <span className={styles.labelText}>Body</span>
-              <AiFixButton onClick={() => handleAiFix('body', 'text')} disabled={isAiBusy} />
-            </div>
-            <textarea
-              value={project.body || ''}
-              onChange={(e) => updateField('body', e.target.value)}
-              className={`${styles.textarea} ${styles.textareaBody}`}
-              placeholder="Full project description..."
-            />
-          </label>
           <div className={styles.formRowThree}>
             <label className={styles.label}>
-              <span className={styles.labelText}>Category</span>
+              <span className={styles.labelText}>
+                Category
+                <FieldInfoTooltip label="Category" lines={workFieldHelp.category} />
+              </span>
               <select
                 value={project.category || 'interiors'}
                 onChange={(e) => updateField('category', e.target.value as Project['category'])}
@@ -391,7 +530,10 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
               </select>
             </label>
             <label className={styles.label}>
-              <span className={styles.labelText}>Status</span>
+              <span className={styles.labelText}>
+                Status
+                <FieldInfoTooltip label="Status" lines={workFieldHelp.status} />
+              </span>
               <select
                 value={project.status || 'draft'}
                 onChange={(e) => updateField('status', e.target.value as Project['status'])}
@@ -408,7 +550,10 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
                 onChange={(e) => updateField('featured', e.target.checked)}
                 className={styles.checkbox}
               />
-              <span className={styles.labelText}>Featured project</span>
+              <span className={styles.labelText}>
+                Featured project
+                <FieldInfoTooltip label="Featured project" lines={workFieldHelp.featured} />
+              </span>
             </label>
           </div>
         </div>
@@ -545,6 +690,10 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
                   </button>
                 </div>
                 <div className={styles.captionFields}>
+                  <div className={styles.sectionHeader}>
+                    <span className={styles.labelText}>Title</span>
+                    <AiFixButton onClick={() => handleAiFixCaption(index, 'title')} disabled={isAiBusy} />
+                  </div>
                   <input
                     value={caption.title}
                     onChange={(e) =>
@@ -553,6 +702,10 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
                     placeholder="Caption title"
                     className={styles.captionInput}
                   />
+                  <div className={styles.sectionHeader}>
+                    <span className={styles.labelText}>Body</span>
+                    <AiFixButton onClick={() => handleAiFixCaption(index, 'body')} disabled={isAiBusy} />
+                  </div>
                   <textarea
                     value={caption.body}
                     onChange={(e) =>
@@ -593,7 +746,10 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
         <div className={styles.formGrid}>
           <label className={styles.label}>
             <div className={styles.sectionHeader}>
-              <span className={styles.labelText}>Meta Title</span>
+              <span className={styles.labelText}>
+                Meta Title
+                <FieldInfoTooltip label="Meta Title" lines={workFieldHelp.metaTitle} />
+              </span>
               <AiFixButton onClick={() => handleAiFix('metaTitle', 'seo')} disabled={isAiBusy} />
             </div>
             <input
@@ -604,7 +760,10 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
           </label>
           <label className={styles.label}>
             <div className={styles.sectionHeader}>
-              <span className={styles.labelText}>Meta Description</span>
+              <span className={styles.labelText}>
+                Meta Description
+                <FieldInfoTooltip label="Meta Description" lines={workFieldHelp.metaDescription} />
+              </span>
               <AiFixButton onClick={() => handleAiFix('metaDescription', 'seo')} disabled={isAiBusy} />
             </div>
             <textarea
@@ -615,7 +774,10 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
           </label>
           <label className={styles.label}>
             <div className={styles.sectionHeader}>
-              <span className={styles.labelText}>Meta Keywords</span>
+              <span className={styles.labelText}>
+                Meta Keywords
+                <FieldInfoTooltip label="Meta Keywords" lines={workFieldHelp.metaKeywords} />
+              </span>
               <AiFixButton onClick={() => handleAiFix('metaKeywords', 'seo')} disabled={isAiBusy} />
             </div>
             <textarea

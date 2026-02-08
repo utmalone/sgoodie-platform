@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .frame { fill: none; stroke: rgba(0,0,0,0.12); stroke-width: 2; }
+      .photo { fill: rgba(0,0,0,0.08); stroke: rgba(0,0,0,0.12); stroke-width: 2; }
+      .title { font: 800 16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.75); letter-spacing: 0.35em; }
+      .para { font: 400 16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.62); }
+      .note { font: 400 14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.45); }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1200" height="700" />
+  <rect class="frame" x="36" y="36" width="1128" height="628" rx="18" />
+
+  <text class="title" x="620" y="150">ABOUT S.GOODIE</text>
+  <text class="note" x="620" y="178">Example of the bio section with photo + text</text>
+
+  <rect class="photo" x="120" y="160" width="380" height="440" rx="18" />
+  <text class="note" x="310" y="390" text-anchor="middle">Bio Photo</text>
+
+  <text class="para" x="620" y="250">I am an architecture and interiors photographer, with an education</text>
+  <text class="para" x="620" y="280">in fine-art photography. I bring this perspective to every shoot.</text>
+
+  <text class="para" x="620" y="340">I cover the Mid-Atlantic region and beyond, and I&apos;m available</text>
+  <text class="para" x="620" y="370">to travel for the right project.</text>
+
+  <text class="para" x="620" y="430">Quality over quantity is something I strive for. If you think we</text>
+  <text class="para" x="620" y="460">could be a good fit, I&apos;d love to hear from you.</text>
+</svg>
+

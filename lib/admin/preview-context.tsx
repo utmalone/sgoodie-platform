@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 
 type PreviewContextType = {
   isOpen: boolean;
@@ -13,20 +13,49 @@ type PreviewContextType = {
 
 const PreviewContext = createContext<PreviewContextType | null>(null);
 
+const PREVIEW_SESSION_KEY = 'sgoodie.admin.preview.session';
+
+function loadStoredPreviewState(): { isOpen: boolean; initialPath: string } | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(PREVIEW_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { isOpen?: unknown; initialPath?: unknown };
+    return {
+      isOpen: Boolean(parsed.isOpen),
+      initialPath: typeof parsed.initialPath === 'string' && parsed.initialPath ? parsed.initialPath : '/'
+    };
+  } catch {
+    return null;
+  }
+}
+
+function persistPreviewState(state: { isOpen: boolean; initialPath: string }) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(PREVIEW_SESSION_KEY, JSON.stringify(state));
+  } catch {
+    // Ignore storage access errors.
+  }
+}
+
 export function PreviewProvider({ children }: { children: ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [initialPath, setInitialPath] = useState('/');
+  const stored = loadStoredPreviewState();
+  const [isOpen, setIsOpen] = useState(stored?.isOpen ?? false);
+  const [initialPath, setInitialPath] = useState(stored?.initialPath ?? '/');
   const [refreshKey, setRefreshKey] = useState(0);
 
   const openPreview = useCallback((path: string = '/') => {
     setInitialPath(path);
     setRefreshKey((prev) => prev + 1);
     setIsOpen(true);
+    persistPreviewState({ isOpen: true, initialPath: path });
   }, []);
 
   const closePreview = useCallback(() => {
     setIsOpen(false);
-  }, []);
+    persistPreviewState({ isOpen: false, initialPath });
+  }, [initialPath]);
 
   const refreshPreview = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
@@ -36,6 +65,12 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
       // Ignore storage access errors.
     }
   }, []);
+
+  useEffect(() => {
+    // Keep session storage in sync if initialPath changes while open.
+    if (!isOpen) return;
+    persistPreviewState({ isOpen: true, initialPath });
+  }, [initialPath, isOpen]);
 
   return (
     <PreviewContext.Provider

@@ -1,5 +1,6 @@
 'use client';
 
+import { Info } from 'lucide-react';
 import type { PhotoGuideline } from '@/lib/admin/photo-guidelines';
 import styles from '@/styles/admin/PhotoGuidelines.module.css';
 
@@ -33,7 +34,7 @@ export function PhotoGuidelineTooltip({
       aria-label={`${label} photo guidelines`}
       className={triggerClassName}
     >
-      i
+      <Info className={styles.icon} aria-hidden="true" focusable="false" strokeWidth={1.75} />
       <span className={tooltipClassName}>
         <span className={styles.tooltipLabel}>{label}</span>
         {lines.map((line) => (

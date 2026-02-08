@@ -7,6 +7,10 @@ import { isMockMode, getAllItems, putItem, getItem } from './db';
 const PAGES_FILE = 'pages.json';
 const TABLE_NAME = 'pages';
 
+// Multiple page-like documents share the `pages` DynamoDB table. `getAllPages()` should only return
+// true PageContent entries (not home/about/contact layouts, profile, work index, etc.).
+const RESERVED_SLUGS = new Set(['home-page', 'about-page', 'contact-page', 'site-profile', 'work-index']);
+
 /**
  * Create a default empty page for a given slug
  */
@@ -20,7 +24,6 @@ function createDefaultPage(slug: string): PageContent {
     slug,
     title,
     intro: '',
-    body: '',
     gallery: [],
     metaTitle: '',
     metaDescription: '',
@@ -31,8 +34,13 @@ function createDefaultPage(slug: string): PageContent {
 async function loadAllPages(): Promise<PageContent[]> {
   if (isMockMode()) {
     const pages = await readJson<PageContent[]>(PAGES_FILE);
-    return pages.map((page) => ({
-      ...page,
+    return pages
+      .filter((page) => typeof page?.slug === 'string' && page.slug && !RESERVED_SLUGS.has(page.slug))
+      .map((page) => ({
+      slug: page.slug,
+      title: page.title ?? '',
+      intro: page.intro ?? '',
+      gallery: Array.isArray(page.gallery) ? page.gallery : [],
       metaTitle: page.metaTitle ?? '',
       metaDescription: page.metaDescription ?? '',
       metaKeywords: page.metaKeywords ?? ''
@@ -41,8 +49,13 @@ async function loadAllPages(): Promise<PageContent[]> {
 
   // DynamoDB mode - return empty array if no data
   const pages = await getAllItems<PageContent>(TABLE_NAME);
-  return pages.map((page) => ({
-    ...page,
+  return pages
+    .filter((page) => typeof page?.slug === 'string' && page.slug && !RESERVED_SLUGS.has(page.slug))
+    .map((page) => ({
+    slug: page.slug,
+    title: page.title ?? '',
+    intro: page.intro ?? '',
+    gallery: Array.isArray(page.gallery) ? page.gallery : [],
     metaTitle: page.metaTitle ?? '',
     metaDescription: page.metaDescription ?? '',
     metaKeywords: page.metaKeywords ?? ''

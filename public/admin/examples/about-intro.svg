@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .frame { fill: none; stroke: rgba(0,0,0,0.12); stroke-width: 2; }
+      .title { font: 700 20px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.72); letter-spacing: 0.12em; }
+      .para { font: 400 18px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.62); }
+      .paraBold { font: 600 18px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.76); }
+      .note { font: 400 14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.45); }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1200" height="700" />
+  <rect class="frame" x="36" y="36" width="1128" height="628" rx="18" />
+
+  <text class="title" x="600" y="110" text-anchor="middle">ABOUT INTRO</text>
+  <text class="note" x="600" y="140" text-anchor="middle">Example of the intro paragraph block (centered, with one emphasized paragraph)</text>
+
+  <text class="para" x="600" y="230" text-anchor="middle">A building is more than a structure... it&apos;s a place that becomes a home,</text>
+  <text class="para" x="600" y="260" text-anchor="middle">an inspiring workspace, or a peaceful retreat.</text>
+
+  <text class="paraBold" x="600" y="330" text-anchor="middle">THAT&apos;S WHERE I COME IN. I CAPTURE SPACES IN A WAY THAT BRINGS THE CREATIVE VISION TO LIFE.</text>
+
+  <text class="para" x="600" y="420" text-anchor="middle">I want to deliver images that have a natural aesthetic and convey the essence of a project.</text>
+  <text class="para" x="600" y="450" text-anchor="middle">Working collaboratively alongside my clients (and often a stylist), we bring out the best in every shot.</text>
+
+  <text class="para" x="600" y="540" text-anchor="middle">Above all, a successful photoshoot should be an enjoyable experience. Ideally one with snacks.</text>
+</svg>
+

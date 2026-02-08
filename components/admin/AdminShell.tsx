@@ -103,9 +103,58 @@ function MasterSaveButton() {
 }
 
 function useInactivityTimeout() {
-  const router = useRouter();
+  const { isDirty, status, saveAll } = useSave();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const warningRef = useRef<NodeJS.Timeout | null>(null);
+
+  const isDirtyRef = useRef(isDirty);
+  const statusRef = useRef(status);
+  const saveAllRef = useRef(saveAll);
+  const autoSavePromiseRef = useRef<Promise<void> | null>(null);
+  const isSigningOutRef = useRef(false);
+
+  useEffect(() => {
+    isDirtyRef.current = isDirty;
+    statusRef.current = status;
+    saveAllRef.current = saveAll;
+  }, [isDirty, status, saveAll]);
+
+  const attemptAutoSave = useCallback(async (
+    reason: 'warning' | 'timeout',
+    options?: { waitIfSaving?: boolean }
+  ) => {
+    if (isSigningOutRef.current) return;
+
+    const waitIfSaving = options?.waitIfSaving ?? false;
+
+    if (statusRef.current === 'saving') {
+      if (waitIfSaving) {
+        const started = Date.now();
+        while (statusRef.current === 'saving' && Date.now() - started < 20_000) {
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+      } else {
+        return;
+      }
+    }
+
+    if (statusRef.current === 'saving') return;
+    if (!isDirtyRef.current) return;
+
+    if (!autoSavePromiseRef.current) {
+      autoSavePromiseRef.current = (async () => {
+        try {
+          await saveAllRef.current();
+        } catch (err) {
+          console.error(`Auto-save failed (${reason}):`, err);
+        }
+      })().finally(() => {
+        autoSavePromiseRef.current = null;
+      });
+    }
+
+    await autoSavePromiseRef.current;
+  }, []);
 
   const resetTimeout = useCallback(() => {
     // Clear existing timeouts
@@ -114,16 +163,30 @@ function useInactivityTimeout() {
 
     // Set warning timeout
     warningRef.current = setTimeout(() => {
-      // Could show a warning modal here
       console.log('Session will expire in 2 minutes due to inactivity');
+      void attemptAutoSave('warning');
     }, INACTIVITY_TIMEOUT - WARNING_BEFORE_TIMEOUT);
 
     // Set logout timeout
     timeoutRef.current = setTimeout(() => {
-      console.log('Session expired due to inactivity');
-      signOut({ callbackUrl: '/admin/login?reason=timeout' });
+      void (async () => {
+        if (isSigningOutRef.current) return;
+        isSigningOutRef.current = true;
+
+        console.log('Session expired due to inactivity');
+
+        try {
+          // Best-effort save before signing out. Do not block forever.
+          await Promise.race([
+            attemptAutoSave('timeout', { waitIfSaving: true }),
+            new Promise<void>((resolve) => setTimeout(resolve, 20_000))
+          ]);
+        } finally {
+          signOut({ callbackUrl: '/admin/login?reason=timeout' });
+        }
+      })();
     }, INACTIVITY_TIMEOUT);
-  }, []);
+  }, [attemptAutoSave]);
 
   useEffect(() => {
     // Activity events to track
@@ -203,6 +266,41 @@ function AdminShellInner({ children }: { children: React.ReactNode }) {
                 <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5" />
               </svg>
               <span>Preview Site</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const path = getPreviewPath();
+                const sep = path.includes('?') ? '&' : '?';
+                window.open(`${path}${sep}preview=draft`, '_blank', 'noopener,noreferrer');
+              }}
+              className={styles.previewBtn}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M6.5 3H3.5A1.5 1.5 0 002 4.5v8A1.5 1.5 0 003.5 14h8A1.5 1.5 0 0013 12.5v-3"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M9 2h5v5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M14 2L7.5 8.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span>Preview Tab</span>
             </button>
 
             {/* Master Save Button */}

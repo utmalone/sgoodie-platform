@@ -63,7 +63,7 @@
 }
 
 .labelText {
-  @apply text-black/60;
+  @apply text-black/60 flex flex-wrap items-center gap-2;
 }
 
 .input {

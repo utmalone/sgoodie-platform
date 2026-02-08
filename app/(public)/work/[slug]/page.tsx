@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { EditorialGallery } from '@/components/portfolio/EditorialGallery';
 import { ProjectHero } from '@/components/portfolio/ProjectHero';
+import { ProjectPageDraftClient } from '@/components/preview/ProjectPageDraftClient';
 import { getAllProjects, getProjectBySlug, getPublishedProjects } from '@/lib/data/projects';
 import { getPhotosByIds } from '@/lib/data/photos';
 import { getWorkIndex } from '@/lib/data/work';
@@ -66,7 +67,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
       ? orderedProjects[currentIndex + 1]
       : null;
 
-  if (!heroPhoto) {
+  if (!heroPhoto && !isPreview) {
     notFound();
   }
 
@@ -82,33 +83,45 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
         </div>
       )}
       
-      <ProjectHero
-        title={project.title}
-        subtitle={project.subtitle}
-        intro={project.intro}
-        photo={heroPhoto}
-      />
-
-      {galleryPhotos.length > 0 && (
-        <EditorialGallery
-          photos={galleryPhotos}
-          rows={project.editorialRows}
-          captions={project.editorialCaptions}
+      {isPreview ? (
+        <ProjectPageDraftClient
+          fallbackProject={project}
+          initialPhotos={[...(heroPhoto ? [heroPhoto] : []), ...galleryPhotos]}
+          enabled
         />
-      )}
+      ) : (
+        <>
+          {heroPhoto && (
+            <ProjectHero
+              title={project.title}
+              subtitle={project.subtitle}
+              intro={project.intro}
+              photo={heroPhoto}
+            />
+          )}
 
-      {project.credits && project.credits.length > 0 && (
-        <section className={styles.credits}>
-          <p className={styles.eyebrow}>Credits</p>
-          <div className={styles.creditsGrid}>
-            {project.credits.map((credit) => (
-              <div key={`${credit.label}-${credit.value}`} className={styles.creditRow}>
-                <span className={styles.creditKey}>{credit.label}</span>
-                <span>{credit.value}</span>
+          {galleryPhotos.length > 0 && (
+            <EditorialGallery
+              photos={galleryPhotos}
+              rows={project.editorialRows}
+              captions={project.editorialCaptions}
+            />
+          )}
+
+          {project.credits && project.credits.length > 0 && (
+            <section className={styles.credits}>
+              <p className={styles.eyebrow}>Credits</p>
+              <div className={styles.creditsGrid}>
+                {project.credits.map((credit) => (
+                  <div key={`${credit.label}-${credit.value}`} className={styles.creditRow}>
+                    <span className={styles.creditKey}>{credit.label}</span>
+                    <span>{credit.value}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </section>
+            </section>
+          )}
+        </>
       )}
 
       <div className={styles.pager}>

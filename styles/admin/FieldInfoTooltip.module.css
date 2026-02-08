@@ -1,0 +1,202 @@
+.tooltipTrigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  border: none;
+  padding: 0;
+  color: rgba(0, 0, 0, 0.35);
+  background: transparent;
+  cursor: help;
+  transition: color 0.15s, box-shadow 0.15s;
+  flex-shrink: 0;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.tooltipTrigger:hover {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.tooltipTrigger:focus {
+  outline: none;
+}
+
+.tooltipTrigger:focus-visible {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+.icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  display: block;
+}
+
+.tooltip {
+  position: absolute;
+  top: 100%;
+  margin-top: 0;
+  width: min(18rem, 80vw);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: white;
+  padding: 0.5rem 0.75rem;
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(0, 0, 0, 0.7);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  z-index: 40;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.tooltipTrigger:hover .tooltip,
+.tooltipTrigger:focus .tooltip {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.alignLeft {
+  right: 0;
+}
+
+.alignCenter {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.alignRight {
+  left: 0;
+}
+
+.tooltipLabel {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.tooltipLine {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.exampleWrap {
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.exampleButton {
+  all: unset;
+  display: grid;
+  gap: 0.4rem;
+  cursor: zoom-in;
+}
+
+.exampleImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+}
+
+.exampleHint {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 2000;
+}
+
+.modal {
+  width: min(980px, 94vw);
+  max-height: 92vh;
+  overflow: auto;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+}
+
+.modalHeader {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.modalTitle {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: rgba(0, 0, 0, 0.55);
+  margin: 0;
+}
+
+.modalClose {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  color: rgba(0, 0, 0, 0.7);
+  border-radius: 9999px;
+  padding: 0.4rem 0.75rem;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.modalClose:hover {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.18);
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.modalClose:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35), 0 0 0 4px rgba(0, 0, 0, 0.35);
+}
+
+.modalBody {
+  padding: 1rem;
+}
+
+.modalImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.modalCaption {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.65);
+}

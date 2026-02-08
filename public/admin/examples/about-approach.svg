@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .frame { fill: none; stroke: rgba(0,0,0,0.12); stroke-width: 2; }
+      .title { font: 800 16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.75); letter-spacing: 0.35em; }
+      .card { fill: rgba(0,0,0,0.03); stroke: rgba(0,0,0,0.1); stroke-width: 2; }
+      .photo { fill: rgba(0,0,0,0.08); }
+      .cardTitle { font: 800 14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.7); letter-spacing: 0.18em; }
+      .cardText { font: 400 14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.6); }
+      .note { font: 400 14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.45); }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1200" height="700" />
+  <rect class="frame" x="36" y="36" width="1128" height="628" rx="18" />
+
+  <text class="title" x="120" y="130">APPROACH SECTION</text>
+  <text class="note" x="120" y="160">Example of the 3-card approach grid</text>
+
+  <rect class="card" x="120" y="220" width="300" height="380" rx="18" />
+  <rect class="photo" x="140" y="240" width="260" height="160" rx="14" />
+  <text class="cardTitle" x="140" y="450">CARD TITLE</text>
+  <text class="cardText" x="140" y="490">Short description line 1</text>
+  <text class="cardText" x="140" y="515">Short description line 2</text>
+
+  <rect class="card" x="450" y="220" width="300" height="380" rx="18" />
+  <rect class="photo" x="470" y="240" width="260" height="160" rx="14" />
+  <text class="cardTitle" x="470" y="450">CARD TITLE</text>
+  <text class="cardText" x="470" y="490">Short description line 1</text>
+  <text class="cardText" x="470" y="515">Short description line 2</text>
+
+  <rect class="card" x="780" y="220" width="300" height="380" rx="18" />
+  <rect class="photo" x="800" y="240" width="260" height="160" rx="14" />
+  <text class="cardTitle" x="800" y="450">CARD TITLE</text>
+  <text class="cardText" x="800" y="490">Short description line 1</text>
+  <text class="cardText" x="800" y="515">Short description line 2</text>
+</svg>
+

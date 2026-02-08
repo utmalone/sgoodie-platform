@@ -10,21 +10,37 @@ const HOME_SLUG = 'home-page';
 
 const defaultHomeLayout: HomeLayout = {
   heroPhotoId: '',
-  featurePhotoIds: []
+  featurePhotoIds: [],
+  introText: 'Creating photographs that not only document spaces, but celebrate the artistry, vision, and craft behind them.'
 };
+
+function normalizeHomeLayout(layout: Partial<HomeLayout> | null | undefined): HomeLayout {
+  return {
+    heroPhotoId:
+      typeof layout?.heroPhotoId === 'string' ? layout.heroPhotoId : defaultHomeLayout.heroPhotoId,
+    featurePhotoIds: Array.isArray(layout?.featurePhotoIds)
+      ? layout!.featurePhotoIds
+      : defaultHomeLayout.featurePhotoIds,
+    introText:
+      typeof layout?.introText === 'string' ? layout.introText : defaultHomeLayout.introText
+  };
+}
 
 async function loadHomeLayout(): Promise<HomeLayout> {
   if (isMockMode()) {
     try {
-      return await readJson<HomeLayout>(HOME_FILE);
+      const stored = await readJson<Partial<HomeLayout>>(HOME_FILE);
+      return normalizeHomeLayout(stored);
     } catch {
       return defaultHomeLayout;
     }
   }
 
   // DynamoDB mode - return default if not found
-  const layout = await getItem<HomeLayout & { slug: string }>(TABLE_NAME, { slug: HOME_SLUG });
-  return layout || defaultHomeLayout;
+  const item = await getItem<Partial<HomeLayout> & { slug: string }>(TABLE_NAME, { slug: HOME_SLUG });
+  if (!item) return defaultHomeLayout;
+  const { slug: _slug, ...rest } = item;
+  return normalizeHomeLayout(rest);
 }
 
 const getHomeLayoutCached = unstable_cache(
@@ -41,7 +57,7 @@ export async function getHomeLayout(): Promise<HomeLayout> {
 
 export async function updateHomeLayout(updates: Partial<HomeLayout>): Promise<HomeLayout> {
   const current = await loadHomeLayout();
-  const updated = { ...current, ...updates };
+  const updated = normalizeHomeLayout({ ...current, ...updates });
 
   if (isMockMode()) {
     await writeJson(HOME_FILE, updated);

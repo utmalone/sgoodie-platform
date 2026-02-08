@@ -25,9 +25,16 @@ type ComputedRow =
       caption?: EditorialRowCaption;
     };
 
+function isCaptionMeaningful(caption?: EditorialRowCaption) {
+  if (!caption) return false;
+  const title = (caption.title || '').trim();
+  const body = (caption.body || '').trim();
+  return Boolean(title || body);
+}
+
 /**
  * Build rows from a flat photo array using alternating double-single pattern.
- * Pattern: double → single → double → single → ...
+ * Pattern: double -> single -> double -> single -> ...
  * Captions appear on every other double row (first double, third double, fifth double, etc.)
  */
 function buildRowsFromPhotos(
@@ -47,7 +54,9 @@ function buildRowsFromPhotos(
       // Alternate which side is offset down
       const offsetSide: 'left' | 'right' = doubleRowCount % 2 === 0 ? 'left' : 'right';
       // Caption on every other double row (0, 2, 4, ...)
-      const caption = doubleRowCount % 2 === 0 ? captions?.[Math.floor(doubleRowCount / 2)] : undefined;
+      const rawCaption =
+        doubleRowCount % 2 === 0 ? captions?.[Math.floor(doubleRowCount / 2)] : undefined;
+      const caption = isCaptionMeaningful(rawCaption) ? rawCaption : undefined;
 
       result.push({
         type: 'double',
@@ -66,10 +75,8 @@ function buildRowsFromPhotos(
         photoIndex += 1;
       }
     } else if (remainingPhotos === 1) {
-      const lastRow = result[result.length - 1];
-      if (!lastRow || lastRow.type === 'double') {
-        result.push({ type: 'single', photo: photos[photoIndex] });
-      }
+      // Always render the final photo (don't drop it).
+      result.push({ type: 'single', photo: photos[photoIndex] });
       photoIndex += 1;
     } else {
       break;
@@ -87,7 +94,6 @@ function buildRowsFromConfig(
   photosById: Map<string, PhotoAsset>
 ): ComputedRow[] {
   const result: ComputedRow[] = [];
-  let doubleRowCount = 0;
 
   for (const row of rows) {
     if (row.type === 'single') {
@@ -105,9 +111,8 @@ function buildRowsFromConfig(
           left,
           right,
           offsetSide,
-          caption: row.caption
+          caption: isCaptionMeaningful(row.caption) ? row.caption : undefined
         });
-        doubleRowCount += 1;
       }
     }
   }
@@ -148,7 +153,8 @@ export function EditorialGallery({ photos, rows, captions }: EditorialGalleryPro
     return list;
   }, [computedRows]);
 
-  const getPhotoIndex = (photo: PhotoAsset) => allPhotosFlat.findIndex((p) => p.id === photo.id);
+  const getPhotoIndex = (photo: PhotoAsset) =>
+    allPhotosFlat.findIndex((p) => p.id === photo.id);
 
   const handlePrev = () => {
     setActiveIndex((current) => {
@@ -193,7 +199,7 @@ export function EditorialGallery({ photos, rows, captions }: EditorialGalleryPro
             );
           }
 
-          const hasCaption = Boolean(row.caption);
+          const hasCaption = isCaptionMeaningful(row.caption);
           const leftIsOffset = row.offsetSide === 'left';
 
           // Row class for caption vs no-caption styling

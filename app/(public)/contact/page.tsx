@@ -3,25 +3,48 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ContactForm } from '@/components/portfolio/ContactForm';
 import { InstagramFeed } from '@/components/portfolio/InstagramFeed';
+import { ContactPageDraftClient } from '@/components/preview/ContactPageDraftClient';
 import { getContactContent } from '@/lib/data/contact';
+import { getPageBySlug } from '@/lib/data/pages';
 import { getPhotoById } from '@/lib/data/photos';
 import { getProfile } from '@/lib/data/profile';
 import styles from '@/styles/public/ContactPage.module.css';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const content = await getContactContent();
+  const [content, page] = await Promise.all([
+    getContactContent(),
+    getPageBySlug('contact')
+  ]);
   return {
-    title: `${content.heroTitle} | S.Goodie Photography`,
-    description: content.introParagraph
+    title: page.metaTitle || `${content.heroTitle} | S.Goodie Photography`,
+    description: page.metaDescription || content.introParagraph,
+    keywords: page.metaKeywords || undefined
   };
 }
 
-export default async function ContactPage() {
+type ContactPageProps = {
+  searchParams: Promise<{ preview?: string }>;
+};
+
+export default async function ContactPage({ searchParams }: ContactPageProps) {
+  const { preview } = await searchParams;
+  const isPreview = preview === 'draft';
+
   const content = await getContactContent();
   const profile = await getProfile();
   const heroPhoto = await getPhotoById(content.heroPhotoId);
-  const email = profile.email || content.email;
-  const phone = profile.phone || content.phone;
+  const email = content.email || profile.email;
+  const phone = content.phone || profile.phone;
+
+  if (isPreview) {
+    return (
+      <ContactPageDraftClient
+        fallbackContent={content}
+        profile={profile}
+        heroPhoto={heroPhoto}
+      />
+    );
+  }
 
   return (
     <div className={styles.wrapper}>

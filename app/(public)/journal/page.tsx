@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { JournalGrid } from '@/components/portfolio/JournalGrid';
+import { DraftPageText } from '@/components/preview/DraftPageText';
 import { getAllJournalPosts } from '@/lib/data/journal';
 import { getPageBySlug } from '@/lib/data/pages';
 import { getPhotosByIds, getPhotoById } from '@/lib/data/photos';
@@ -19,12 +20,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 type JournalPageProps = {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; preview?: string }>;
 };
 
 export default async function JournalPage({ searchParams }: JournalPageProps) {
   const params = await searchParams;
   const currentPage = Math.max(1, parseInt(params.page || '1', 10));
+  const isPreview = params.preview === 'draft';
   
   const page = await getPageBySlug('journal');
   const allPosts = (await getAllJournalPosts()).sort(
@@ -49,6 +51,12 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
   const heroPhotos = await getPhotosByIds(heroPhotoIds);
   const photosById = new Map(heroPhotos.map((photo) => [photo.id, photo]));
 
+  const buildHref = (pageNumber: number) => {
+    const base = pageNumber <= 1 ? '/journal' : `/journal?page=${pageNumber}`;
+    if (!isPreview) return base;
+    return `${base}${base.includes('?') ? '&' : '?'}preview=draft`;
+  };
+
   return (
     <div className={styles.wrapper}>
       {/* Hero Section */}
@@ -65,8 +73,20 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
             />
             <div className={styles.heroOverlay} />
             <div className={styles.heroContent}>
-              <h1 className={styles.heroTitle}>Journal</h1>
-              <p className={styles.heroSubtitle}>{page.title}</p>
+              <h1 className={styles.heroTitle}>
+                {isPreview ? (
+                  <DraftPageText slug="journal" field="title" fallback={page.title} enabled />
+                ) : (
+                  page.title
+                )}
+              </h1>
+              <p className={styles.heroSubtitle}>
+                {isPreview ? (
+                  <DraftPageText slug="journal" field="intro" fallback={page.intro} enabled />
+                ) : (
+                  page.intro
+                )}
+              </p>
             </div>
           </div>
         </section>
@@ -74,14 +94,14 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
 
       {/* Journal Posts Grid */}
       <section className={styles.gridSection}>
-        <JournalGrid posts={posts} photosById={photosById} />
+        <JournalGrid posts={posts} photosById={photosById} isPreview={isPreview} />
 
         {/* Pagination */}
         {(hasNewerPosts || hasOlderPosts) && (
           <nav className={styles.pagination}>
             {hasNewerPosts && (
               <Link
-                href={currentPage === 2 ? '/journal' : `/journal?page=${currentPage - 1}`}
+                href={buildHref(currentPage - 1)}
                 className={styles.paginationLink}
               >
                 <span className={styles.paginationArrow}>‹</span>
@@ -90,7 +110,7 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
             )}
             {hasOlderPosts && (
               <Link
-                href={`/journal?page=${currentPage + 1}`}
+                href={buildHref(currentPage + 1)}
                 className={`${styles.paginationLink} ${styles.paginationLinkRight}`}
               >
                 Older Posts

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import layoutStyles from '@/styles/public/layout.module.css';
 import styles from '@/styles/public/SiteHeader.module.css';
@@ -86,6 +86,13 @@ export function SiteHeader({ socialLinks }: SiteHeaderProps) {
   const [mobilePortfolioOpen, setMobilePortfolioOpen] = useState(false);
   const portfolioRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isDraftPreview = searchParams.get('preview') === 'draft';
+
+  const buildHref = useMemo(() => {
+    if (!isDraftPreview) return (href: string) => href;
+    return (href: string) => `${href}${href.includes('?') ? '&' : '?'}preview=draft`;
+  }, [isDraftPreview]);
 
   const isHeroPage = useMemo(() => {
     if (pathname === '/') return true;
@@ -127,7 +134,7 @@ export function SiteHeader({ socialLinks }: SiteHeaderProps) {
         Skip to Content
       </a>
       <div className={`${layoutStyles.container} ${styles.inner}`}>
-        <Link href="/" className={styles.logo}>
+        <Link href={buildHref('/')} className={styles.logo}>
           S.Goodie
         </Link>
         <nav className={styles.nav}>
@@ -162,7 +169,7 @@ export function SiteHeader({ socialLinks }: SiteHeaderProps) {
                 {portfolioItems.map((item) => (
                   <Link
                     key={item.href}
-                    href={item.href}
+                    href={buildHref(item.href)}
                     className={styles.dropdownLink}
                     onClick={() => setPortfolioOpen(false)}
                   >
@@ -174,7 +181,7 @@ export function SiteHeader({ socialLinks }: SiteHeaderProps) {
           </div>
 
           {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} className={`${styles.navLink} ${linkClass}`}>
+            <Link key={link.href} href={buildHref(link.href)} className={`${styles.navLink} ${linkClass}`}>
               {link.label}
             </Link>
           ))}
@@ -257,7 +264,7 @@ export function SiteHeader({ socialLinks }: SiteHeaderProps) {
                   {portfolioItems.map((item) => (
                     <Link
                       key={item.href}
-                      href={item.href}
+                      href={buildHref(item.href)}
                       className={styles.mobileSubLink}
                       onClick={() => setMenuOpen(false)}
                     >
@@ -271,7 +278,7 @@ export function SiteHeader({ socialLinks }: SiteHeaderProps) {
             {navLinks.map((link) => (
               <Link
                 key={link.href}
-                href={link.href}
+                href={buildHref(link.href)}
                 className={styles.mobileLink}
                 onClick={() => setMenuOpen(false)}
               >

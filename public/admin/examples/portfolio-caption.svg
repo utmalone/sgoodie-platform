@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .frame { fill: none; stroke: rgba(0,0,0,0.12); stroke-width: 2; }
+      .photo { fill: rgba(0,0,0,0.08); stroke: rgba(0,0,0,0.12); stroke-width: 2; }
+      .title { font: 800 16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.75); letter-spacing: 0.35em; }
+      .capTitle { font: 900 14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: #000; letter-spacing: 0.3em; }
+      .capBody { font: 400 16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.7); }
+      .note { font: 400 14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.45); }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1200" height="700" />
+  <rect class="frame" x="36" y="36" width="1128" height="628" rx="18" />
+
+  <text class="title" x="120" y="140">EDITORIAL CAPTION</text>
+  <text class="note" x="120" y="170">Example of a caption attached to a double-photo row</text>
+
+  <rect class="photo" x="120" y="220" width="440" height="330" rx="18" />
+  <rect class="photo" x="640" y="220" width="440" height="330" rx="18" />
+  <text class="note" x="340" y="400" text-anchor="middle">Photo</text>
+  <text class="note" x="860" y="400" text-anchor="middle">Photo</text>
+
+  <text class="capTitle" x="120" y="610">INFINITY VIEWS</text>
+  <text class="capBody" x="120" y="645">The signature infinity pool creates a seamless visual connection between the grounds and the ocean beyond.</text>
+</svg>
+

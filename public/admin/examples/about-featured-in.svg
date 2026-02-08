@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .frame { fill: none; stroke: rgba(0,0,0,0.12); stroke-width: 2; }
+      .title { font: 700 20px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.72); letter-spacing: 0.28em; }
+      .item { font: 600 14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.65); letter-spacing: 0.18em; }
+      .note { font: 400 14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.45); }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1200" height="700" />
+  <rect class="frame" x="36" y="36" width="1128" height="628" rx="18" />
+
+  <text class="title" x="600" y="120" text-anchor="middle">FEATURED IN</text>
+  <text class="note" x="600" y="150" text-anchor="middle">Example of the two-column publication list</text>
+
+  <!-- Left column -->
+  <text class="item" x="240" y="250">ARCHITECTURAL DIGEST</text>
+  <text class="item" x="240" y="295">AMERICAN FARMHOUSE STYLE</text>
+  <text class="item" x="240" y="340">THE COTTAGE JOURNAL</text>
+  <text class="item" x="240" y="385">THE NEW YORK TIMES</text>
+  <text class="item" x="240" y="430">ANNAPOLIS HOME MAGAZINE</text>
+
+  <!-- Right column -->
+  <text class="item" x="700" y="250">HOUSE BEAUTIFUL</text>
+  <text class="item" x="700" y="295">THE WALL STREET JOURNAL</text>
+  <text class="item" x="700" y="340">COTTAGES AND BUNGALOWS</text>
+  <text class="item" x="700" y="385">GOOD HOUSEKEEPING</text>
+  <text class="item" x="700" y="430">WASHINGTONIAN MAGAZINE</text>
+</svg>
+

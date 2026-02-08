@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+  <defs>
+    <style>
+      .bg { fill: #ffffff; }
+      .frame { fill: none; stroke: rgba(0,0,0,0.12); stroke-width: 2; }
+      .title { font: 800 16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.75); letter-spacing: 0.35em; }
+      .rule { stroke: rgba(0,0,0,0.25); stroke-width: 2; }
+      .label { font: 600 16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.65); }
+      .value { font: 400 16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.62); }
+      .note { font: 400 14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: rgba(0,0,0,0.45); }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1200" height="700" />
+  <rect class="frame" x="36" y="36" width="1128" height="628" rx="18" />
+
+  <text class="title" x="120" y="150">CREDITS</text>
+  <line class="rule" x1="120" y1="180" x2="200" y2="180" />
+  <text class="note" x="120" y="210">Example of the credits block shown on a journal post</text>
+
+  <text class="label" x="120" y="290">Interior Designer:</text>
+  <text class="value" x="320" y="290">Jodi Macklin Interior Design</text>
+
+  <text class="label" x="120" y="340">Interiors Photographer:</text>
+  <text class="value" x="360" y="340">S.Goodie Photography</text>
+
+  <text class="label" x="120" y="390">Season:</text>
+  <text class="value" x="230" y="390">Summer 2025</text>
+</svg>
+

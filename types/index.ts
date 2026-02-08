@@ -23,9 +23,6 @@ export type PageContent = {
   slug: string; // Can be PageSlug or portfolio category slugs (e.g., 'portfolio-hotels')
   title: string;
   intro: string;
-  body: string;
-  ctaLabel?: string;
-  ctaUrl?: string;
   gallery: string[];
   metaTitle?: string;
   metaDescription?: string;
@@ -102,6 +99,7 @@ export type Project = {
 export type HomeLayout = {
   heroPhotoId: string;
   featurePhotoIds: string[];
+  introText: string;
 };
 
 export type WorkIndex = {

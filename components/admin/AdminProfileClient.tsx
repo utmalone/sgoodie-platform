@@ -6,7 +6,91 @@ import Image from 'next/image';
 import type { SiteProfile, PhotoAsset } from '@/types';
 import { useSave } from '@/lib/admin/save-context';
 import { usePreview } from '@/lib/admin/preview-context';
+import { FieldInfoTooltip } from './FieldInfoTooltip';
 import styles from '@/styles/admin/AdminProfile.module.css';
+
+const profileFieldHelp = {
+  name: [
+    'Name shown on the website.',
+    'Example: S.Goodie Studio.'
+  ],
+  title: [
+    'Your role or tagline shown under your name.',
+    'Example: Creative Direction + Photography.'
+  ],
+  photo: [
+    'Headshot or brand image used on About and Contact.'
+  ],
+  email: [
+    'Public contact email address.',
+    'Example: hello@sgoodie.com.'
+  ],
+  phone: [
+    'Public contact phone number.',
+    'Example: (202) 555-0123.'
+  ],
+  street: [
+    'Optional street address for footer and contact.',
+    'Example: 123 Main St.'
+  ],
+  city: [
+    'City shown with your address.',
+    'Example: Washington.'
+  ],
+  state: [
+    'State or region abbreviation.',
+    'Example: DC.'
+  ],
+  regions: [
+    'Areas you serve, separated by commas.',
+    'Example: DC, MD, VA.'
+  ],
+  availability: [
+    'Short availability message.',
+    'Example: Booking Spring 2026.'
+  ],
+  instagramHandle: [
+    'Your handle, usually starts with @.',
+    'Example: @sgoodiestudio.'
+  ],
+  instagramUrl: [
+    'Full link to your Instagram profile.',
+    'Example: https://instagram.com/sgoodiestudio.'
+  ],
+  linkedinName: [
+    'Display name for the LinkedIn link.',
+    'Example: S.Goodie Studio.'
+  ],
+  linkedinUrl: [
+    'Full LinkedIn profile or company URL.',
+    'Example: https://linkedin.com/company/sgoodie.'
+  ],
+  twitterHandle: [
+    'Optional handle.',
+    'Example: @sgoodie.'
+  ],
+  twitterUrl: [
+    'Optional profile URL.',
+    'Example: https://x.com/sgoodie.'
+  ],
+  facebookName: [
+    'Display name for your Facebook page.',
+    'Example: S.Goodie Studio.'
+  ],
+  facebookUrl: [
+    'Full Facebook page URL.',
+    'Example: https://facebook.com/sgoodiestudio.'
+  ],
+  currentPassword: [
+    'Your existing admin password.'
+  ],
+  newPassword: [
+    'Choose a new password (8+ characters).'
+  ],
+  confirmPassword: [
+    'Re-enter the new password to confirm.'
+  ]
+};
 
 export function AdminProfileClient() {
   const router = useRouter();
@@ -16,7 +100,6 @@ export function AdminProfileClient() {
   const [savedProfile, setSavedProfile] = useState<SiteProfile | null>(null);
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [status, setStatus] = useState('');
   const [emailError, setEmailError] = useState('');
   
   // Password change state
@@ -31,13 +114,13 @@ export function AdminProfileClient() {
     return JSON.stringify(profile) !== JSON.stringify(savedProfile);
   }, [profile, savedProfile]);
 
-  const isEmailValid = useMemo(() => {
-    if (!profile?.email) return true;
-    return profile.email.includes('@');
-  }, [profile?.email]);
-
   const saveProfile = useCallback(async (): Promise<boolean> => {
     if (!profile) return false;
+
+    if (profile.email && !profile.email.includes('@')) {
+      setEmailError('Email must include an "@" symbol.');
+      return false;
+    }
     
     try {
       const response = await fetch('/api/admin/profile', {
@@ -100,25 +183,6 @@ export function AdminProfileClient() {
 
     load();
   }, [router]);
-
-  async function handleSave() {
-    if (!profile) return;
-    
-    if (!isEmailValid) {
-      setEmailError('Please enter a valid email address.');
-      setStatus('Please fix the email address before saving.');
-      return;
-    }
-
-    setStatus('Saving...');
-    const success = await saveProfile();
-    
-    if (success) {
-      setStatus('Profile saved successfully!');
-    } else {
-      setStatus('Failed to save profile.');
-    }
-  }
 
   async function handlePasswordChange() {
     if (newPassword !== confirmPassword) {
@@ -205,17 +269,7 @@ export function AdminProfileClient() {
           <h1>Profile</h1>
           <p>Manage your profile, contact info, and footer content.</p>
         </div>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={!isDirty}
-          className={styles.saveButton}
-        >
-          Save Changes
-        </button>
       </div>
-
-      {status && <p className={styles.statusMessage}>{status}</p>}
 
       {/* Basic Info */}
       <section className={styles.section}>
@@ -226,7 +280,10 @@ export function AdminProfileClient() {
 
         <div className={`${styles.formGrid} ${styles.formGrid2}`}>
           <label className={styles.formLabel}>
-            <span className={styles.labelText}>Name</span>
+            <span className={styles.labelText}>
+              Name
+              <FieldInfoTooltip label="Name" lines={profileFieldHelp.name} />
+            </span>
             <input
               type="text"
               value={profile.name}
@@ -235,7 +292,10 @@ export function AdminProfileClient() {
             />
           </label>
           <label className={styles.formLabel}>
-            <span className={styles.labelText}>Title</span>
+            <span className={styles.labelText}>
+              Title
+              <FieldInfoTooltip label="Title" lines={profileFieldHelp.title} />
+            </span>
             <input
               type="text"
               value={profile.title}
@@ -247,7 +307,10 @@ export function AdminProfileClient() {
 
         {/* Profile Photo */}
         <div>
-          <span className={styles.labelText}>Profile Photo</span>
+          <span className={styles.labelText}>
+            Profile Photo
+            <FieldInfoTooltip label="Profile Photo" lines={profileFieldHelp.photo} />
+          </span>
           <div className={styles.photoSection}>
             {selectedPhoto ? (
               <div className={styles.photoPreview}>
@@ -288,7 +351,10 @@ export function AdminProfileClient() {
 
         <div className={`${styles.formGrid} ${styles.formGrid2}`}>
           <label className={styles.formLabel}>
-            <span className={styles.labelText}>Email</span>
+            <span className={styles.labelText}>
+              Email
+              <FieldInfoTooltip label="Email" lines={profileFieldHelp.email} />
+            </span>
             <input
               type="email"
               value={profile.email}
@@ -306,7 +372,10 @@ export function AdminProfileClient() {
             {emailError && <p className={styles.statusMessage}>{emailError}</p>}
           </label>
           <label className={styles.formLabel}>
-            <span className={styles.labelText}>Phone</span>
+            <span className={styles.labelText}>
+              Phone
+              <FieldInfoTooltip label="Phone" lines={profileFieldHelp.phone} />
+            </span>
             <input
               type="tel"
               value={profile.phone}
@@ -318,7 +387,10 @@ export function AdminProfileClient() {
 
         <div className={`${styles.formGrid} ${styles.formGrid4}`}>
           <label className={`${styles.formLabel} ${styles.formGridSpan2}`}>
-            <span className={styles.labelText}>Street Address</span>
+            <span className={styles.labelText}>
+              Street Address
+              <FieldInfoTooltip label="Street Address" lines={profileFieldHelp.street} />
+            </span>
             <input
               type="text"
               value={profile.address.street}
@@ -328,7 +400,10 @@ export function AdminProfileClient() {
             />
           </label>
           <label className={styles.formLabel}>
-            <span className={styles.labelText}>City</span>
+            <span className={styles.labelText}>
+              City
+              <FieldInfoTooltip label="City" lines={profileFieldHelp.city} />
+            </span>
             <input
               type="text"
               value={profile.address.city}
@@ -337,7 +412,10 @@ export function AdminProfileClient() {
             />
           </label>
           <label className={styles.formLabel}>
-            <span className={styles.labelText}>State</span>
+            <span className={styles.labelText}>
+              State
+              <FieldInfoTooltip label="State" lines={profileFieldHelp.state} />
+            </span>
             <input
               type="text"
               value={profile.address.state}
@@ -357,7 +435,10 @@ export function AdminProfileClient() {
 
         <div className={`${styles.formGrid} ${styles.formGrid2}`}>
           <label className={styles.formLabel}>
-            <span className={styles.labelText}>Regions (comma-separated)</span>
+            <span className={styles.labelText}>
+              Regions (comma-separated)
+              <FieldInfoTooltip label="Regions" lines={profileFieldHelp.regions} />
+            </span>
             <input
               type="text"
               value={profile.availability.regions.join(', ')}
@@ -367,7 +448,10 @@ export function AdminProfileClient() {
             />
           </label>
           <label className={styles.formLabel}>
-            <span className={styles.labelText}>Availability Note</span>
+            <span className={styles.labelText}>
+              Availability Note
+              <FieldInfoTooltip label="Availability Note" lines={profileFieldHelp.availability} />
+            </span>
             <input
               type="text"
               value={profile.availability.note}
@@ -390,7 +474,10 @@ export function AdminProfileClient() {
           <div className={styles.socialItem}>
             <div className={`${styles.formGrid} ${styles.formGrid2}`}>
               <label className={styles.formLabel}>
-                <span className={styles.labelText}>Instagram Handle</span>
+                <span className={styles.labelText}>
+                  Instagram Handle
+                  <FieldInfoTooltip label="Instagram Handle" lines={profileFieldHelp.instagramHandle} />
+                </span>
                 <input
                   type="text"
                   value={profile.social.instagram.handle || ''}
@@ -400,7 +487,10 @@ export function AdminProfileClient() {
                 />
               </label>
               <label className={styles.formLabel}>
-                <span className={styles.labelText}>Instagram URL</span>
+                <span className={styles.labelText}>
+                  Instagram URL
+                  <FieldInfoTooltip label="Instagram URL" lines={profileFieldHelp.instagramUrl} />
+                </span>
                 <input
                   type="url"
                   value={profile.social.instagram.url}
@@ -416,7 +506,10 @@ export function AdminProfileClient() {
           <div className={styles.socialItem}>
             <div className={`${styles.formGrid} ${styles.formGrid2}`}>
               <label className={styles.formLabel}>
-                <span className={styles.labelText}>LinkedIn Name</span>
+                <span className={styles.labelText}>
+                  LinkedIn Name
+                  <FieldInfoTooltip label="LinkedIn Name" lines={profileFieldHelp.linkedinName} />
+                </span>
                 <input
                   type="text"
                   value={profile.social.linkedin.name || ''}
@@ -426,7 +519,10 @@ export function AdminProfileClient() {
                 />
               </label>
               <label className={styles.formLabel}>
-                <span className={styles.labelText}>LinkedIn URL</span>
+                <span className={styles.labelText}>
+                  LinkedIn URL
+                  <FieldInfoTooltip label="LinkedIn URL" lines={profileFieldHelp.linkedinUrl} />
+                </span>
                 <input
                   type="url"
                   value={profile.social.linkedin.url}
@@ -442,7 +538,10 @@ export function AdminProfileClient() {
           <div className={styles.socialItem}>
             <div className={`${styles.formGrid} ${styles.formGrid2}`}>
               <label className={styles.formLabel}>
-                <span className={styles.labelText}>Twitter/X Handle</span>
+                <span className={styles.labelText}>
+                  Twitter/X Handle
+                  <FieldInfoTooltip label="Twitter/X Handle" lines={profileFieldHelp.twitterHandle} />
+                </span>
                 <input
                   type="text"
                   value={profile.social.twitter.handle || ''}
@@ -452,7 +551,10 @@ export function AdminProfileClient() {
                 />
               </label>
               <label className={styles.formLabel}>
-                <span className={styles.labelText}>Twitter/X URL</span>
+                <span className={styles.labelText}>
+                  Twitter/X URL
+                  <FieldInfoTooltip label="Twitter/X URL" lines={profileFieldHelp.twitterUrl} />
+                </span>
                 <input
                   type="url"
                   value={profile.social.twitter.url}
@@ -468,7 +570,10 @@ export function AdminProfileClient() {
           <div className={styles.socialItem}>
             <div className={`${styles.formGrid} ${styles.formGrid2}`}>
               <label className={styles.formLabel}>
-                <span className={styles.labelText}>Facebook Name</span>
+                <span className={styles.labelText}>
+                  Facebook Name
+                  <FieldInfoTooltip label="Facebook Name" lines={profileFieldHelp.facebookName} />
+                </span>
                 <input
                   type="text"
                   value={profile.social.facebook.name || ''}
@@ -478,7 +583,10 @@ export function AdminProfileClient() {
                 />
               </label>
               <label className={styles.formLabel}>
-                <span className={styles.labelText}>Facebook URL</span>
+                <span className={styles.labelText}>
+                  Facebook URL
+                  <FieldInfoTooltip label="Facebook URL" lines={profileFieldHelp.facebookUrl} />
+                </span>
                 <input
                   type="url"
                   value={profile.social.facebook.url}
@@ -501,7 +609,10 @@ export function AdminProfileClient() {
 
         <div className={`${styles.formGrid} ${styles.formGrid3}`}>
           <label className={styles.formLabel}>
-            <span className={styles.labelText}>Current Password</span>
+            <span className={styles.labelText}>
+              Current Password
+              <FieldInfoTooltip label="Current Password" lines={profileFieldHelp.currentPassword} />
+            </span>
             <input
               type="password"
               value={currentPassword}
@@ -510,7 +621,10 @@ export function AdminProfileClient() {
             />
           </label>
           <label className={styles.formLabel}>
-            <span className={styles.labelText}>New Password</span>
+            <span className={styles.labelText}>
+              New Password
+              <FieldInfoTooltip label="New Password" lines={profileFieldHelp.newPassword} />
+            </span>
             <input
               type="password"
               value={newPassword}
@@ -519,7 +633,10 @@ export function AdminProfileClient() {
             />
           </label>
           <label className={styles.formLabel}>
-            <span className={styles.labelText}>Confirm New Password</span>
+            <span className={styles.labelText}>
+              Confirm New Password
+              <FieldInfoTooltip label="Confirm New Password" lines={profileFieldHelp.confirmPassword} />
+            </span>
             <input
               type="password"
               value={confirmPassword}

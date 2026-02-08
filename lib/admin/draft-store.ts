@@ -6,6 +6,29 @@ type DraftPayload = {
 };
 
 const DRAFT_KEY = 'sgoodie.admin.draft';
+const HOME_LAYOUT_DRAFT_KEY = 'sgoodie.admin.draft.homeLayout';
+const ABOUT_DRAFT_KEY = 'sgoodie.admin.draft.about';
+const CONTACT_DRAFT_KEY = 'sgoodie.admin.draft.contact';
+
+function normalizeDraftPage(raw: unknown): PageContent | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const page = raw as Partial<PageContent> & Record<string, unknown>;
+  if (typeof page.slug !== 'string' || page.slug.trim() === '') return null;
+
+  const gallery = Array.isArray(page.gallery)
+    ? page.gallery.filter((id): id is string => typeof id === 'string' && id.trim() !== '')
+    : [];
+
+  return {
+    slug: page.slug,
+    title: typeof page.title === 'string' ? page.title : '',
+    intro: typeof page.intro === 'string' ? page.intro : '',
+    gallery,
+    metaTitle: typeof page.metaTitle === 'string' ? page.metaTitle : '',
+    metaDescription: typeof page.metaDescription === 'string' ? page.metaDescription : '',
+    metaKeywords: typeof page.metaKeywords === 'string' ? page.metaKeywords : ''
+  };
+}
 
 export function loadDraftPages(): PageContent[] | null {
   if (typeof window === 'undefined') return null;
@@ -13,7 +36,11 @@ export function loadDraftPages(): PageContent[] | null {
   if (!raw) return null;
   try {
     const data = JSON.parse(raw) as DraftPayload;
-    return Array.isArray(data.pages) ? data.pages : null;
+    if (!Array.isArray(data.pages)) return null;
+    const pages = data.pages
+      .map((page) => normalizeDraftPage(page))
+      .filter(Boolean) as PageContent[];
+    return pages.length > 0 ? pages : null;
   } catch {
     return null;
   }
@@ -28,4 +55,7 @@ export function saveDraftPages(pages: PageContent[]) {
 export function clearDraftPages() {
   if (typeof window === 'undefined') return;
   window.localStorage.removeItem(DRAFT_KEY);
+  window.localStorage.removeItem(HOME_LAYOUT_DRAFT_KEY);
+  window.localStorage.removeItem(ABOUT_DRAFT_KEY);
+  window.localStorage.removeItem(CONTACT_DRAFT_KEY);
 }

@@ -256,11 +256,6 @@ export function AdminPreviewClient() {
                   <p className="text-[12px] uppercase tracking-[0.35em] text-white/80">
                     {currentPage?.intro}
                   </p>
-                  {currentPage?.body && (
-                    <p className="mx-auto max-w-2xl text-sm text-white/80">
-                      {currentPage.body}
-                    </p>
-                  )}
                 </div>
               </FullBleedHero>
             )}
@@ -281,8 +276,7 @@ export function AdminPreviewClient() {
                     </svg>
                   </div>
                   <p className="text-[11px] uppercase tracking-[0.4em] text-ink/60">
-                    Creating photographs that not only document spaces, but celebrate the
-                    artistry, vision, and craft behind them.
+                    {homeLayout.introText}
                   </p>
                 </div>
                 <HomeGalleryGrid
@@ -367,7 +361,6 @@ export function AdminPreviewClient() {
                 <p className="eyebrow">About</p>
                 <h1 className="text-4xl font-semibold md:text-5xl">{currentPage?.title}</h1>
                 <p className="text-base text-ink/70">{currentPage?.intro}</p>
-                {currentPage?.body && <p className="text-base text-ink/60">{currentPage.body}</p>}
               </div>
               {getGallery('about')[0] && (
                 <FullBleedHero photo={getGallery('about')[0]} minHeight="screen" overlay="light" />
@@ -473,7 +466,6 @@ export function AdminPreviewClient() {
                 <p className="eyebrow">Contact</p>
                 <h1 className="text-4xl font-semibold md:text-5xl">{currentPage?.title}</h1>
                 <p className="text-base text-ink/70">{currentPage?.intro}</p>
-                {currentPage?.body && <p className="text-base text-ink/60">{currentPage.body}</p>}
                 <div className="space-y-2 text-sm text-ink/70">
                   <p>{profile?.name || 'S.Goodie Photography'}</p>
                   <p>{previewEmail}</p>

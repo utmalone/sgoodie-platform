@@ -5,8 +5,12 @@ import { useRouter } from 'next/navigation';
 import type { JournalPost, PhotoAsset } from '@/types';
 import { AdminPhotoSelector } from './AdminPhotoSelector';
 import { AdminCreditsEditor } from './AdminCreditsEditor';
+import { AiFixButton } from './AiFixButton';
 import { PhotoGuidelineTooltip } from './PhotoGuidelines';
+import { FieldInfoTooltip } from './FieldInfoTooltip';
 import { getApiErrorMessage } from '@/lib/admin/api-error';
+import { loadAiModel } from '@/lib/admin/ai-model';
+import { loadDraftJournalPost, saveDraftJournalPost, clearDraftJournalPost } from '@/lib/admin/draft-journal-post-store';
 import { usePreview } from '@/lib/admin/preview-context';
 import { useSave } from '@/lib/admin/save-context';
 import { journalPhotoGuideline } from '@/lib/admin/photo-guidelines';
@@ -37,6 +41,36 @@ const emptyPost: Omit<JournalPost, 'id'> = {
   credits: []
 };
 
+const journalFieldHelp = {
+  title: [
+    'Headline for the post.',
+    'Example: Behind the Scenes at The Meridian.'
+  ],
+  slug: [
+    'URL-friendly version of the title. Use lowercase and hyphens.',
+    'Example: behind-the-scenes-meridian.'
+  ],
+  category: [
+    'Label shown on the journal list.',
+    'Example: Project Feature.'
+  ],
+  author: [
+    'Name shown under the post title.',
+    'Example: S.Goodie Studio.'
+  ],
+  date: [
+    'Publish date used for ordering.',
+    'Example: 2026-02-07.'
+  ],
+  excerpt: [
+    'Short summary used on the journal list.',
+    'Example: A quick look at our latest hotel shoot.'
+  ],
+  body: [
+    'Full article content. Use paragraphs and line breaks.'
+  ]
+};
+
 export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientProps) {
   const router = useRouter();
   const { openPreview, refreshPreview } = usePreview();
@@ -47,20 +81,17 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
   const [savedPost, setSavedPost] = useState<Partial<JournalPost>>(emptyPost);
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
   const [status, setStatus] = useState('');
+  const [aiStatus, setAiStatus] = useState('');
+  const [isAiBusy, setIsAiBusy] = useState(false);
   const [isLoading, setIsLoading] = useState(!isNew);
-  const [isSaving, setIsSaving] = useState(false);
   const [showHeroSelector, setShowHeroSelector] = useState(false);
   const [showGallerySelector, setShowGallerySelector] = useState(false);
   const [draggedPhotoId, setDraggedPhotoId] = useState<string | null>(null);
 
   // Check if post has unsaved changes
   const isDirty = useMemo(() => {
-    if (isNew) {
-      // For new posts, dirty if any required field has content
-      return !!(post.title || post.heroPhotoId);
-    }
     return JSON.stringify(post) !== JSON.stringify(savedPost);
-  }, [post, savedPost, isNew]);
+  }, [post, savedPost]);
 
   const photosById = useMemo(() => {
     return new Map(photos.map((photo) => [photo.id, photo]));
@@ -76,9 +107,11 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
   // Save function for master save
   const savePost = useCallback(async (): Promise<boolean> => {
     if (!post.title || !post.slug || !post.heroPhotoId) {
+      setStatus('Please fill in title, slug, and select a hero photo.');
       return false;
     }
 
+    setStatus('Saving...');
     try {
       const url = isNew ? '/api/admin/journal' : `/api/admin/journal/${postId}`;
       const method = isNew ? 'POST' : 'PUT';
@@ -89,9 +122,14 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
         body: JSON.stringify(post)
       });
 
-      if (!res.ok) return false;
+      if (!res.ok) {
+        const message = await getApiErrorMessage(res, 'Failed to save post.');
+        setStatus(message);
+        return false;
+      }
 
       const saved = (await res.json()) as JournalPost;
+      setStatus('Saved successfully.');
       setPost(saved);
       setSavedPost(saved);
 
@@ -102,6 +140,7 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
       refreshPreview();
       return true;
     } catch {
+      setStatus('Failed to save post.');
       return false;
     }
   }, [post, isNew, postId, router, refreshPreview]);
@@ -124,6 +163,32 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
     };
   }, [isDirty, isLoading, postId, registerChange, unregisterChange, savePost]);
 
+  const draftSnapshot = useMemo(
+    () => ({
+      title: post.title,
+      category: post.category,
+      excerpt: post.excerpt,
+      body: post.body,
+      heroPhotoId: post.heroPhotoId,
+      galleryPhotoIds: post.galleryPhotoIds,
+      credits: post.credits
+    }),
+    [post]
+  );
+
+  const draftSerialized = useMemo(() => JSON.stringify(draftSnapshot), [draftSnapshot]);
+
+  // Persist draft changes for preview before Save All.
+  useEffect(() => {
+    if (!postId || isLoading) return;
+
+    if (isDirty) {
+      saveDraftJournalPost(postId, JSON.parse(draftSerialized));
+    } else {
+      clearDraftJournalPost(postId);
+    }
+  }, [draftSerialized, isDirty, isLoading, postId]);
+
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -143,7 +208,8 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
         const postRes = await fetch(`/api/admin/journal/${postId}`);
         if (postRes.ok) {
           const postData = (await postRes.json()) as JournalPost;
-          setPost(postData);
+          const draft = loadDraftJournalPost(postData.id);
+          setPost(draft ? { ...postData, ...draft } : postData);
           setSavedPost(postData);
         } else {
           setStatus('Post not found.');
@@ -165,48 +231,6 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
       }
       return updated;
     });
-  }
-
-  async function handleSave() {
-    if (!post.title || !post.slug || !post.heroPhotoId) {
-      setStatus('Please fill in title, slug, and select a hero photo.');
-      return;
-    }
-
-    setIsSaving(true);
-    setStatus('Saving...');
-
-    try {
-      const url = isNew ? '/api/admin/journal' : `/api/admin/journal/${postId}`;
-      const method = isNew ? 'POST' : 'PUT';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(post)
-      });
-
-      if (!res.ok) {
-        const message = await getApiErrorMessage(res, 'Failed to save post.');
-        setStatus(message);
-        setIsSaving(false);
-        return;
-      }
-
-      const saved = (await res.json()) as JournalPost;
-      setStatus('Saved successfully.');
-      setPost(saved);
-      setSavedPost(saved);
-
-      if (isNew) {
-        router.push(`/admin/journal/${saved.id}`);
-      }
-      refreshPreview();
-    } catch {
-      setStatus('Failed to save post.');
-    } finally {
-      setIsSaving(false);
-    }
   }
 
   function handleHeroSelect(photoIds: string[]) {
@@ -245,6 +269,56 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
     );
   }
 
+  async function handleAiFix(field: 'title' | 'excerpt' | 'body') {
+    if (isAiBusy) return;
+    setIsAiBusy(true);
+    setAiStatus('Optimizing with AI...');
+
+    try {
+      const model = loadAiModel();
+      const res = await fetch('/api/admin/ai/optimize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'text',
+          target: 'page',
+          field: `journal.${field}`,
+          input: String((post as JournalPost)[field] || ''),
+          model,
+          context: {
+            post: {
+              slug: post.slug,
+              title: post.title,
+              excerpt: post.excerpt,
+              body: post.body,
+              category: post.category,
+              author: post.author,
+              date: post.date
+            }
+          }
+        })
+      });
+
+      if (!res.ok) {
+        const message = await getApiErrorMessage(res, 'AI request failed.');
+        setAiStatus(message);
+        return;
+      }
+
+      const data = (await res.json()) as { output?: string };
+      if (data.output) {
+        updateField(field, data.output);
+        setAiStatus('AI update complete.');
+      } else {
+        setAiStatus('AI did not return a result.');
+      }
+    } catch {
+      setAiStatus('AI request failed.');
+    } finally {
+      setIsAiBusy(false);
+    }
+  }
+
   if (isLoading) {
     return <p className={styles.statusMessage}>Loading post...</p>;
   }
@@ -261,13 +335,24 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
         </div>
         <div className={styles.headerActions}>
           {!isNew && post.slug && (
-            <button
-              type="button"
-              onClick={() => openPreview(`/journal/${post.slug}`)}
-              className={styles.btnSecondary}
-            >
-              Preview
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => openPreview(`/journal/${post.slug}`)}
+                className={styles.btnSecondary}
+              >
+                Preview
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  window.open(`/journal/${post.slug}?preview=draft`, '_blank', 'noopener,noreferrer')
+                }
+                className={styles.btnSecondary}
+              >
+                Preview Tab
+              </button>
+            </>
           )}
           <button
             type="button"
@@ -276,18 +361,11 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
           >
             Cancel
           </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className={styles.btnPrimary}
-          >
-            {isSaving ? 'Saving...' : 'Save'}
-          </button>
         </div>
       </div>
 
       {status && <p className={styles.statusMessage}>{status}</p>}
+      {aiStatus && <p className={styles.statusMessage}>{aiStatus}</p>}
 
       {/* Basic Info */}
       <section className={styles.card}>
@@ -295,7 +373,13 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
         <div className={styles.formGrid}>
           <div className={styles.formRowTwo}>
             <label className={styles.label}>
-              <span className={styles.labelText}>Title *</span>
+              <div className={styles.sectionHeader}>
+                <span className={styles.labelText}>
+                  Title *
+                  <FieldInfoTooltip label="Title" lines={journalFieldHelp.title} />
+                </span>
+                <AiFixButton onClick={() => handleAiFix('title')} disabled={isAiBusy} />
+              </div>
               <input
                 value={post.title || ''}
                 onChange={(e) => updateField('title', e.target.value)}
@@ -304,7 +388,10 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
               />
             </label>
             <label className={styles.label}>
-              <span className={styles.labelText}>Slug *</span>
+              <span className={styles.labelText}>
+                Slug *
+                <FieldInfoTooltip label="Slug" lines={journalFieldHelp.slug} />
+              </span>
               <input
                 value={post.slug || ''}
                 onChange={(e) => updateField('slug', e.target.value)}
@@ -315,7 +402,10 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
           </div>
           <div className={styles.formRowThree}>
             <label className={styles.label}>
-              <span className={styles.labelText}>Category</span>
+              <span className={styles.labelText}>
+                Category
+                <FieldInfoTooltip label="Category" lines={journalFieldHelp.category} />
+              </span>
               <input
                 value={post.category || ''}
                 onChange={(e) => updateField('category', e.target.value)}
@@ -324,7 +414,10 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
               />
             </label>
             <label className={styles.label}>
-              <span className={styles.labelText}>Author</span>
+              <span className={styles.labelText}>
+                Author
+                <FieldInfoTooltip label="Author" lines={journalFieldHelp.author} />
+              </span>
               <input
                 value={post.author || ''}
                 onChange={(e) => updateField('author', e.target.value)}
@@ -333,7 +426,10 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
               />
             </label>
             <label className={styles.label}>
-              <span className={styles.labelText}>Date</span>
+              <span className={styles.labelText}>
+                Date
+                <FieldInfoTooltip label="Date" lines={journalFieldHelp.date} />
+              </span>
               <input
                 type="date"
                 value={post.date || ''}
@@ -343,7 +439,13 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
             </label>
           </div>
           <label className={styles.label}>
-            <span className={styles.labelText}>Excerpt</span>
+            <div className={styles.sectionHeader}>
+              <span className={styles.labelText}>
+                Excerpt
+                <FieldInfoTooltip label="Excerpt" lines={journalFieldHelp.excerpt} />
+              </span>
+              <AiFixButton onClick={() => handleAiFix('excerpt')} disabled={isAiBusy} />
+            </div>
             <textarea
               value={post.excerpt || ''}
               onChange={(e) => updateField('excerpt', e.target.value)}
@@ -352,7 +454,13 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
             />
           </label>
           <label className={styles.label}>
-            <span className={styles.labelText}>Body</span>
+            <div className={styles.sectionHeader}>
+              <span className={styles.labelText}>
+                Body
+                <FieldInfoTooltip label="Body" lines={journalFieldHelp.body} />
+              </span>
+              <AiFixButton onClick={() => handleAiFix('body')} disabled={isAiBusy} />
+            </div>
             <textarea
               value={post.body || ''}
               onChange={(e) => updateField('body', e.target.value)}
@@ -448,8 +556,10 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
                   type="button"
                   onClick={() => removeFromGallery(photo.id)}
                   className={styles.galleryRemove}
+                  aria-label="Remove photo from gallery"
+                  title="Remove"
                 >
-                  ×
+                  x
                 </button>
               </div>
             ))}
@@ -461,7 +571,18 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
 
       {/* Credits */}
       <section className={styles.card}>
-        <h2 className={styles.cardTitle}>Credits</h2>
+        <div className={guidelineStyles.headingRow}>
+          <h2 className={styles.cardTitle}>Credits</h2>
+          <FieldInfoTooltip
+            label="Credits"
+            lines={[
+              'Credits appear on the journal post detail page (right column).',
+              'Add one credit per line (label + value).'
+            ]}
+            align="right"
+            example={{ src: '/admin/examples/journal-credits.svg', alt: 'Credits block example' }}
+          />
+        </div>
         <p className={styles.cardDescription}>
           Credit collaborators on this project.
         </p>

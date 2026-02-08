@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { EditorialGallery } from '@/components/portfolio/EditorialGallery';
 import { ProjectHero } from '@/components/portfolio/ProjectHero';
+import { ProjectPageDraftClient } from '@/components/preview/ProjectPageDraftClient';
 import {
   getAllProjects,
   getProjectBySlug,
@@ -130,36 +131,46 @@ export default async function ProjectPage({
         </div>
       )}
 
-      <ProjectHero
-        title={project.title}
-        subtitle={project.subtitle}
-        intro={project.intro}
-        photo={heroPhoto}
-      />
-
-      {galleryPhotos.length > 0 && (
-        <EditorialGallery
-          photos={galleryPhotos}
-          rows={project.editorialRows}
-          captions={project.editorialCaptions}
+      {isPreview ? (
+        <ProjectPageDraftClient
+          fallbackProject={project}
+          initialPhotos={[heroPhoto, ...galleryPhotos]}
+          enabled
         />
-      )}
+      ) : (
+        <>
+          <ProjectHero
+            title={project.title}
+            subtitle={project.subtitle}
+            intro={project.intro}
+            photo={heroPhoto}
+          />
 
-      {project.credits && project.credits.length > 0 && (
-        <section className={styles.credits}>
-          <p className={styles.eyebrow}>Credits</p>
-          <div className={styles.creditsGrid}>
-            {project.credits.map((credit) => (
-              <div
-                key={`${credit.label}-${credit.value}`}
-                className={styles.creditRow}
-              >
-                <span className={styles.creditKey}>{credit.label}</span>
-                <span>{credit.value}</span>
+          {galleryPhotos.length > 0 && (
+            <EditorialGallery
+              photos={galleryPhotos}
+              rows={project.editorialRows}
+              captions={project.editorialCaptions}
+            />
+          )}
+
+          {project.credits && project.credits.length > 0 && (
+            <section className={styles.credits}>
+              <p className={styles.eyebrow}>Credits</p>
+              <div className={styles.creditsGrid}>
+                {project.credits.map((credit) => (
+                  <div
+                    key={`${credit.label}-${credit.value}`}
+                    className={styles.creditRow}
+                  >
+                    <span className={styles.creditKey}>{credit.label}</span>
+                    <span>{credit.value}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </section>
+            </section>
+          )}
+        </>
       )}
 
       <div className={styles.pager}>

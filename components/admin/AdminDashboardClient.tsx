@@ -5,6 +5,10 @@ import type { DashboardStats, Period } from '@/lib/data/stats';
 import { loadAiModel, saveAiModel } from '@/lib/admin/ai-model';
 import { getApiErrorMessage } from '@/lib/admin/api-error';
 import { clearDraftPages } from '@/lib/admin/draft-store';
+import { clearDraftHomeLayout } from '@/lib/admin/draft-home-layout-store';
+import { clearDraftAboutContent } from '@/lib/admin/draft-about-store';
+import { clearDraftContactContent } from '@/lib/admin/draft-contact-store';
+import { FieldInfoTooltip } from './FieldInfoTooltip';
 
 type ModelResponse = {
   models: string[];
@@ -34,6 +38,36 @@ type ErrorEvent = {
 };
 
 type StreamEvent = ProgressEvent | CompleteEvent | ErrorEvent;
+
+const dashboardFieldHelp = {
+  period: [
+    'How analytics are grouped (daily, monthly, quarterly, yearly).'
+  ],
+  year: [
+    'Year of data to view.'
+  ],
+  month: [
+    'Month of data when using the daily view.'
+  ],
+  quarter: [
+    'Quarter of data when using the quarterly view.'
+  ],
+  model: [
+    'AI model used for optimization.'
+  ],
+  includePages: [
+    'Include page copy and SEO updates.'
+  ],
+  includePhotos: [
+    'Include photo metadata updates.'
+  ],
+  includeProjects: [
+    'Include portfolio and work project updates.'
+  ],
+  includeJournal: [
+    'Include journal post updates.'
+  ]
+};
 
 export function AdminDashboardClient() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -263,6 +297,9 @@ export function AdminDashboardClient() {
                 setAiStatus(`Done. Updated ${parts.join(', ')}. Refresh Pages/Photos to see changes.`);
                 // Clear any cached drafts so admin UI shows fresh data
                 clearDraftPages();
+                clearDraftHomeLayout();
+                clearDraftAboutContent();
+                clearDraftContactContent();
                 finishBatchProgress('Complete!');
               } else if (event.type === 'error') {
                 throw new Error(event.message);
@@ -346,7 +383,10 @@ export function AdminDashboardClient() {
       <div className="rounded-3xl border border-black/10 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-4">
           <label className="text-xs uppercase tracking-[0.3em] text-black/40">
-            Period
+            <span className="inline-flex items-center gap-2">
+              Period
+              <FieldInfoTooltip label="Period" lines={dashboardFieldHelp.period} />
+            </span>
             <select
               value={period}
               onChange={(event) => setPeriod(event.target.value as Period)}
@@ -360,7 +400,10 @@ export function AdminDashboardClient() {
             </select>
           </label>
           <label className="text-xs uppercase tracking-[0.3em] text-black/40">
-            Year
+            <span className="inline-flex items-center gap-2">
+              Year
+              <FieldInfoTooltip label="Year" lines={dashboardFieldHelp.year} />
+            </span>
             <select
               value={year}
               onChange={(event) => setYear(Number(event.target.value))}
@@ -376,7 +419,10 @@ export function AdminDashboardClient() {
           </label>
           {period === 'daily' && (
             <label className="text-xs uppercase tracking-[0.3em] text-black/40">
-              Month
+              <span className="inline-flex items-center gap-2">
+                Month
+                <FieldInfoTooltip label="Month" lines={dashboardFieldHelp.month} />
+              </span>
               <select
                 value={month}
                 onChange={(event) => setMonth(Number(event.target.value))}
@@ -393,7 +439,10 @@ export function AdminDashboardClient() {
           )}
           {period === 'quarterly' && (
             <label className="text-xs uppercase tracking-[0.3em] text-black/40">
-              Quarter
+              <span className="inline-flex items-center gap-2">
+                Quarter
+                <FieldInfoTooltip label="Quarter" lines={dashboardFieldHelp.quarter} />
+              </span>
               <select
                 value={quarter}
                 onChange={(event) => setQuarter(Number(event.target.value))}
@@ -461,7 +510,10 @@ export function AdminDashboardClient() {
           </p>
           <div className="mt-4 grid gap-3">
             <label className="text-sm text-black/60">
-              Model
+              <span className="inline-flex items-center gap-2">
+                Model
+                <FieldInfoTooltip label="Model" lines={dashboardFieldHelp.model} />
+              </span>
               <select
                 value={selectedModel}
                 onChange={(event) => setSelectedModel(event.target.value)}
@@ -484,7 +536,10 @@ export function AdminDashboardClient() {
                   disabled={isBatching}
                   className="h-4 w-4 rounded border-black/20"
                 />
-                <span className="text-black/60">Pages</span>
+                <span className="flex items-center gap-2 text-black/60">
+                  Pages
+                  <FieldInfoTooltip label="Pages" lines={dashboardFieldHelp.includePages} />
+                </span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -494,7 +549,10 @@ export function AdminDashboardClient() {
                   disabled={isBatching}
                   className="h-4 w-4 rounded border-black/20"
                 />
-                <span className="text-black/60">Photos</span>
+                <span className="flex items-center gap-2 text-black/60">
+                  Photos
+                  <FieldInfoTooltip label="Photos" lines={dashboardFieldHelp.includePhotos} />
+                </span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -504,7 +562,10 @@ export function AdminDashboardClient() {
                   disabled={isBatching}
                   className="h-4 w-4 rounded border-black/20"
                 />
-                <span className="text-black/60">Projects</span>
+                <span className="flex items-center gap-2 text-black/60">
+                  Projects
+                  <FieldInfoTooltip label="Projects" lines={dashboardFieldHelp.includeProjects} />
+                </span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -514,7 +575,10 @@ export function AdminDashboardClient() {
                   disabled={isBatching}
                   className="h-4 w-4 rounded border-black/20"
                 />
-                <span className="text-black/60">Journal</span>
+                <span className="flex items-center gap-2 text-black/60">
+                  Journal
+                  <FieldInfoTooltip label="Journal" lines={dashboardFieldHelp.includeJournal} />
+                </span>
               </label>
             </div>
             <div className="flex flex-wrap gap-3">

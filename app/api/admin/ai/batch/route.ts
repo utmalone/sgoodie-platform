@@ -5,8 +5,11 @@ import { getAllPages, updatePage } from '@/lib/data/pages';
 import { getAllPhotos, updatePhoto } from '@/lib/data/photos';
 import { getAllProjects, updateProject } from '@/lib/data/projects';
 import { getAllJournalPosts, updateJournalPost } from '@/lib/data/journal';
+import { getHomeLayout, updateHomeLayout } from '@/lib/data/home';
+import { getAboutContent, updateAboutContent } from '@/lib/data/about';
+import { getContactContent, updateContactContent } from '@/lib/data/contact';
 import { revalidateAllPages } from '@/lib/admin/revalidate';
-import type { PageContent, PhotoAsset, Project, JournalPost } from '@/types';
+import type { AboutPageContent, ContactPageContent, HomeLayout, PageContent, PhotoAsset, Project, JournalPost } from '@/types';
 
 export const runtime = 'nodejs';
 
@@ -45,12 +48,23 @@ export async function POST(request: Request) {
   }
 
   try {
-    const pages = payload.includePages !== false ? await getAllPages() : [];
+    const shouldProcessPages = payload.includePages !== false;
+    const shouldProcessPhotos = payload.includePhotos !== false;
+
+    const pages = shouldProcessPages ? await getAllPages() : [];
+    const homeLayout =
+      shouldProcessPages && payload.mode === 'text' ? await getHomeLayout() : null;
+    const aboutContent =
+      shouldProcessPages && payload.mode === 'text' ? await getAboutContent() : null;
+    const contactContent =
+      shouldProcessPages && payload.mode === 'text' ? await getContactContent() : null;
     const photos = await getAllPhotos();
     const projects = payload.includeProjects ? await getAllProjects() : [];
     const journalPosts = payload.includeJournal ? await getAllJournalPosts() : [];
     const photoMap = new Map(photos.map((photo) => [photo.id, photo]));
-    const shouldProcessPhotos = payload.includePhotos !== false;
+
+    const hasText = (value: unknown): value is string =>
+      typeof value === 'string' && value.trim().length > 0;
     let updatedPages = 0;
     let updatedPhotos = 0;
     let updatedProjects = 0;
@@ -60,37 +74,25 @@ export async function POST(request: Request) {
       if (payload.mode === 'text') {
         const updatedPage: PageContent = { ...page };
 
-        if (page.intro) {
+        if (hasText(page.title)) {
+          updatedPage.title = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: 'title',
+              input: page.title,
+              context: { page }
+            })
+          });
+        }
+
+        if (hasText(page.intro)) {
           updatedPage.intro = await createOpenAiResponse({
             model,
             systemPrompt: TEXT_SYSTEM_PROMPT,
             userPrompt: buildTextPrompt({
               field: 'intro',
               input: page.intro,
-              context: { page }
-            })
-          });
-        }
-
-        if (page.body) {
-          updatedPage.body = await createOpenAiResponse({
-            model,
-            systemPrompt: TEXT_SYSTEM_PROMPT,
-            userPrompt: buildTextPrompt({
-              field: 'body',
-              input: page.body,
-              context: { page }
-            })
-          });
-        }
-
-        if (page.ctaLabel) {
-          updatedPage.ctaLabel = await createOpenAiResponse({
-            model,
-            systemPrompt: TEXT_SYSTEM_PROMPT,
-            userPrompt: buildTextPrompt({
-              field: 'ctaLabel',
-              input: page.ctaLabel,
               context: { page }
             })
           });
@@ -153,6 +155,240 @@ export async function POST(request: Request) {
       }
     }
 
+    // Process structured layouts (Home/About/Contact) when in text mode
+    if (payload.mode === 'text') {
+      if (homeLayout && hasText(homeLayout.introText)) {
+        const introText = await createOpenAiResponse({
+          model,
+          systemPrompt: TEXT_SYSTEM_PROMPT,
+          userPrompt: buildTextPrompt({
+            field: 'homeLayout.introText',
+            input: homeLayout.introText,
+            context: { homeLayout }
+          })
+        });
+        await updateHomeLayout({ introText });
+        updatedPages += 1;
+      }
+
+      if (aboutContent) {
+        const updatedAbout: AboutPageContent = {
+          ...aboutContent,
+          introParagraphs: [...(aboutContent.introParagraphs || [])],
+          approachItems: (aboutContent.approachItems || []).map((item) => ({ ...item })),
+          featuredPublications: [...(aboutContent.featuredPublications || [])],
+          bio: {
+            ...aboutContent.bio,
+            paragraphs: [...(aboutContent.bio?.paragraphs || [])]
+          }
+        };
+        let didUpdate = false;
+
+        if (hasText(aboutContent.heroTitle)) {
+          updatedAbout.heroTitle = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: 'about.heroTitle',
+              input: aboutContent.heroTitle,
+              context: { about: aboutContent }
+            })
+          });
+          didUpdate = true;
+        }
+
+        if (hasText(aboutContent.heroSubtitle)) {
+          updatedAbout.heroSubtitle = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: 'about.heroSubtitle',
+              input: aboutContent.heroSubtitle,
+              context: { about: aboutContent }
+            })
+          });
+          didUpdate = true;
+        }
+
+        for (let index = 0; index < (aboutContent.introParagraphs || []).length; index++) {
+          const paragraph = aboutContent.introParagraphs[index];
+          if (!hasText(paragraph)) continue;
+          updatedAbout.introParagraphs[index] = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: `about.introParagraphs[${index}]`,
+              input: paragraph,
+              context: { about: aboutContent }
+            })
+          });
+          didUpdate = true;
+        }
+
+        if (hasText(aboutContent.approachTitle)) {
+          updatedAbout.approachTitle = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: 'about.approachTitle',
+              input: aboutContent.approachTitle,
+              context: { about: aboutContent }
+            })
+          });
+          didUpdate = true;
+        }
+
+        for (let index = 0; index < (aboutContent.approachItems || []).length; index++) {
+          const item = aboutContent.approachItems[index];
+          if (hasText(item.title)) {
+            updatedAbout.approachItems[index].title = await createOpenAiResponse({
+              model,
+              systemPrompt: TEXT_SYSTEM_PROMPT,
+              userPrompt: buildTextPrompt({
+                field: `about.approachItems[${index}].title`,
+                input: item.title,
+                context: { about: aboutContent, approachItem: item }
+              })
+            });
+            didUpdate = true;
+          }
+          if (hasText(item.description)) {
+            updatedAbout.approachItems[index].description = await createOpenAiResponse({
+              model,
+              systemPrompt: TEXT_SYSTEM_PROMPT,
+              userPrompt: buildTextPrompt({
+                field: `about.approachItems[${index}].description`,
+                input: item.description,
+                context: { about: aboutContent, approachItem: item }
+              })
+            });
+            didUpdate = true;
+          }
+        }
+
+        if (hasText(aboutContent.featuredTitle)) {
+          updatedAbout.featuredTitle = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: 'about.featuredTitle',
+              input: aboutContent.featuredTitle,
+              context: { about: aboutContent }
+            })
+          });
+          didUpdate = true;
+        }
+
+        if (hasText(aboutContent.bio?.name)) {
+          updatedAbout.bio.name = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: 'about.bio.name',
+              input: aboutContent.bio.name,
+              context: { about: aboutContent }
+            })
+          });
+          didUpdate = true;
+        }
+
+        for (let index = 0; index < (aboutContent.bio?.paragraphs || []).length; index++) {
+          const paragraph = aboutContent.bio.paragraphs[index];
+          if (!hasText(paragraph)) continue;
+          updatedAbout.bio.paragraphs[index] = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: `about.bio.paragraphs[${index}]`,
+              input: paragraph,
+              context: { about: aboutContent }
+            })
+          });
+          didUpdate = true;
+        }
+
+        if (didUpdate) {
+          await updateAboutContent(updatedAbout);
+          updatedPages += 1;
+        }
+      }
+
+      if (contactContent) {
+        const updatedContact: ContactPageContent = { ...contactContent };
+        let didUpdate = false;
+
+        if (hasText(contactContent.heroTitle)) {
+          updatedContact.heroTitle = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: 'contact.heroTitle',
+              input: contactContent.heroTitle,
+              context: { contact: contactContent }
+            })
+          });
+          didUpdate = true;
+        }
+
+        if (hasText(contactContent.heroSubtitle)) {
+          updatedContact.heroSubtitle = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: 'contact.heroSubtitle',
+              input: contactContent.heroSubtitle,
+              context: { contact: contactContent }
+            })
+          });
+          didUpdate = true;
+        }
+
+        if (hasText(contactContent.sectionTitle)) {
+          updatedContact.sectionTitle = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: 'contact.sectionTitle',
+              input: contactContent.sectionTitle,
+              context: { contact: contactContent }
+            })
+          });
+          didUpdate = true;
+        }
+
+        if (hasText(contactContent.introParagraph)) {
+          updatedContact.introParagraph = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: 'contact.introParagraph',
+              input: contactContent.introParagraph,
+              context: { contact: contactContent }
+            })
+          });
+          didUpdate = true;
+        }
+
+        if (hasText(contactContent.companyName)) {
+          updatedContact.companyName = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: 'contact.companyName',
+              input: contactContent.companyName,
+              context: { contact: contactContent }
+            })
+          });
+          didUpdate = true;
+        }
+
+        if (didUpdate) {
+          await updateContactContent(updatedContact);
+          updatedPages += 1;
+        }
+      }
+    }
+
     // Process ALL photos using Vision AI (if photos included and SEO mode)
     if (shouldProcessPhotos && payload.mode === 'seo') {
       for (const photo of photos) {
@@ -180,7 +416,67 @@ export async function POST(request: Request) {
       if (payload.mode === 'text') {
         const updates: Partial<Project> = {};
 
-        if (project.intro) {
+        if (hasText(project.title)) {
+          updates.title = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: 'title',
+              input: project.title,
+              context: {
+                page: {
+                  slug: project.slug,
+                  title: project.title,
+                  subtitle: project.subtitle || '',
+                  intro: project.intro || '',
+                  body: project.body || ''
+                }
+              }
+            })
+          });
+        }
+
+        if (hasText(project.subtitle)) {
+          updates.subtitle = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: 'subtitle',
+              input: project.subtitle,
+              context: {
+                page: {
+                  slug: project.slug,
+                  title: project.title,
+                  subtitle: project.subtitle || '',
+                  intro: project.intro || '',
+                  body: project.body || ''
+                }
+              }
+            })
+          });
+        }
+
+        if (hasText(project.hoverTitle)) {
+          updates.hoverTitle = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: 'hoverTitle',
+              input: project.hoverTitle,
+              context: {
+                page: {
+                  slug: project.slug,
+                  title: project.title,
+                  subtitle: project.subtitle || '',
+                  intro: project.intro || '',
+                  body: project.body || ''
+                }
+              }
+            })
+          });
+        }
+
+        if (hasText(project.intro)) {
           updates.intro = await createOpenAiResponse({
             model,
             systemPrompt: TEXT_SYSTEM_PROMPT,
@@ -192,7 +488,7 @@ export async function POST(request: Request) {
           });
         }
 
-        if (project.body) {
+        if (hasText(project.body)) {
           updates.body = await createOpenAiResponse({
             model,
             systemPrompt: TEXT_SYSTEM_PROMPT,
@@ -202,6 +498,46 @@ export async function POST(request: Request) {
               context: { page: { slug: project.slug, title: project.title, intro: project.intro || '', body: project.body } }
             })
           });
+        }
+
+        if ((project.editorialCaptions || []).length > 0) {
+          const currentCaptions = project.editorialCaptions || [];
+          const nextCaptions = currentCaptions.map((caption) => ({ ...caption }));
+          let didUpdateCaptions = false;
+
+          for (let index = 0; index < currentCaptions.length; index++) {
+            const caption = currentCaptions[index];
+
+            if (hasText(caption.title)) {
+              nextCaptions[index].title = await createOpenAiResponse({
+                model,
+                systemPrompt: TEXT_SYSTEM_PROMPT,
+                userPrompt: buildTextPrompt({
+                  field: `editorialCaptions[${index}].title`,
+                  input: caption.title,
+                  context: { page: { slug: project.slug, title: project.title }, captionSlot: index + 1 }
+                })
+              });
+              didUpdateCaptions = true;
+            }
+
+            if (hasText(caption.body)) {
+              nextCaptions[index].body = await createOpenAiResponse({
+                model,
+                systemPrompt: TEXT_SYSTEM_PROMPT,
+                userPrompt: buildTextPrompt({
+                  field: `editorialCaptions[${index}].body`,
+                  input: caption.body,
+                  context: { page: { slug: project.slug, title: project.title }, captionSlot: index + 1 }
+                })
+              });
+              didUpdateCaptions = true;
+            }
+          }
+
+          if (didUpdateCaptions) {
+            updates.editorialCaptions = nextCaptions;
+          }
         }
 
         if (Object.keys(updates).length > 0) {
@@ -260,7 +596,19 @@ export async function POST(request: Request) {
       if (payload.mode === 'text') {
         const updates: Partial<JournalPost> = {};
 
-        if (post.excerpt) {
+        if (hasText(post.title)) {
+          updates.title = await createOpenAiResponse({
+            model,
+            systemPrompt: TEXT_SYSTEM_PROMPT,
+            userPrompt: buildTextPrompt({
+              field: 'title',
+              input: post.title,
+              context: { page: { slug: post.slug, title: post.title, intro: post.excerpt, body: post.body } }
+            })
+          });
+        }
+
+        if (hasText(post.excerpt)) {
           updates.excerpt = await createOpenAiResponse({
             model,
             systemPrompt: TEXT_SYSTEM_PROMPT,
@@ -272,7 +620,7 @@ export async function POST(request: Request) {
           });
         }
 
-        if (post.body) {
+        if (hasText(post.body)) {
           updates.body = await createOpenAiResponse({
             model,
             systemPrompt: TEXT_SYSTEM_PROMPT,

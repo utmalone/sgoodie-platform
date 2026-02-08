@@ -1,21 +1,33 @@
 import type { Metadata } from 'next';
 import { FullBleedHero } from '@/components/portfolio/FullBleedHero';
 import { HomeGalleryGrid } from '@/components/portfolio/HomeGalleryGrid';
+import { DraftPageText } from '@/components/preview/DraftPageText';
+import { DraftHomeLayoutText } from '@/components/preview/DraftHomeLayoutText';
 import { getHomeLayout } from '@/lib/data/home';
 import { getPageBySlug } from '@/lib/data/pages';
 import { getPhotosByIds } from '@/lib/data/photos';
 import styles from '@/styles/public/HomePage.module.css';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const page = await getPageBySlug('home');
+  const [page, layout] = await Promise.all([
+    getPageBySlug('home'),
+    getHomeLayout()
+  ]);
   return {
     title: page.metaTitle || page.title,
-    description: page.metaDescription || page.body,
+    description: page.metaDescription || layout.introText || page.intro,
     keywords: page.metaKeywords || undefined
   };
 }
 
-export default async function HomePage() {
+type HomePageProps = {
+  searchParams: Promise<{ preview?: string }>;
+};
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const { preview } = await searchParams;
+  const isPreview = preview === 'draft';
+
   const page = await getPageBySlug('home');
   const layout = await getHomeLayout();
   const [heroPhoto] = await getPhotosByIds([layout.heroPhotoId]);
@@ -27,9 +39,20 @@ export default async function HomePage() {
         <FullBleedHero photo={heroPhoto} minHeight="screen">
           <div className={styles.heroContent}>
             <p className={styles.heroEyebrow}>S.Goodie Photography</p>
-            <h1 className={styles.heroTitle}>{page.title}</h1>
-            <p className={styles.heroSubtitle}>{page.intro}</p>
-            {/* {page.body && <p className={styles.heroBody}>{page.body}</p>} */}
+            <h1 className={styles.heroTitle}>
+              {isPreview ? (
+                <DraftPageText slug="home" field="title" fallback={page.title} enabled />
+              ) : (
+                page.title
+              )}
+            </h1>
+            <p className={styles.heroSubtitle}>
+              {isPreview ? (
+                <DraftPageText slug="home" field="intro" fallback={page.intro} enabled />
+              ) : (
+                page.intro
+              )}
+            </p>
           </div>
         </FullBleedHero>
       )}
@@ -49,8 +72,11 @@ export default async function HomePage() {
             </svg>
           </div>
           <p className={styles.introText}>
-            Creating photographs that not only document spaces, but celebrate the artistry,
-            vision, and craft behind them.
+            {isPreview ? (
+              <DraftHomeLayoutText field="introText" fallback={layout.introText} enabled />
+            ) : (
+              layout.introText
+            )}
           </p>
         </div>
         <HomeGalleryGrid photos={featurePhotos} />

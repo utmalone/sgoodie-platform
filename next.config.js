@@ -38,6 +38,9 @@ remotePatterns.push(
 
 const nextConfig = {
   output: 'standalone',
+  turbopack: {
+    root: __dirname
+  },
   images: {
     unoptimized: true,
     remotePatterns,

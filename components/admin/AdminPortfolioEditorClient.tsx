@@ -7,8 +7,10 @@ import { AdminPhotoSelector } from './AdminPhotoSelector';
 import { AdminCreditsEditor } from './AdminCreditsEditor';
 import { AiFixButton } from './AiFixButton';
 import { PhotoGuidelineTooltip } from './PhotoGuidelines';
+import { FieldInfoTooltip } from './FieldInfoTooltip';
 import { loadAiModel } from '@/lib/admin/ai-model';
 import { getApiErrorMessage } from '@/lib/admin/api-error';
+import { loadDraftProject, saveDraftProject, clearDraftProject } from '@/lib/admin/draft-project-store';
 import { usePreview } from '@/lib/admin/preview-context';
 import { useSave } from '@/lib/admin/save-context';
 import {
@@ -50,6 +52,62 @@ const emptyProject: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> = {
   metaKeywords: ''
 };
 
+const portfolioFieldHelp = {
+  title: [
+    'Project name shown on cards and the project page.',
+    'Example: The Meridian Hotel.'
+  ],
+  slug: [
+    'URL-friendly project name. Use lowercase and hyphens.',
+    'Example: the-meridian-hotel.'
+  ],
+  subtitle: [
+    'Short descriptor shown under the title.',
+    'Example: Boutique Hotel Photography.'
+  ],
+  hoverTitle: [
+    'Short title shown when hovering on the project card.',
+    'Example: The Meridian.'
+  ],
+  intro: [
+    'Short intro shown near the top of the project page.',
+    'Example: A modern hotel in downtown DC.'
+  ],
+  category: [
+    'Where this project appears in the portfolio.',
+    'Example: Hotels.'
+  ],
+  status: [
+    'Draft hides it from the site. Published makes it visible.'
+  ],
+  featured: [
+    'Highlight this project in featured sections.'
+  ],
+  metaTitle: [
+    'SEO title shown in search results. Keep around 50-60 characters.',
+    'Example: The Meridian Hotel | Portfolio.'
+  ],
+  metaDescription: [
+    'SEO summary shown in search results. Aim for 140-160 characters.',
+    'Example: Boutique hotel photography project for The Meridian in DC.'
+  ],
+  metaKeywords: [
+    'Comma-separated keywords (optional).',
+    'Example: hotel photography, boutique hotel, hospitality branding.'
+  ]
+};
+
+const CAPTION_TITLE_MAX = 40;
+const CAPTION_BODY_MAX = 180;
+
+function getCaptionSlotCount(photoCount: number) {
+  // Matches the public EditorialGallery "double -> single" pattern:
+  // every 3 photos produces 1 double row, plus a final double row when 2 photos remain.
+  const doubleRowCount = Math.floor((photoCount + 1) / 3);
+  // Captions appear on every other double row (0, 2, 4, ...).
+  return Math.ceil(doubleRowCount / 2);
+}
+
 export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -72,19 +130,14 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
   const [aiStatus, setAiStatus] = useState('');
   const [isAiBusy, setIsAiBusy] = useState(false);
   const [isLoading, setIsLoading] = useState(!isNew);
-  const [isSaving, setIsSaving] = useState(false);
   const [showHeroSelector, setShowHeroSelector] = useState(false);
   const [showGallerySelector, setShowGallerySelector] = useState(false);
   const [draggedPhotoId, setDraggedPhotoId] = useState<string | null>(null);
 
   // Check if project has unsaved changes
   const isDirty = useMemo(() => {
-    if (isNew) {
-      // For new projects, dirty if any required field has content
-      return !!(project.title || project.heroPhotoId);
-    }
     return JSON.stringify(project) !== JSON.stringify(savedProject);
-  }, [project, savedProject, isNew]);
+  }, [project, savedProject]);
 
   const photosById = useMemo(() => {
     return new Map(photos.map((photo) => [photo.id, photo]));
@@ -100,9 +153,11 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
   // Save function for master save
   const saveProject = useCallback(async (): Promise<boolean> => {
     if (!project.title || !project.slug || !project.heroPhotoId) {
+      setStatus('Please fill in title, slug, and select a hero photo.');
       return false;
     }
 
+    setStatus('Saving...');
     try {
       const url = isNew ? '/api/admin/projects' : `/api/admin/projects/${projectId}`;
       const method = isNew ? 'POST' : 'PUT';
@@ -113,9 +168,14 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
         body: JSON.stringify(project)
       });
 
-      if (!res.ok) return false;
+      if (!res.ok) {
+        const message = await getApiErrorMessage(res, 'Failed to save project.');
+        setStatus(message);
+        return false;
+      }
 
       const saved = (await res.json()) as Project;
+      setStatus('Saved successfully.');
       setProject(saved);
       setSavedProject(saved);
 
@@ -126,6 +186,7 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
       refreshPreview();
       return true;
     } catch {
+      setStatus('Failed to save project.');
       return false;
     }
   }, [project, isNew, projectId, router, refreshPreview]);
@@ -148,6 +209,31 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
     };
   }, [isDirty, isLoading, projectId, registerChange, unregisterChange, saveProject]);
 
+  const draftSnapshot = useMemo(
+    () => ({
+      title: project.title,
+      subtitle: project.subtitle,
+      heroPhotoId: project.heroPhotoId,
+      galleryPhotoIds: project.galleryPhotoIds,
+      editorialCaptions: project.editorialCaptions,
+      credits: project.credits
+    }),
+    [project]
+  );
+
+  const draftSerialized = useMemo(() => JSON.stringify(draftSnapshot), [draftSnapshot]);
+
+  // Persist draft changes for preview before Save All.
+  useEffect(() => {
+    if (!projectId || isLoading) return;
+
+    if (isDirty) {
+      saveDraftProject(projectId, JSON.parse(draftSerialized));
+    } else {
+      clearDraftProject(projectId);
+    }
+  }, [draftSerialized, isDirty, isLoading, projectId]);
+
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -167,7 +253,8 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
         const projectRes = await fetch(`/api/admin/projects/${projectId}`);
         if (projectRes.ok) {
           const projectData = (await projectRes.json()) as Project;
-          setProject(projectData);
+          const draft = loadDraftProject(projectData.id);
+          setProject(draft ? { ...projectData, ...draft } : projectData);
           setSavedProject(projectData);
         } else {
           setStatus('Project not found.');
@@ -193,50 +280,16 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
     });
   }
 
-  async function handleSave() {
-    if (!project.title || !project.slug || !project.heroPhotoId) {
-      setStatus('Please fill in title, slug, and select a hero photo.');
-      return;
-    }
-
-    setIsSaving(true);
-    setStatus('Saving...');
-
-    try {
-      const url = isNew ? '/api/admin/projects' : `/api/admin/projects/${projectId}`;
-      const method = isNew ? 'POST' : 'PUT';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(project)
-      });
-
-      if (!res.ok) {
-        const message = await getApiErrorMessage(res, 'Failed to save project.');
-        setStatus(message);
-        setIsSaving(false);
-        return;
-      }
-
-      const saved = (await res.json()) as Project;
-      setStatus('Saved successfully.');
-      setProject(saved);
-      setSavedProject(saved);
-
-      if (isNew) {
-        router.push(`/admin/portfolio/${saved.id}`);
-      }
-      refreshPreview();
-    } catch {
-      setStatus('Failed to save project.');
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
   async function handleAiFix(
-    field: 'intro' | 'body' | 'metaTitle' | 'metaDescription' | 'metaKeywords',
+    field:
+      | 'title'
+      | 'subtitle'
+      | 'hoverTitle'
+      | 'intro'
+      | 'body'
+      | 'metaTitle'
+      | 'metaDescription'
+      | 'metaKeywords',
     mode: 'text' | 'seo'
   ) {
     if (isAiBusy) return;
@@ -274,6 +327,59 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
       const data = (await res.json()) as { output?: string };
       if (data.output) {
         updateField(field, data.output);
+        setAiStatus('AI update complete.');
+      } else {
+        setAiStatus('AI did not return a result.');
+      }
+    } catch {
+      setAiStatus('AI request failed.');
+    } finally {
+      setIsAiBusy(false);
+    }
+  }
+
+  async function handleAiFixCaption(index: number, field: 'title' | 'body') {
+    if (isAiBusy) return;
+    setIsAiBusy(true);
+    setAiStatus('Optimizing with AI...');
+
+    try {
+      const model = loadAiModel();
+      const caption = (project.editorialCaptions || [])[index] || { title: '', body: '' };
+      const res = await fetch('/api/admin/ai/optimize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'text',
+          target: 'page',
+          field: `editorialCaptions[${index}].${field}`,
+          input: String(caption[field] || ''),
+          model,
+          context: {
+            page: {
+              slug: project.slug,
+              title: project.title,
+              subtitle: project.subtitle,
+              intro: project.intro,
+              body: project.body
+            },
+            captionSlot: index + 1,
+            captionLimits: { titleMax: CAPTION_TITLE_MAX, bodyMax: CAPTION_BODY_MAX }
+          }
+        })
+      });
+
+      if (!res.ok) {
+        const message = await getApiErrorMessage(res, 'AI request failed.');
+        setAiStatus(message);
+        return;
+      }
+
+      const data = (await res.json()) as { output?: string };
+      if (data.output) {
+        const capped =
+          field === 'title' ? data.output.slice(0, CAPTION_TITLE_MAX) : data.output.slice(0, CAPTION_BODY_MAX);
+        updateCaption(index, { ...caption, [field]: capped });
         setAiStatus('AI update complete.');
       } else {
         setAiStatus('AI did not return a result.');
@@ -327,19 +433,11 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
     updateField('editorialCaptions', captions);
   }
 
-  function addCaption() {
-    updateField('editorialCaptions', [
-      ...(project.editorialCaptions || []),
-      { title: '', body: '' }
-    ]);
-  }
-
-  function removeCaption(index: number) {
-    const captions = (project.editorialCaptions || []).filter((_, i) => i !== index);
-    updateField('editorialCaptions', captions);
-  }
-
   const projectCategory = project.category as PortfolioCategory;
+  const captionSlotCount = useMemo(
+    () => getCaptionSlotCount((project.galleryPhotoIds || []).length),
+    [project.galleryPhotoIds]
+  );
 
   if (isLoading) {
     return <p className={styles.statusMessage}>Loading project...</p>;
@@ -361,13 +459,28 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
         </div>
         <div className={styles.headerActions}>
           {!isNew && project.slug && project.category && (
-            <button
-              type="button"
-              onClick={() => openPreview(`/portfolio/${project.category}/${project.slug}`)}
-              className={styles.btnSecondary}
-            >
-              Preview
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => openPreview(`/portfolio/${project.category}/${project.slug}`)}
+                className={styles.btnSecondary}
+              >
+                Preview
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  window.open(
+                    `/portfolio/${project.category}/${project.slug}?preview=draft`,
+                    '_blank',
+                    'noopener,noreferrer'
+                  )
+                }
+                className={styles.btnSecondary}
+              >
+                Preview Tab
+              </button>
+            </>
           )}
           <button
             type="button"
@@ -375,14 +488,6 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
             className={styles.btnSecondary}
           >
             Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className={styles.btnPrimary}
-          >
-            {isSaving ? 'Saving...' : 'Save'}
           </button>
         </div>
       </div>
@@ -396,7 +501,13 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
         <div className={styles.formGrid}>
           <div className={styles.formGrid2}>
             <label className={styles.label}>
-              <span className={styles.labelText}>Title *</span>
+              <div className={styles.fieldHeader}>
+                <span className={styles.labelText}>
+                  Title *
+                  <FieldInfoTooltip label="Title" lines={portfolioFieldHelp.title} />
+                </span>
+                <AiFixButton onClick={() => handleAiFix('title', 'text')} disabled={isAiBusy} />
+              </div>
               <input
                 value={project.title || ''}
                 onChange={(e) => updateField('title', e.target.value)}
@@ -405,7 +516,10 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
               />
             </label>
             <label className={styles.label}>
-              <span className={styles.labelText}>Slug *</span>
+              <span className={styles.labelText}>
+                Slug *
+                <FieldInfoTooltip label="Slug" lines={portfolioFieldHelp.slug} />
+              </span>
               <input
                 value={project.slug || ''}
                 onChange={(e) => updateField('slug', e.target.value)}
@@ -416,7 +530,13 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
           </div>
           <div className={styles.formGrid2}>
             <label className={styles.label}>
-              <span className={styles.labelText}>Subtitle</span>
+              <div className={styles.fieldHeader}>
+                <span className={styles.labelText}>
+                  Subtitle
+                  <FieldInfoTooltip label="Subtitle" lines={portfolioFieldHelp.subtitle} />
+                </span>
+                <AiFixButton onClick={() => handleAiFix('subtitle', 'text')} disabled={isAiBusy} />
+              </div>
               <input
                 value={project.subtitle || ''}
                 onChange={(e) => updateField('subtitle', e.target.value)}
@@ -425,7 +545,13 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
               />
             </label>
             <label className={styles.label}>
-              <span className={styles.labelText}>Hover Title</span>
+              <div className={styles.fieldHeader}>
+                <span className={styles.labelText}>
+                  Hover Title
+                  <FieldInfoTooltip label="Hover Title" lines={portfolioFieldHelp.hoverTitle} />
+                </span>
+                <AiFixButton onClick={() => handleAiFix('hoverTitle', 'text')} disabled={isAiBusy} />
+              </div>
               <input
                 value={project.hoverTitle || ''}
                 onChange={(e) => updateField('hoverTitle', e.target.value)}
@@ -436,7 +562,10 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
           </div>
           <label className={styles.label}>
             <div className={styles.fieldHeader}>
-              <span className={styles.labelText}>Introduction</span>
+              <span className={styles.labelText}>
+                Introduction
+                <FieldInfoTooltip label="Introduction" lines={portfolioFieldHelp.intro} />
+              </span>
               <AiFixButton onClick={() => handleAiFix('intro', 'text')} disabled={isAiBusy} />
             </div>
             <textarea
@@ -446,21 +575,12 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
               placeholder="Brief introduction..."
             />
           </label>
-          <label className={styles.label}>
-            <div className={styles.fieldHeader}>
-              <span className={styles.labelText}>Body</span>
-              <AiFixButton onClick={() => handleAiFix('body', 'text')} disabled={isAiBusy} />
-            </div>
-            <textarea
-              value={project.body || ''}
-              onChange={(e) => updateField('body', e.target.value)}
-              className={styles.textarea}
-              placeholder="Full project description..."
-            />
-          </label>
           <div className={styles.formGrid3}>
             <label className={styles.label}>
-              <span className={styles.labelText}>Category *</span>
+              <span className={styles.labelText}>
+                Category *
+                <FieldInfoTooltip label="Category" lines={portfolioFieldHelp.category} />
+              </span>
               <select
                 value={project.category || 'hotels'}
                 onChange={(e) => updateField('category', e.target.value as ProjectCategory)}
@@ -474,7 +594,10 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
               </select>
             </label>
             <label className={styles.label}>
-              <span className={styles.labelText}>Status</span>
+              <span className={styles.labelText}>
+                Status
+                <FieldInfoTooltip label="Status" lines={portfolioFieldHelp.status} />
+              </span>
               <select
                 value={project.status || 'draft'}
                 onChange={(e) => updateField('status', e.target.value as Project['status'])}
@@ -491,7 +614,10 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
                 onChange={(e) => updateField('featured', e.target.checked)}
                 className={styles.checkbox}
               />
-              <span className={styles.labelText}>Featured project</span>
+              <span className={styles.labelText}>
+                Featured project
+                <FieldInfoTooltip label="Featured project" lines={portfolioFieldHelp.featured} />
+              </span>
             </label>
           </div>
         </div>
@@ -523,6 +649,15 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
             <div className={styles.heroPreviewLarge}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={heroPhoto.src} alt={heroPhoto.alt} />
+              <div className={styles.heroPreviewOverlay} aria-hidden="true" />
+              <div className={styles.heroPreviewTextBlock} aria-hidden="true">
+                {project.subtitle && (
+                  <p className={styles.heroPreviewSubtitleText}>{project.subtitle}</p>
+                )}
+                <p className={styles.heroPreviewTitleText}>
+                  {project.title || 'Project Title'}
+                </p>
+              </div>
             </div>
             <p className={styles.mutedText}>{heroPhoto.alt || 'No alt text'}</p>
           </div>
@@ -585,48 +720,77 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
       <section className={styles.card}>
         <div className={styles.quickLinkCard}>
           <div>
-            <h2 className={styles.cardTitle}>Editorial Captions</h2>
+            <div className={guidelineStyles.headingRow}>
+              <h2 className={styles.cardTitle}>Editorial Captions</h2>
+              <FieldInfoTooltip
+                label="Editorial Captions"
+                lines={[
+                  'Captions attach to specific rows in the editorial gallery pattern.',
+                  'They appear on the 1st, 3rd, 5th... double-photo rows (roughly every 6 photos).',
+                  'You will see a new caption slot automatically after you add more gallery photos.',
+                  'Leaving a caption slot blank is fine (it will not show on the site).'
+                ]}
+                align="right"
+                example={{ src: '/admin/examples/portfolio-caption.svg', alt: 'Editorial caption example' }}
+              />
+            </div>
             <p className={styles.cardDescription}>
-              Captions appear on alternating double rows in the gallery.
+              Caption slots are generated automatically from your gallery photo count.
             </p>
           </div>
-          <button type="button" onClick={addCaption} className={styles.btnSecondary}>
-            Add Caption
-          </button>
         </div>
-        {(project.editorialCaptions || []).length > 0 ? (
-          <div className={styles.captionsContainer}>
-            {(project.editorialCaptions || []).map((caption, index) => (
-              <div key={index} className={styles.captionCard}>
-                <div className={styles.captionHeader}>
-                  <span className={styles.captionLabel}>Caption {index + 1}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeCaption(index)}
-                    className={styles.captionRemove}
-                  >
-                    Remove
-                  </button>
-                </div>
-                <div className={styles.captionFields}>
-                  <input
-                    value={caption.title}
-                    onChange={(e) => updateCaption(index, { ...caption, title: e.target.value })}
-                    placeholder="Caption title"
-                    className={styles.input}
-                  />
-                  <textarea
-                    value={caption.body}
-                    onChange={(e) => updateCaption(index, { ...caption, body: e.target.value })}
-                    placeholder="Caption body text..."
-                    className={styles.textarea}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+
+        {captionSlotCount === 0 ? (
+          <p className={styles.mutedText}>
+            Add at least 2 gallery photos to unlock caption slots.
+          </p>
         ) : (
-          <p className={styles.mutedText}>No captions added yet.</p>
+          <div className={styles.captionsContainer}>
+            {Array.from({ length: captionSlotCount }).map((_, index) => {
+              const caption = (project.editorialCaptions || [])[index] || { title: '', body: '' };
+              return (
+                <div key={index} className={styles.captionCard}>
+                  <div className={styles.captionHeader}>
+                    <span className={styles.captionLabel}>Caption Slot {index + 1}</span>
+                  </div>
+                  <div className={styles.captionFields}>
+                    <div className={styles.fieldHeader}>
+                      <span className={styles.labelText}>Title</span>
+                      <div className={styles.actionsRow}>
+                        <span className={styles.charCount}>
+                          {(caption.title || '').length}/{CAPTION_TITLE_MAX}
+                        </span>
+                        <AiFixButton onClick={() => handleAiFixCaption(index, 'title')} disabled={isAiBusy} />
+                      </div>
+                    </div>
+                    <input
+                      value={caption.title}
+                      onChange={(e) => updateCaption(index, { ...caption, title: e.target.value })}
+                      placeholder="Infinity Views"
+                      className={styles.input}
+                      maxLength={CAPTION_TITLE_MAX}
+                    />
+                    <div className={styles.fieldHeader}>
+                      <span className={styles.labelText}>Body</span>
+                      <div className={styles.actionsRow}>
+                        <span className={styles.charCount}>
+                          {(caption.body || '').length}/{CAPTION_BODY_MAX}
+                        </span>
+                        <AiFixButton onClick={() => handleAiFixCaption(index, 'body')} disabled={isAiBusy} />
+                      </div>
+                    </div>
+                    <textarea
+                      value={caption.body}
+                      onChange={(e) => updateCaption(index, { ...caption, body: e.target.value })}
+                      placeholder="The signature infinity pool creates a seamless visual connection..."
+                      className={styles.textarea}
+                      maxLength={CAPTION_BODY_MAX}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
 
@@ -649,7 +813,10 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
         <div className={styles.formGrid}>
           <label className={styles.label}>
             <div className={styles.fieldHeader}>
-              <span className={styles.labelText}>Meta Title</span>
+              <span className={styles.labelText}>
+                Meta Title
+                <FieldInfoTooltip label="Meta Title" lines={portfolioFieldHelp.metaTitle} />
+              </span>
               <AiFixButton onClick={() => handleAiFix('metaTitle', 'seo')} disabled={isAiBusy} />
             </div>
             <input
@@ -660,7 +827,10 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
           </label>
           <label className={styles.label}>
             <div className={styles.fieldHeader}>
-              <span className={styles.labelText}>Meta Description</span>
+              <span className={styles.labelText}>
+                Meta Description
+                <FieldInfoTooltip label="Meta Description" lines={portfolioFieldHelp.metaDescription} />
+              </span>
               <AiFixButton onClick={() => handleAiFix('metaDescription', 'seo')} disabled={isAiBusy} />
             </div>
             <textarea
@@ -671,7 +841,10 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
           </label>
           <label className={styles.label}>
             <div className={styles.fieldHeader}>
-              <span className={styles.labelText}>Meta Keywords</span>
+              <span className={styles.labelText}>
+                Meta Keywords
+                <FieldInfoTooltip label="Meta Keywords" lines={portfolioFieldHelp.metaKeywords} />
+              </span>
               <AiFixButton onClick={() => handleAiFix('metaKeywords', 'seo')} disabled={isAiBusy} />
             </div>
             <textarea

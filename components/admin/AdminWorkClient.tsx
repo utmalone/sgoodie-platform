@@ -229,7 +229,7 @@ export function AdminWorkClient() {
               >
                 {/* Drag Handle */}
                 <div className="cursor-grab text-black/30 hover:text-black/50">
-                  <span className="text-lg">⋮⋮</span>
+                  <span className="text-lg">::</span>
                 </div>
 
                 {/* Order Number */}
@@ -276,7 +276,7 @@ export function AdminWorkClient() {
                     className="rounded-full border border-black/20 px-3 py-1.5 text-[10px] uppercase tracking-[0.25em] text-black/40 hover:border-black/40 hover:text-black/60"
                     title="Preview"
                   >
-                    👁
+                    View
                   </button>
                   <button
                     type="button"
