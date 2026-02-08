@@ -276,6 +276,22 @@
   @apply flex items-center gap-2;
 }
 
+.bulkItemLeft {
+  @apply flex min-w-0 flex-col gap-0.5;
+}
+
+.bulkItemDims {
+  @apply flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-black/50;
+}
+
+.bulkRatio {
+  @apply text-black/60;
+}
+
+.bulkSuitability {
+  @apply text-black/70;
+}
+
 .bulkFileName {
   @apply truncate text-black/60;
 }

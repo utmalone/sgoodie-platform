@@ -15,6 +15,7 @@ import { pagePhotoGuidelinesBySlug } from '@/lib/admin/photo-guidelines';
 import {
   getPhotoLibraryGroup,
   getLibraryGroupOrderForPage,
+  getPhotoSuitabilityLabels,
   getSlotForAdd,
   getMismatchWarning,
   LIBRARY_GROUP_LABELS,
@@ -39,8 +40,38 @@ type BulkUploadItem = {
   metaTitle: string;
   metaDescription: string;
   metaKeywords: string;
+  width?: number;
+  height?: number;
   error?: string;
 };
+
+function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new window.Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load image'));
+    };
+    img.src = url;
+  });
+}
+
+function getAspectRatioLabel(width: number, height: number): string {
+  if (width <= 0 || height <= 0) return '';
+  const aspect = width / height;
+  if (aspect >= 1.6 && aspect <= 2.0) return '16:9';
+  if (aspect >= 1.4 && aspect <= 1.7) return '3:2';
+  if (aspect >= 0.6 && aspect <= 0.72) return '2:3';
+  if (aspect >= 0.7 && aspect <= 0.8) return '3:4';
+  if (aspect >= 1.2 && aspect <= 1.4) return '4:3';
+  if (aspect >= 0.95 && aspect <= 1.05) return '1:1';
+  return '';
+}
 
 const MAX_BULK_PHOTOS = 50;
 const ABOUT_MAX_APPROACH_PHOTOS = 4;
@@ -703,6 +734,19 @@ export function AdminPhotosClient() {
     }));
     
     setBulkItems(prev => [...prev, ...newItems]);
+    
+    // Load dimensions for each new item
+    newItems.forEach((item) => {
+      getImageDimensions(item.file)
+        .then(({ width, height }) => {
+          setBulkItems(prev =>
+            prev.map((p) => (p.id === item.id ? { ...p, width, height } : p))
+          );
+        })
+        .catch(() => {
+          // Ignore - dimensions will stay undefined
+        });
+    });
   }
 
   async function processBulkWithAi() {
@@ -1219,7 +1263,29 @@ export function AdminPhotosClient() {
                         </div>
 
                         <div className={styles.bulkItemRow}>
-                          <span className={styles.truncateMuted}>{item.file.name}</span>
+                          <div className={styles.bulkItemLeft}>
+                            <span className={styles.truncateMuted}>{item.file.name}</span>
+                            {(item.width != null && item.height != null) && (() => {
+                              const labels = getPhotoSuitabilityLabels({
+                                width: item.width,
+                                height: item.height
+                              } as PhotoAsset);
+                              const ratio = getAspectRatioLabel(item.width, item.height);
+                              return (
+                                <div className={styles.bulkItemDims}>
+                                  <span className={styles.libraryDims}>
+                                    {item.width}×{item.height}
+                                  </span>
+                                  {ratio && <span className={styles.bulkRatio}>{ratio}</span>}
+                                  {labels.length > 0 && (
+                                    <span className={styles.bulkSuitability}>
+                                      {labels.join(', ')}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
                           <div className={styles.rowGap2}>
                             <button
                               type="button"
