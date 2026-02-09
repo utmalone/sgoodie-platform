@@ -69,7 +69,7 @@ export default async function PortfolioCategoryPage({ params, searchParams }: Pa
   const projectMap = new Map(projects.map((p) => [p.id, p]));
   const orderedProjects = workIndex.projectIds
     .map((id) => projectMap.get(id))
-    .filter(Boolean);
+    .filter((p): p is Project => p != null);
   const remainingProjects = projects.filter((p) => !workIndex.projectIds.includes(p.id));
   const list = [...orderedProjects, ...remainingProjects];
 
