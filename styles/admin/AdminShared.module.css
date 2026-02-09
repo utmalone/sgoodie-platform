@@ -1060,6 +1060,83 @@
   color: var(--hero-subtitle-color, rgba(255, 255, 255, 0.8));
 }
 
+/* Hero Preview + Color Picker Layout */
+.heroPreviewWithColors {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.heroPreviewWithColors .heroPreviewLarge {
+  flex: 1;
+  min-width: 0;
+}
+
+.heroColorPickerPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.75rem;
+  min-width: 11rem;
+}
+
+.heroColorLabel {
+  display: block;
+  font-size: 0.625rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(0, 0, 0, 0.5);
+  margin-bottom: 0.25rem;
+}
+
+.heroColorPickerRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.heroColorPicker {
+  width: 2rem;
+  height: 2rem;
+  padding: 0.125rem;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.heroColorPicker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.heroColorPicker::-webkit-color-swatch {
+  border: none;
+  border-radius: 0.25rem;
+}
+
+.heroColorHexInput {
+  flex: 1;
+  min-width: 5rem;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.75rem;
+  font-family: ui-monospace, monospace;
+  color: #000;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0.5rem;
+  box-sizing: border-box;
+}
+
+.heroColorHexInput:focus {
+  outline: none;
+  border-color: rgba(0, 0, 0, 0.4);
+}
+
 /* Caption Card */
 .captionCard {
   padding: 1rem;

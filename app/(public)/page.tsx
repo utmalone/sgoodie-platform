@@ -99,7 +99,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <div className={styles.wrapper}>
       {heroPhoto && (
-        <FullBleedHero photo={heroPhoto} minHeight="screen">
+        <FullBleedHero
+          photo={heroPhoto}
+          minHeight="screen"
+          style={{
+            ...(layout.heroTitleColor ? { '--hero-title-color': layout.heroTitleColor } : {}),
+            ...(layout.heroSubtitleColor ? { '--hero-subtitle-color': layout.heroSubtitleColor } : {})
+          } as React.CSSProperties}
+        >
           {heroContent}
         </FullBleedHero>
       )}

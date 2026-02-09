@@ -7,15 +7,22 @@ type ProjectHeroProps = {
   subtitle?: string;
   intro?: string;
   photo: PhotoAsset;
+  heroTitleColor?: string;
+  heroSubtitleColor?: string;
 };
 
 /**
  * Full-bleed hero with title/subtitle/intro overlaid centered on the image.
  * Used on portfolio detail pages.
  */
-export function ProjectHero({ title, subtitle, intro, photo }: ProjectHeroProps) {
+export function ProjectHero({ title, subtitle, intro, photo, heroTitleColor, heroSubtitleColor }: ProjectHeroProps) {
+  const heroStyle = {
+    ...(heroTitleColor ? { '--hero-title-color': heroTitleColor } : {}),
+    ...(heroSubtitleColor ? { '--hero-subtitle-color': heroSubtitleColor } : {})
+  } as React.CSSProperties;
+
   return (
-    <section className={styles.wrapper} data-hero="true">
+    <section className={styles.wrapper} data-hero="true" style={heroStyle}>
       <div className={styles.imageContainer}>
         <Image
           src={photo.src}

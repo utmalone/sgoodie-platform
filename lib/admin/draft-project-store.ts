@@ -3,7 +3,7 @@
 import type { EditorialRowCaption, Project, ProjectCredit } from '@/types';
 
 export type DraftProjectContent = Partial<
-  Pick<Project, 'title' | 'subtitle' | 'heroPhotoId' | 'galleryPhotoIds' | 'editorialCaptions' | 'credits'>
+  Pick<Project, 'title' | 'subtitle' | 'heroPhotoId' | 'galleryPhotoIds' | 'editorialCaptions' | 'credits' | 'heroTitleColor' | 'heroSubtitleColor'>
 >;
 
 type DraftPayload = {
@@ -66,7 +66,9 @@ function normalizeDraftProject(raw: unknown): DraftProjectContent | null {
     heroPhotoId: typeof data.heroPhotoId === 'string' ? data.heroPhotoId : undefined,
     galleryPhotoIds: normalizeStringArray(data.galleryPhotoIds),
     editorialCaptions: normalizeCaptions(data.editorialCaptions),
-    credits: normalizeCredits(data.credits)
+    credits: normalizeCredits(data.credits),
+    heroTitleColor: typeof data.heroTitleColor === 'string' ? data.heroTitleColor : undefined,
+    heroSubtitleColor: typeof data.heroSubtitleColor === 'string' ? data.heroSubtitleColor : undefined
   };
 }
 

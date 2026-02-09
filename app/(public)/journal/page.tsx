@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { JournalGrid } from '@/components/portfolio/JournalGrid';
 import { DraftPageText } from '@/components/preview/DraftPageText';
+import { DraftHeroColors } from '@/components/preview/DraftHeroColors';
 import { getAllJournalPosts } from '@/lib/data/journal';
 import { getPageBySlug } from '@/lib/data/pages';
 import { getPhotosByIds, getPhotoById } from '@/lib/data/photos';
@@ -60,8 +61,44 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
   return (
     <div className={styles.wrapper}>
       {/* Hero Section */}
-      {heroPhoto && (
-        <section className={styles.heroSection} data-hero="true">
+      {heroPhoto && isPreview ? (
+        <DraftHeroColors
+          store="pages"
+          slug="journal"
+          savedTitleColor={page.heroTitleColor}
+          savedSubtitleColor={page.heroSubtitleColor}
+        >
+          <section className={styles.heroSection} data-hero="true">
+            <div className={styles.heroImage}>
+              <Image
+                src={heroPhoto.src}
+                alt={heroPhoto.alt}
+                fill
+                priority
+                sizes="100vw"
+                className={styles.heroImg}
+              />
+              <div className={styles.heroOverlay} />
+              <div className={styles.heroContent}>
+                <h1 className={styles.heroTitle}>
+                  <DraftPageText slug="journal" field="title" fallback={page.title} enabled />
+                </h1>
+                <p className={styles.heroSubtitle}>
+                  <DraftPageText slug="journal" field="intro" fallback={page.intro} enabled />
+                </p>
+              </div>
+            </div>
+          </section>
+        </DraftHeroColors>
+      ) : heroPhoto ? (
+        <section
+          className={styles.heroSection}
+          data-hero="true"
+          style={{
+            ...(page.heroTitleColor ? { '--hero-title-color': page.heroTitleColor } : {}),
+            ...(page.heroSubtitleColor ? { '--hero-subtitle-color': page.heroSubtitleColor } : {})
+          } as React.CSSProperties}
+        >
           <div className={styles.heroImage}>
             <Image
               src={heroPhoto.src}
@@ -73,24 +110,12 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
             />
             <div className={styles.heroOverlay} />
             <div className={styles.heroContent}>
-              <h1 className={styles.heroTitle}>
-                {isPreview ? (
-                  <DraftPageText slug="journal" field="title" fallback={page.title} enabled />
-                ) : (
-                  page.title
-                )}
-              </h1>
-              <p className={styles.heroSubtitle}>
-                {isPreview ? (
-                  <DraftPageText slug="journal" field="intro" fallback={page.intro} enabled />
-                ) : (
-                  page.intro
-                )}
-              </p>
+              <h1 className={styles.heroTitle}>{page.title}</h1>
+              <p className={styles.heroSubtitle}>{page.intro}</p>
             </div>
           </div>
         </section>
-      )}
+      ) : null}
 
       {/* Journal Posts Grid */}
       <section className={styles.gridSection}>

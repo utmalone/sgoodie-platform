@@ -50,7 +50,14 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
     <div className={styles.wrapper}>
       {/* Hero Section */}
       {heroPhoto && (
-        <section className={styles.heroSection} data-hero="true">
+        <section
+          className={styles.heroSection}
+          data-hero="true"
+          style={{
+            ...(content.heroTitleColor ? { '--hero-title-color': content.heroTitleColor } : {}),
+            ...(content.heroSubtitleColor ? { '--hero-subtitle-color': content.heroSubtitleColor } : {})
+          } as React.CSSProperties}
+        >
           <div className={styles.heroImage}>
             <Image
               src={heroPhoto.src}

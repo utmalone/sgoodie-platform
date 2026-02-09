@@ -5,6 +5,8 @@ import type { ApproachItem } from '@/types';
 export type DraftAboutContent = {
   heroTitle?: string;
   heroSubtitle?: string;
+  heroTitleColor?: string;
+  heroSubtitleColor?: string;
   introParagraphs?: string[];
   approachTitle?: string;
   approachItems?: Array<Pick<ApproachItem, 'id' | 'title' | 'description'>>;
@@ -70,6 +72,8 @@ function normalizeDraftAboutContent(raw: unknown): DraftAboutContent | null {
   return {
     heroTitle: typeof draft.heroTitle === 'string' ? draft.heroTitle : undefined,
     heroSubtitle: typeof draft.heroSubtitle === 'string' ? draft.heroSubtitle : undefined,
+    heroTitleColor: typeof draft.heroTitleColor === 'string' ? draft.heroTitleColor : undefined,
+    heroSubtitleColor: typeof draft.heroSubtitleColor === 'string' ? draft.heroSubtitleColor : undefined,
     introParagraphs,
     approachTitle: typeof draft.approachTitle === 'string' ? draft.approachTitle : undefined,
     approachItems,

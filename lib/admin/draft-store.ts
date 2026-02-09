@@ -24,6 +24,8 @@ function normalizeDraftPage(raw: unknown): PageContent | null {
     title: typeof page.title === 'string' ? page.title : '',
     intro: typeof page.intro === 'string' ? page.intro : '',
     gallery,
+    ...(typeof page.heroTitleColor === 'string' ? { heroTitleColor: page.heroTitleColor } : {}),
+    ...(typeof page.heroSubtitleColor === 'string' ? { heroSubtitleColor: page.heroSubtitleColor } : {}),
     metaTitle: typeof page.metaTitle === 'string' ? page.metaTitle : '',
     metaDescription: typeof page.metaDescription === 'string' ? page.metaDescription : '',
     metaKeywords: typeof page.metaKeywords === 'string' ? page.metaKeywords : ''

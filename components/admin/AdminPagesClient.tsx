@@ -141,6 +141,8 @@ function pickAboutText(content: AboutPageContent) {
   return {
     heroTitle: content.heroTitle,
     heroSubtitle: content.heroSubtitle,
+    heroTitleColor: content.heroTitleColor,
+    heroSubtitleColor: content.heroSubtitleColor,
     introParagraphs: content.introParagraphs,
     approachTitle: content.approachTitle,
     approachItems: (content.approachItems || []).map((item) => ({
@@ -161,6 +163,8 @@ function pickContactText(content: ContactPageContent) {
   return {
     heroTitle: content.heroTitle,
     heroSubtitle: content.heroSubtitle,
+    heroTitleColor: content.heroTitleColor,
+    heroSubtitleColor: content.heroSubtitleColor,
     sectionTitle: content.sectionTitle,
     introParagraph: content.introParagraph,
     companyName: content.companyName,
@@ -214,11 +218,17 @@ export function AdminPagesClient() {
     [savedPages, activeSlug]
   );
   const isDirty = useMemo(() => !isEqualPage(activePage, savedPage), [activePage, savedPage]);
-  const isHomeIntroTextDirty = useMemo(() => {
-    const current = layouts.home?.introText ?? '';
-    const saved = savedHomeLayout?.introText ?? '';
-    return current !== saved;
-  }, [layouts.home?.introText, savedHomeLayout?.introText]);
+  const isHomeLayoutDirty = useMemo(() => {
+    const currentIntro = layouts.home?.introText ?? '';
+    const savedIntro = savedHomeLayout?.introText ?? '';
+    const currentTitleColor = layouts.home?.heroTitleColor ?? '';
+    const savedTitleColor = savedHomeLayout?.heroTitleColor ?? '';
+    const currentSubtitleColor = layouts.home?.heroSubtitleColor ?? '';
+    const savedSubtitleColor = savedHomeLayout?.heroSubtitleColor ?? '';
+    return currentIntro !== savedIntro
+      || currentTitleColor !== savedTitleColor
+      || currentSubtitleColor !== savedSubtitleColor;
+  }, [layouts.home, savedHomeLayout]);
 
   const isAboutTextDirty = useMemo(() => {
     if (!layouts.about || !savedAboutLayout) return false;
@@ -230,7 +240,7 @@ export function AdminPagesClient() {
     return JSON.stringify(pickContactText(layouts.contact)) !== JSON.stringify(pickContactText(savedContactLayout));
   }, [layouts.contact, savedContactLayout]);
 
-  const hasUnsavedChanges = isDirty || isHomeIntroTextDirty || isAboutTextDirty || isContactTextDirty;
+  const hasUnsavedChanges = isDirty || isHomeLayoutDirty || isAboutTextDirty || isContactTextDirty;
 
   const setAiResult = useCallback((key: string, success: boolean) => {
     if (aiResultTimeoutRef.current) clearTimeout(aiResultTimeoutRef.current);
@@ -286,13 +296,17 @@ export function AdminPagesClient() {
   }, [activePage, refreshPreview]);
 
   const saveHomeLayout = useCallback(async (): Promise<boolean> => {
-    const introText = layouts.home?.introText ?? '';
+    const payload: Partial<HomeLayout> = {
+      introText: layouts.home?.introText ?? '',
+      heroTitleColor: layouts.home?.heroTitleColor,
+      heroSubtitleColor: layouts.home?.heroSubtitleColor
+    };
 
     try {
       const response = await fetch('/api/admin/layouts/home', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ introText })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) return false;
@@ -305,7 +319,7 @@ export function AdminPagesClient() {
     } catch {
       return false;
     }
-  }, [layouts.home?.introText, refreshPreview]);
+  }, [layouts.home, refreshPreview]);
 
   const saveAboutLayout = useCallback(async (): Promise<boolean> => {
     if (!layouts.about) return true;
@@ -325,6 +339,8 @@ export function AdminPagesClient() {
         ...latest,
         heroTitle: currentText.heroTitle,
         heroSubtitle: currentText.heroSubtitle,
+        heroTitleColor: currentText.heroTitleColor,
+        heroSubtitleColor: currentText.heroSubtitleColor,
         introParagraphs: currentText.introParagraphs ?? [],
         approachTitle: currentText.approachTitle,
         approachItems: (latest.approachItems || []).map((item) => {
@@ -409,7 +425,7 @@ export function AdminPagesClient() {
 
   useEffect(() => {
     const changeId = 'layout-home';
-    if (isHomeIntroTextDirty && !isLoading) {
+    if (isHomeLayoutDirty && !isLoading) {
       registerChange({
         id: changeId,
         type: 'layout',
@@ -422,7 +438,7 @@ export function AdminPagesClient() {
     return () => {
       unregisterChange(changeId);
     };
-  }, [isHomeIntroTextDirty, isLoading, registerChange, unregisterChange, saveHomeLayout]);
+  }, [isHomeLayoutDirty, isLoading, registerChange, unregisterChange, saveHomeLayout]);
 
   useEffect(() => {
     const changeId = 'layout-about';
@@ -526,6 +542,8 @@ export function AdminPagesClient() {
               ...aboutData,
               ...(draftAbout.heroTitle ? { heroTitle: draftAbout.heroTitle } : null),
               ...(draftAbout.heroSubtitle ? { heroSubtitle: draftAbout.heroSubtitle } : null),
+              ...(draftAbout.heroTitleColor !== undefined ? { heroTitleColor: draftAbout.heroTitleColor } : null),
+              ...(draftAbout.heroSubtitleColor !== undefined ? { heroSubtitleColor: draftAbout.heroSubtitleColor } : null),
               ...(draftAbout.introParagraphs ? { introParagraphs: draftAbout.introParagraphs } : null),
               ...(draftAbout.approachTitle ? { approachTitle: draftAbout.approachTitle } : null),
               ...(draftAbout.featuredTitle ? { featuredTitle: draftAbout.featuredTitle } : null),
@@ -593,19 +611,30 @@ export function AdminPagesClient() {
     }
   }, [draftPages, isLoading]);
 
-  const homeIntroText = layouts.home?.introText;
+  const homeLayoutDraftDeps = [
+    layouts.home?.introText,
+    layouts.home?.heroTitleColor,
+    layouts.home?.heroSubtitleColor
+  ];
 
   useEffect(() => {
     if (isLoading) return;
-    if (typeof homeIntroText !== 'string') return;
-    saveDraftHomeLayout({ introText: homeIntroText });
-  }, [homeIntroText, isLoading]);
+    if (!layouts.home) return;
+    saveDraftHomeLayout({
+      introText: layouts.home.introText,
+      heroTitleColor: layouts.home.heroTitleColor,
+      heroSubtitleColor: layouts.home.heroSubtitleColor
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, ...homeLayoutDraftDeps]);
 
   const aboutDraftSnapshot = useMemo(() => {
     if (!layouts.about) return null;
     return {
       heroTitle: layouts.about.heroTitle,
       heroSubtitle: layouts.about.heroSubtitle,
+      heroTitleColor: layouts.about.heroTitleColor,
+      heroSubtitleColor: layouts.about.heroSubtitleColor,
       introParagraphs: layouts.about.introParagraphs,
       approachTitle: layouts.about.approachTitle,
       approachItems: (layouts.about.approachItems || []).map((item) => ({
@@ -998,6 +1027,34 @@ export function AdminPagesClient() {
       },
       apply: (output) => updateContactField(field, output as ContactPageContent[typeof field])
     });
+  }
+
+  function getActiveHeroTitleColor(): string {
+    if (activeMainSlug === 'home') return layouts.home?.heroTitleColor || '';
+    if (activeMainSlug === 'about') return layouts.about?.heroTitleColor || '';
+    if (activeMainSlug === 'contact') return layouts.contact?.heroTitleColor || '';
+    if (activeMainSlug === 'journal') return activePage.heroTitleColor || '';
+    return '';
+  }
+
+  function getActiveHeroSubtitleColor(): string {
+    if (activeMainSlug === 'home') return layouts.home?.heroSubtitleColor || '';
+    if (activeMainSlug === 'about') return layouts.about?.heroSubtitleColor || '';
+    if (activeMainSlug === 'contact') return layouts.contact?.heroSubtitleColor || '';
+    if (activeMainSlug === 'journal') return activePage.heroSubtitleColor || '';
+    return '';
+  }
+
+  function handleHeroColorChange(field: 'heroTitleColor' | 'heroSubtitleColor', value: string) {
+    if (activeMainSlug === 'home') updateHomeLayoutField(field, value);
+    else if (activeMainSlug === 'about') updateAboutField(field, value);
+    else if (activeMainSlug === 'contact') updateContactField(field, value);
+    else if (activeMainSlug === 'journal') updateField(field, value);
+  }
+
+  function handleResetHeroColors() {
+    handleHeroColorChange('heroTitleColor', '');
+    handleHeroColorChange('heroSubtitleColor', '');
   }
 
   const showHeroSection = ['home', 'about', 'contact', 'journal'].includes(activeMainSlug);
@@ -1730,57 +1787,113 @@ export function AdminPagesClient() {
             <div className={styles.formGrid}>
               <p className={styles.sectionLabel}>Hero</p>
               {heroPhoto ? (
-                <div className={styles.heroPreviewLarge}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={heroPhoto.src} alt={heroPhoto.alt} />
-                  {activeMainSlug === 'home' ? (
-                    <>
-                      <div className={styles.heroPreviewHomeOverlay} aria-hidden="true" />
-                      <div className={styles.heroPreviewHomeTextBlock} aria-hidden="true">
-                        <p className={styles.heroPreviewHomeEyebrow}>S.Goodie Photography</p>
-                        <p className={styles.heroPreviewHomeTitle}>
-                          {activePage.title || 'Page Title'}
-                        </p>
-                        <p className={styles.heroPreviewHomeSubtitle}>
-                          {activePage.intro || 'Page Subtitle'}
-                        </p>
+                <div className={styles.heroPreviewWithColors}>
+                  <div
+                    className={styles.heroPreviewLarge}
+                    style={{
+                      ...(getActiveHeroTitleColor() ? { '--hero-title-color': getActiveHeroTitleColor() } as React.CSSProperties : {}),
+                      ...(getActiveHeroSubtitleColor() ? { '--hero-subtitle-color': getActiveHeroSubtitleColor() } as React.CSSProperties : {})
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={heroPhoto.src} alt={heroPhoto.alt} />
+                    {activeMainSlug === 'home' ? (
+                      <>
+                        <div className={styles.heroPreviewHomeOverlay} aria-hidden="true" />
+                        <div className={styles.heroPreviewHomeTextBlock} aria-hidden="true">
+                          <p className={styles.heroPreviewHomeEyebrow}>S.Goodie Photography</p>
+                          <p className={styles.heroPreviewHomeTitle}>
+                            {activePage.title || 'Page Title'}
+                          </p>
+                          <p className={styles.heroPreviewHomeSubtitle}>
+                            {activePage.intro || 'Page Subtitle'}
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className={styles.heroPreviewPageOverlay} aria-hidden="true" />
+                        <div className={styles.heroPreviewPageTextBlock} aria-hidden="true">
+                          {activeMainSlug === 'about' && layouts.about ? (
+                            <>
+                              <p className={styles.heroPreviewPageTitle}>
+                                {layouts.about.heroTitle || 'Hero Title'}
+                              </p>
+                              <p className={styles.heroPreviewPageSubtitle}>
+                                {layouts.about.heroSubtitle || 'Hero Subtitle'}
+                              </p>
+                            </>
+                          ) : activeMainSlug === 'contact' && layouts.contact ? (
+                            <>
+                              <p className={styles.heroPreviewPageTitle}>
+                                {layouts.contact.heroTitle || 'Hero Title'}
+                              </p>
+                              <p className={styles.heroPreviewPageSubtitle}>
+                                {layouts.contact.heroSubtitle || 'Hero Subtitle'}
+                              </p>
+                            </>
+                          ) : activeMainSlug === 'journal' ? (
+                            <>
+                              <p className={styles.heroPreviewPageTitle}>
+                                {activePage.title || 'Hero Title'}
+                              </p>
+                              <p className={styles.heroPreviewPageSubtitle}>
+                                {activePage.intro || 'Hero Subtitle'}
+                              </p>
+                            </>
+                          ) : null}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div className={styles.heroColorPickerPanel}>
+                    <div>
+                      <span className={styles.heroColorLabel}>Title Color</span>
+                      <div className={styles.heroColorPickerRow}>
+                        <input
+                          type="color"
+                          value={getActiveHeroTitleColor() || '#ffffff'}
+                          onChange={(e) => handleHeroColorChange('heroTitleColor', e.target.value)}
+                          className={styles.heroColorPicker}
+                          aria-label="Hero title color"
+                        />
+                        <input
+                          type="text"
+                          value={getActiveHeroTitleColor()}
+                          onChange={(e) => handleHeroColorChange('heroTitleColor', e.target.value)}
+                          className={styles.heroColorHexInput}
+                          placeholder="#ffffff"
+                        />
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className={styles.heroPreviewPageOverlay} aria-hidden="true" />
-                      <div className={styles.heroPreviewPageTextBlock} aria-hidden="true">
-                        {activeMainSlug === 'about' && layouts.about ? (
-                          <>
-                            <p className={styles.heroPreviewPageTitle}>
-                              {layouts.about.heroTitle || 'Hero Title'}
-                            </p>
-                            <p className={styles.heroPreviewPageSubtitle}>
-                              {layouts.about.heroSubtitle || 'Hero Subtitle'}
-                            </p>
-                          </>
-                        ) : activeMainSlug === 'contact' && layouts.contact ? (
-                          <>
-                            <p className={styles.heroPreviewPageTitle}>
-                              {layouts.contact.heroTitle || 'Hero Title'}
-                            </p>
-                            <p className={styles.heroPreviewPageSubtitle}>
-                              {layouts.contact.heroSubtitle || 'Hero Subtitle'}
-                            </p>
-                          </>
-                        ) : activeMainSlug === 'journal' ? (
-                          <>
-                            <p className={styles.heroPreviewPageTitle}>
-                              {activePage.title || 'Hero Title'}
-                            </p>
-                            <p className={styles.heroPreviewPageSubtitle}>
-                              {activePage.intro || 'Hero Subtitle'}
-                            </p>
-                          </>
-                        ) : null}
+                    </div>
+                    <div>
+                      <span className={styles.heroColorLabel}>Subtitle Color</span>
+                      <div className={styles.heroColorPickerRow}>
+                        <input
+                          type="color"
+                          value={getActiveHeroSubtitleColor() || '#e6e6e6'}
+                          onChange={(e) => handleHeroColorChange('heroSubtitleColor', e.target.value)}
+                          className={styles.heroColorPicker}
+                          aria-label="Hero subtitle color"
+                        />
+                        <input
+                          type="text"
+                          value={getActiveHeroSubtitleColor()}
+                          onChange={(e) => handleHeroColorChange('heroSubtitleColor', e.target.value)}
+                          className={styles.heroColorHexInput}
+                          placeholder="#e6e6e6"
+                        />
                       </div>
-                    </>
-                  )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleResetHeroColors}
+                      className={styles.btnSecondary}
+                      style={{ fontSize: '0.625rem', padding: '0.375rem 0.5rem' }}
+                    >
+                      Reset to Default
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className={styles.imagePreviewEmpty}>

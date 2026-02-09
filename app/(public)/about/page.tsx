@@ -6,6 +6,7 @@ import { DraftAboutIntroParagraphs } from '@/components/preview/DraftAboutIntroP
 import { DraftAboutApproachText } from '@/components/preview/DraftAboutApproachText';
 import { DraftAboutFeaturedPublications } from '@/components/preview/DraftAboutFeaturedPublications';
 import { DraftAboutBioParagraphs } from '@/components/preview/DraftAboutBioParagraphs';
+import { DraftHeroColors } from '@/components/preview/DraftHeroColors';
 import { getAboutContent } from '@/lib/data/about';
 import { getPageBySlug } from '@/lib/data/pages';
 import { getPhotosByIds, getPhotoById } from '@/lib/data/photos';
@@ -38,8 +39,43 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
   return (
     <div className={styles.wrapper}>
       {/* Hero Section */}
-      {heroPhoto && (
-        <section className={styles.heroSection} data-hero="true">
+      {heroPhoto && isPreview ? (
+        <DraftHeroColors
+          store="about"
+          savedTitleColor={content.heroTitleColor}
+          savedSubtitleColor={content.heroSubtitleColor}
+        >
+          <section className={styles.heroSection} data-hero="true">
+            <div className={styles.heroImage}>
+              <Image
+                src={heroPhoto.src}
+                alt={heroPhoto.alt}
+                fill
+                priority
+                sizes="100vw"
+                className={styles.heroImg}
+              />
+              <div className={styles.heroOverlay} />
+              <div className={styles.heroContent}>
+                <h1 className={styles.heroTitle}>
+                  <DraftAboutText field="heroTitle" fallback={content.heroTitle} enabled />
+                </h1>
+                <p className={styles.heroSubtitle}>
+                  <DraftAboutText field="heroSubtitle" fallback={content.heroSubtitle} enabled />
+                </p>
+              </div>
+            </div>
+          </section>
+        </DraftHeroColors>
+      ) : heroPhoto ? (
+        <section
+          className={styles.heroSection}
+          data-hero="true"
+          style={{
+            ...(content.heroTitleColor ? { '--hero-title-color': content.heroTitleColor } : {}),
+            ...(content.heroSubtitleColor ? { '--hero-subtitle-color': content.heroSubtitleColor } : {})
+          } as React.CSSProperties}
+        >
           <div className={styles.heroImage}>
             <Image
               src={heroPhoto.src}
@@ -51,24 +87,12 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
             />
             <div className={styles.heroOverlay} />
             <div className={styles.heroContent}>
-              <h1 className={styles.heroTitle}>
-                {isPreview ? (
-                  <DraftAboutText field="heroTitle" fallback={content.heroTitle} enabled />
-                ) : (
-                  content.heroTitle
-                )}
-              </h1>
-              <p className={styles.heroSubtitle}>
-                {isPreview ? (
-                  <DraftAboutText field="heroSubtitle" fallback={content.heroSubtitle} enabled />
-                ) : (
-                  content.heroSubtitle
-                )}
-              </p>
+              <h1 className={styles.heroTitle}>{content.heroTitle}</h1>
+              <p className={styles.heroSubtitle}>{content.heroSubtitle}</p>
             </div>
           </div>
         </section>
-      )}
+      ) : null}
 
       {/* Intro Section */}
       <section className={styles.introSection}>

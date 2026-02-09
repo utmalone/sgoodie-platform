@@ -241,7 +241,9 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
       heroPhotoId: project.heroPhotoId,
       galleryPhotoIds: project.galleryPhotoIds,
       editorialCaptions: project.editorialCaptions,
-      credits: project.credits
+      credits: project.credits,
+      heroTitleColor: project.heroTitleColor,
+      heroSubtitleColor: project.heroSubtitleColor
     }),
     [project]
   );
@@ -681,17 +683,72 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
         </div>
         {heroPhoto && (
           <div className={styles.formGrid}>
-            <div className={styles.heroPreviewLarge}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={heroPhoto.src} alt={heroPhoto.alt} />
-              <div className={styles.heroPreviewOverlay} aria-hidden="true" />
-              <div className={styles.heroPreviewTextBlock} aria-hidden="true">
-                {project.subtitle && (
-                  <p className={styles.heroPreviewSubtitleText}>{project.subtitle}</p>
+            <div className={styles.heroPreviewWithColors}>
+              <div
+                className={styles.heroPreviewLarge}
+                style={{
+                  ...(project.heroTitleColor ? { '--hero-title-color': project.heroTitleColor } : {}),
+                  ...(project.heroSubtitleColor ? { '--hero-subtitle-color': project.heroSubtitleColor } : {})
+                } as React.CSSProperties}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={heroPhoto.src} alt={heroPhoto.alt} />
+                <div className={styles.heroPreviewOverlay} aria-hidden="true" />
+                <div className={styles.heroPreviewTextBlock} aria-hidden="true">
+                  {project.subtitle && (
+                    <p className={styles.heroPreviewSubtitleText}>{project.subtitle}</p>
+                  )}
+                  <p className={styles.heroPreviewTitleText}>
+                    {project.title || 'Project Title'}
+                  </p>
+                </div>
+              </div>
+              <div className={styles.heroColorPickerPanel}>
+                <div className={styles.heroColorPickerRow}>
+                  <span className={styles.heroColorLabel}>Title</span>
+                  <input
+                    type="color"
+                    value={project.heroTitleColor || '#ffffff'}
+                    onChange={(e) => updateField('heroTitleColor', e.target.value)}
+                    className={styles.heroColorPicker}
+                  />
+                  <input
+                    type="text"
+                    value={project.heroTitleColor || ''}
+                    onChange={(e) => updateField('heroTitleColor', e.target.value)}
+                    placeholder="#ffffff"
+                    className={styles.heroColorHexInput}
+                  />
+                </div>
+                <div className={styles.heroColorPickerRow}>
+                  <span className={styles.heroColorLabel}>Subtitle</span>
+                  <input
+                    type="color"
+                    value={project.heroSubtitleColor || '#ffffff'}
+                    onChange={(e) => updateField('heroSubtitleColor', e.target.value)}
+                    className={styles.heroColorPicker}
+                  />
+                  <input
+                    type="text"
+                    value={project.heroSubtitleColor || ''}
+                    onChange={(e) => updateField('heroSubtitleColor', e.target.value)}
+                    placeholder="#ffffff"
+                    className={styles.heroColorHexInput}
+                  />
+                </div>
+                {(project.heroTitleColor || project.heroSubtitleColor) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateField('heroTitleColor', '');
+                      updateField('heroSubtitleColor', '');
+                    }}
+                    className={styles.btnSecondary}
+                    style={{ fontSize: '0.7rem', padding: '0.25rem 0.5rem' }}
+                  >
+                    Reset to Default
+                  </button>
                 )}
-                <p className={styles.heroPreviewTitleText}>
-                  {project.title || 'Project Title'}
-                </p>
               </div>
             </div>
             <p className={styles.mutedText}>{heroPhoto.alt || 'No alt text'}</p>

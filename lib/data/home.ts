@@ -22,7 +22,9 @@ function normalizeHomeLayout(layout: Partial<HomeLayout> | null | undefined): Ho
       ? layout!.featurePhotoIds
       : defaultHomeLayout.featurePhotoIds,
     introText:
-      typeof layout?.introText === 'string' ? layout.introText : defaultHomeLayout.introText
+      typeof layout?.introText === 'string' ? layout.introText : defaultHomeLayout.introText,
+    ...(typeof layout?.heroTitleColor === 'string' ? { heroTitleColor: layout.heroTitleColor } : {}),
+    ...(typeof layout?.heroSubtitleColor === 'string' ? { heroSubtitleColor: layout.heroSubtitleColor } : {})
   };
 }
 

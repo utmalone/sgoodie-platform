@@ -24,6 +24,8 @@ export type PageContent = {
   title: string;
   intro: string;
   gallery: string[];
+  heroTitleColor?: string;
+  heroSubtitleColor?: string;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
@@ -91,6 +93,8 @@ export type Project = {
   credits?: ProjectCredit[];
   metaTitle?: string;
   metaDescription?: string;
+  heroTitleColor?: string;
+  heroSubtitleColor?: string;
   metaKeywords?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -100,6 +104,8 @@ export type HomeLayout = {
   heroPhotoId: string;
   featurePhotoIds: string[];
   introText: string;
+  heroTitleColor?: string;
+  heroSubtitleColor?: string;
 };
 
 export type WorkIndex = {
@@ -140,6 +146,8 @@ export type AboutPageContent = {
   heroPhotoId: string;
   heroTitle: string;
   heroSubtitle: string;
+  heroTitleColor?: string;
+  heroSubtitleColor?: string;
   introParagraphs: string[];
   approachTitle: string;
   approachItems: ApproachItem[];
@@ -153,6 +161,8 @@ export type ContactPageContent = {
   heroPhotoId: string;
   heroTitle: string;
   heroSubtitle: string;
+  heroTitleColor?: string;
+  heroSubtitleColor?: string;
   sectionTitle: string;
   introParagraph: string;
   companyName: string;

@@ -41,6 +41,8 @@ async function loadAllPages(): Promise<PageContent[]> {
       title: page.title ?? '',
       intro: page.intro ?? '',
       gallery: Array.isArray(page.gallery) ? page.gallery : [],
+      ...(page.heroTitleColor ? { heroTitleColor: page.heroTitleColor } : {}),
+      ...(page.heroSubtitleColor ? { heroSubtitleColor: page.heroSubtitleColor } : {}),
       metaTitle: page.metaTitle ?? '',
       metaDescription: page.metaDescription ?? '',
       metaKeywords: page.metaKeywords ?? ''
@@ -56,6 +58,8 @@ async function loadAllPages(): Promise<PageContent[]> {
     title: page.title ?? '',
     intro: page.intro ?? '',
     gallery: Array.isArray(page.gallery) ? page.gallery : [],
+    ...(page.heroTitleColor ? { heroTitleColor: page.heroTitleColor } : {}),
+    ...(page.heroSubtitleColor ? { heroSubtitleColor: page.heroSubtitleColor } : {}),
     metaTitle: page.metaTitle ?? '',
     metaDescription: page.metaDescription ?? '',
     metaKeywords: page.metaKeywords ?? ''

@@ -144,6 +144,8 @@ export default async function ProjectPage({
             subtitle={project.subtitle}
             intro={project.intro}
             photo={heroPhoto}
+            heroTitleColor={project.heroTitleColor}
+            heroSubtitleColor={project.heroSubtitleColor}
           />
 
           {galleryPhotos.length > 0 && (

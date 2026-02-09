@@ -108,7 +108,14 @@ export function ProjectPageDraftClient({
   return (
     <>
       {heroPhoto && (
-        <section className={heroStyles.wrapper} data-hero="true">
+        <section
+          className={heroStyles.wrapper}
+          data-hero="true"
+          style={{
+            ...(project.heroTitleColor ? { '--hero-title-color': project.heroTitleColor } : {}),
+            ...(project.heroSubtitleColor ? { '--hero-subtitle-color': project.heroSubtitleColor } : {})
+          } as React.CSSProperties}
+        >
           <div className={heroStyles.imageContainer}>
             <Image
               src={heroPhoto.src}

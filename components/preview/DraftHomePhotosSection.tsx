@@ -5,9 +5,11 @@ import type { ReactNode } from 'react';
 import type { PhotoAsset } from '@/types';
 import { FullBleedHero } from '@/components/portfolio/FullBleedHero';
 import { HomeGalleryGrid } from '@/components/portfolio/HomeGalleryGrid';
+import { loadDraftHomeLayout } from '@/lib/admin/draft-home-layout-store';
 import styles from '@/styles/public/HomePage.module.css';
 
 const PREVIEW_REFRESH_KEY = 'admin-preview-refresh';
+const HOME_LAYOUT_DRAFT_KEY = 'sgoodie.admin.draft.homeLayout';
 
 type DraftHomePhotosSectionProps = {
   isPreview: boolean;
@@ -26,6 +28,8 @@ export function DraftHomePhotosSection({
 }: DraftHomePhotosSectionProps) {
   const [heroPhoto, setHeroPhoto] = useState(initialHeroPhoto);
   const [featurePhotos, setFeaturePhotos] = useState(initialFeaturePhotos);
+  const [heroTitleColor, setHeroTitleColor] = useState<string | undefined>();
+  const [heroSubtitleColor, setHeroSubtitleColor] = useState<string | undefined>();
 
   useEffect(() => {
     if (!isPreview) return;
@@ -35,6 +39,11 @@ export function DraftHomePhotosSection({
         const layoutRes = await fetch('/api/admin/layouts/home');
         if (!layoutRes.ok) return;
         const layout = await layoutRes.json();
+
+        // Apply saved colors from API
+        setHeroTitleColor(layout.heroTitleColor || undefined);
+        setHeroSubtitleColor(layout.heroSubtitleColor || undefined);
+
         const ids = [
           layout.heroPhotoId,
           ...(layout.featurePhotoIds || [])
@@ -79,10 +88,43 @@ export function DraftHomePhotosSection({
     };
   }, [isPreview]);
 
+  // Poll draft store for unsaved color changes
+  useEffect(() => {
+    if (!isPreview) return;
+
+    const loadDraftColors = () => {
+      const draft = loadDraftHomeLayout();
+      if (draft) {
+        if (typeof draft.heroTitleColor === 'string') setHeroTitleColor(draft.heroTitleColor || undefined);
+        if (typeof draft.heroSubtitleColor === 'string') setHeroSubtitleColor(draft.heroSubtitleColor || undefined);
+      }
+    };
+
+    loadDraftColors();
+
+    const pollId = window.setInterval(loadDraftColors, 500);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === HOME_LAYOUT_DRAFT_KEY) loadDraftColors();
+    };
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      window.clearInterval(pollId);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [isPreview]);
+
   return (
     <>
       {heroPhoto && (
-        <FullBleedHero photo={heroPhoto} minHeight="screen">
+        <FullBleedHero
+          photo={heroPhoto}
+          minHeight="screen"
+          style={{
+            ...(heroTitleColor ? { '--hero-title-color': heroTitleColor } : {}),
+            ...(heroSubtitleColor ? { '--hero-subtitle-color': heroSubtitleColor } : {})
+          } as React.CSSProperties}
+        >
           {heroContent}
         </FullBleedHero>
       )}

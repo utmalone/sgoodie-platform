@@ -352,7 +352,7 @@ export function AdminProfileClient() {
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2>Hero Colors</h2>
-          <p>Font colors for hero titles and subtitles on all pages (Home, About, Contact, Journal, Portfolio).</p>
+          <p>Default font colors for all hero titles and subtitles. Individual pages can override these with their own colors.</p>
         </div>
         <div className={`${styles.formGrid} ${styles.formGrid2}`}>
           <label className={styles.formLabel}>

@@ -7,6 +7,8 @@ export type DraftContactContent = Partial<
     ContactPageContent,
     | 'heroTitle'
     | 'heroSubtitle'
+    | 'heroTitleColor'
+    | 'heroSubtitleColor'
     | 'sectionTitle'
     | 'introParagraph'
     | 'companyName'
@@ -34,6 +36,8 @@ function normalizeDraftContact(raw: unknown): DraftContactContent | null {
   return {
     heroTitle: pick('heroTitle'),
     heroSubtitle: pick('heroSubtitle'),
+    heroTitleColor: pick('heroTitleColor'),
+    heroSubtitleColor: pick('heroSubtitleColor'),
     sectionTitle: pick('sectionTitle'),
     introParagraph: pick('introParagraph'),
     companyName: pick('companyName'),

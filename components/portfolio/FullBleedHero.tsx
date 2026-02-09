@@ -11,6 +11,7 @@ type FullBleedHeroProps = {
   minHeight?: 'screen' | 'tall';
   overlay?: 'dark' | 'light' | 'none';
   offset?: boolean;
+  style?: React.CSSProperties;
 };
 
 export function FullBleedHero({
@@ -18,7 +19,8 @@ export function FullBleedHero({
   children,
   minHeight = 'screen',
   overlay = 'dark',
-  offset = true
+  offset = true,
+  style
 }: FullBleedHeroProps) {
   const minHeightClass = minHeight === 'tall' ? styles.minTall : styles.minScreen;
   const overlayClass =
@@ -29,6 +31,7 @@ export function FullBleedHero({
     <section
       className={`${styles.wrapper} ${minHeightClass} ${offsetClass}`}
       data-hero="true"
+      style={style}
     >
       <Image
         src={photo.src}
