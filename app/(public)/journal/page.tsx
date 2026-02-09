@@ -3,8 +3,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { JournalGrid } from '@/components/portfolio/JournalGrid';
 import { DraftPageText } from '@/components/preview/DraftPageText';
+import { DraftJournalGridSection } from '@/components/preview/DraftJournalGridSection';
 import { DraftHeroColors } from '@/components/preview/DraftHeroColors';
 import { getAllJournalPosts } from '@/lib/data/journal';
+import { getJournalIndex } from '@/lib/data/journal-index';
 import { getPageBySlug } from '@/lib/data/pages';
 import { getPhotosByIds, getPhotoById } from '@/lib/data/photos';
 import styles from '@/styles/public/JournalPage.module.css';
@@ -30,11 +32,27 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
   const isPreview = params.preview === 'draft';
   
   const page = await getPageBySlug('journal');
-  const allPosts = (await getAllJournalPosts()).sort(
+  const [rawPosts, journalIndex] = await Promise.all([
+    getAllJournalPosts(),
+    getJournalIndex()
+  ]);
+
+  const dateSorted = rawPosts.sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  // Calculate pagination
+  const allPosts =
+    journalIndex.postIds.length > 0
+      ? (() => {
+          const byId = new Map(dateSorted.map((p) => [p.id, p]));
+          const ordered = journalIndex.postIds
+            .map((id) => byId.get(id))
+            .filter(Boolean) as typeof dateSorted;
+          const remaining = dateSorted.filter((p) => !journalIndex.postIds.includes(p.id));
+          return [...ordered, ...remaining];
+        })()
+      : dateSorted;
+
   const totalPosts = allPosts.length;
   const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
   const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
@@ -47,8 +65,10 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
   // Get hero photo from page gallery
   const heroPhoto = page.gallery[0] ? await getPhotoById(page.gallery[0]) : null;
 
-  // Get all hero photos for current page of journal posts
-  const heroPhotoIds = posts.map((post) => post.heroPhotoId);
+  // Get hero photos for journal posts (all posts when preview for draft order)
+  const heroPhotoIds = isPreview
+    ? allPosts.map((p) => p.heroPhotoId).filter(Boolean)
+    : posts.map((post) => post.heroPhotoId);
   const heroPhotos = await getPhotosByIds(heroPhotoIds);
   const photosById = new Map(heroPhotos.map((photo) => [photo.id, photo]));
 
@@ -119,7 +139,17 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
 
       {/* Journal Posts Grid */}
       <section className={styles.gridSection}>
-        <JournalGrid posts={posts} photosById={photosById} isPreview={isPreview} />
+        {isPreview ? (
+          <DraftJournalGridSection
+            isPreview
+            allPosts={allPosts}
+            photosById={photosById}
+            startIndex={startIndex}
+            endIndex={endIndex}
+          />
+        ) : (
+          <JournalGrid posts={posts} photosById={photosById} isPreview={false} />
+        )}
 
         {/* Pagination */}
         {(hasNewerPosts || hasOlderPosts) && (

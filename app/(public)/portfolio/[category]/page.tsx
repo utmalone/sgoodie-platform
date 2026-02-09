@@ -10,6 +10,7 @@ import { getPhotosByIds } from '@/lib/data/photos';
 import { getWorkIndex } from '@/lib/data/work';
 import { WorkGalleryGrid } from '@/components/portfolio/WorkGalleryGrid';
 import { DraftPageText } from '@/components/preview/DraftPageText';
+import { DraftPortfolioProjectsSection } from '@/components/preview/DraftPortfolioProjectsSection';
 import {
   portfolioCategories,
   portfolioCategoryLabels,
@@ -104,7 +105,17 @@ export default async function PortfolioCategoryPage({ params, searchParams }: Pa
       </header>
 
       {/* Projects Grid */}
-      <WorkGalleryGrid items={items} isPreview={isPreview} category={projectCategory} />
+      {isPreview ? (
+        <DraftPortfolioProjectsSection
+          isPreview
+          initialItems={items}
+          projects={list}
+          photosById={photosById}
+          category={projectCategory}
+        />
+      ) : (
+        <WorkGalleryGrid items={items} isPreview={false} category={projectCategory} />
+      )}
 
       {/* Empty State */}
       {items.length === 0 && (

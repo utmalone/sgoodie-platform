@@ -21,6 +21,12 @@ import {
   LIBRARY_GROUP_LABELS,
   type LibraryGroupKey
 } from '@/lib/admin/photo-suitability';
+import {
+  loadDraftAboutContent,
+  saveDraftAboutContent
+} from '@/lib/admin/draft-about-store';
+import { saveDraftHomeLayout } from '@/lib/admin/draft-home-layout-store';
+import { saveDraftContactContent } from '@/lib/admin/draft-contact-store';
 import guidelineStyles from '@/styles/admin/PhotoGuidelines.module.css';
 import sharedStyles from '@/styles/admin/AdminShared.module.css';
 import styles from '@/styles/admin/AdminPhotosClient.module.css';
@@ -102,7 +108,8 @@ function PagePhotoCard({
   aiLoadingKey,
   photoFieldHelp,
   styles,
-  slotIndex
+  slotIndex,
+  slotSection
 }: {
   photo: PhotoAsset;
   label: string;
@@ -112,10 +119,10 @@ function PagePhotoCard({
   onDragStart: (id: string) => void;
   onDragOver: (t: DropTarget) => void;
   onDragLeave: () => void;
-  onDropOnPhoto: (id: string) => void;
+  onDropOnPhoto: (id: string, targetSlot?: { section: 'hero' | 'approach' | 'bio' | 'feature'; index?: number }) => void;
   onDropOnSlot: (t: DropTarget & { type: 'slot' }) => void;
   togglePhotoDetails: (id: string) => void;
-  removeFromGallery: (id: string) => void;
+  removeFromGallery: (id: string, slot?: { section: 'hero' | 'approach' | 'bio' | 'feature'; index?: number }) => void;
   expandedPhotoId: string | null;
   updatePhotoField: (id: string, f: 'alt' | 'metaTitle' | 'metaDescription' | 'metaKeywords', v: string) => void;
   getAiFixRowClass: (k: string) => string;
@@ -124,7 +131,18 @@ function PagePhotoCard({
   photoFieldHelp: Record<string, string[]>;
   styles: Record<string, string>;
   slotIndex?: number;
+  slotSection?: 'hero' | 'approach' | 'bio' | 'feature';
 }) {
+  const slotInfo =
+    slotSection === 'hero'
+      ? { section: 'hero' as const }
+      : slotSection === 'bio'
+        ? { section: 'bio' as const }
+        : slotSection === 'approach' && slotIndex != null
+          ? { section: 'approach' as const, index: slotIndex }
+          : slotSection === 'feature' && slotIndex != null
+            ? { section: 'feature' as const, index: slotIndex }
+            : undefined;
   const isTargetPhoto = dragOverTarget?.type === 'photo' && dragOverTarget.id === photo.id;
   const isTargetSlot = dragOverTarget?.type === 'slot' && dragOverTarget.section === 'approach' && dragOverTarget.index === slotIndex;
 
@@ -144,7 +162,7 @@ function PagePhotoCard({
       onDrop={(e) => {
         e.preventDefault();
         onDragLeave();
-        onDropOnPhoto(photo.id);
+        onDropOnPhoto(photo.id, slotInfo);
       }}
       className={`${styles.photoCard} ${canReorder ? styles.photoCardDraggable : ''} ${
         draggedId === photo.id ? styles.photoCardDragging : ''
@@ -160,7 +178,7 @@ function PagePhotoCard({
           <button type="button" onClick={() => togglePhotoDetails(photo.id)} className={styles.textButton}>
             {expandedPhotoId === photo.id ? 'Close' : 'Edit'}
           </button>
-          <button type="button" onClick={() => removeFromGallery(photo.id)} className={styles.textButton}>
+          <button type="button" onClick={() => removeFromGallery(photo.id, slotInfo)} className={styles.textButton}>
             Remove
           </button>
         </div>
@@ -308,6 +326,7 @@ export function AdminPhotosClient() {
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
   const [savedPhotos, setSavedPhotos] = useState<PhotoAsset[]>([]);
   const [layouts, setLayouts] = useState<PageLayouts>({ home: null, about: null, contact: null });
+  const [savedLayouts, setSavedLayouts] = useState<PageLayouts>({ home: null, about: null, contact: null });
   const [activeSlug, setActiveSlug] = useState<PageSlug>('home');
   const [status, setStatus] = useState('');
   const [aiStatus, setAiStatus] = useState('');
@@ -338,7 +357,11 @@ export function AdminPhotosClient() {
   const [dragOverTarget, setDragOverTarget] = useState<DropTarget | null>(null);
   const [expandedPhotoId, setExpandedPhotoId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [addConfirm, setAddConfirm] = useState<{ photoId: string; message: string } | null>(null);
+  const [addConfirm, setAddConfirm] = useState<{
+    photoId?: string;
+    message: string;
+    blocking?: boolean;
+  } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const uploadFileInputRef = useRef<HTMLInputElement>(null);
   const pageGuidelines = useMemo(
@@ -381,6 +404,66 @@ export function AdminPhotosClient() {
       );
     });
   }, [photos, savedPhotos]);
+
+  // Check if layout (photo assignments/order) has unsaved changes
+  const hasLayoutChanges = useMemo(() => {
+    if (!layouts.home || !savedLayouts.home) return false;
+    if (
+      layouts.home.heroPhotoId !== savedLayouts.home.heroPhotoId ||
+      JSON.stringify(layouts.home.featurePhotoIds || []) !==
+        JSON.stringify(savedLayouts.home.featurePhotoIds || [])
+    )
+      return true;
+    if (!layouts.about || !savedLayouts.about) return false;
+    const layoutApproach = layouts.about.approachItems || [];
+    const savedApproach = savedLayouts.about.approachItems || [];
+    if (layoutApproach.length !== savedApproach.length) return true;
+    if (layouts.about.heroPhotoId !== savedLayouts.about.heroPhotoId) return true;
+    if (layouts.about.bio?.photoId !== savedLayouts.about.bio?.photoId) return true;
+    for (let i = 0; i < layoutApproach.length; i++) {
+      if (layoutApproach[i]?.photoId !== savedApproach[i]?.photoId) return true;
+    }
+    if (!layouts.contact || !savedLayouts.contact) return false;
+    return layouts.contact.heroPhotoId !== savedLayouts.contact.heroPhotoId;
+  }, [layouts, savedLayouts]);
+
+  // Save layouts to API (called by Save All)
+  const saveLayouts = useCallback(async (): Promise<boolean> => {
+    try {
+      if (layouts.home) {
+        const res = await fetch('/api/admin/layouts/home', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            heroPhotoId: layouts.home.heroPhotoId || '',
+            featurePhotoIds: layouts.home.featurePhotoIds || []
+          })
+        });
+        if (!res.ok) return false;
+      }
+      if (layouts.about) {
+        const res = await fetch('/api/admin/layouts/about', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(layouts.about)
+        });
+        if (!res.ok) return false;
+      }
+      if (layouts.contact) {
+        const res = await fetch('/api/admin/layouts/contact', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ heroPhotoId: layouts.contact.heroPhotoId || '' })
+        });
+        if (!res.ok) return false;
+      }
+      setSavedLayouts({ ...layouts });
+      refreshPreview();
+      return true;
+    } catch {
+      return false;
+    }
+  }, [layouts, refreshPreview]);
 
   // Save function for master save
   const savePhotos = useCallback(async (): Promise<boolean> => {
@@ -435,6 +518,19 @@ export function AdminPhotosClient() {
     }
   }, [hasPhotoChanges, isLoading, registerChange, unregisterChange, savePhotos]);
 
+  // Register layout changes (photo order/assignments) with master save context
+  useEffect(() => {
+    if (hasLayoutChanges && !isLoading) {
+      registerChange({
+        id: 'layouts',
+        type: 'layout',
+        save: saveLayouts
+      });
+    } else {
+      unregisterChange('layouts');
+    }
+  }, [hasLayoutChanges, isLoading, registerChange, unregisterChange, saveLayouts]);
+
   // Close menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -488,10 +584,10 @@ export function AdminPhotosClient() {
       .filter(Boolean) as PhotoAsset[];
   }, [pagePhotoIds, photosById]);
 
-  /** Sectioned data for Home: hero (1 slot) + features (unlimited) */
+  /** Sectioned data for Home: hero (1 slot) + features (collapse on remove) */
   const homeSections = useMemo(() => {
     const heroId = layouts.home?.heroPhotoId || '';
-    const featureIds = layouts.home?.featurePhotoIds || [];
+    const featureIds = (layouts.home?.featurePhotoIds || []).filter(Boolean);
     return {
       hero: heroId ? [heroId] : [],
       feature: featureIds
@@ -502,7 +598,9 @@ export function AdminPhotosClient() {
   const aboutSections = useMemo(() => {
     const heroId = layouts.about?.heroPhotoId || '';
     const approachItems = layouts.about?.approachItems || [];
-    const approachIds = approachItems.map((i) => i.photoId).filter(Boolean);
+    const approachIds = Array.from({ length: ABOUT_MAX_APPROACH_PHOTOS }, (_, i) =>
+      approachItems[i]?.photoId ?? ''
+    );
     const bioId = layouts.about?.bio?.photoId || '';
     return {
       hero: heroId ? [heroId] : [],
@@ -518,6 +616,26 @@ export function AdminPhotosClient() {
       hero: heroId ? [heroId] : []
     };
   }, [layouts.contact]);
+
+  /** True when About or Contact has max photos (blocks adding) */
+  const isPageFull = useMemo(() => {
+    if (activeSlug === 'about' && layouts.about) {
+      const heroId = layouts.about.heroPhotoId || '';
+      const approachItems = layouts.about.approachItems || [];
+      const approachFull = Array.from({ length: ABOUT_MAX_APPROACH_PHOTOS }, (_, i) =>
+        approachItems[i]?.photoId ?? ''
+      ).every((id) => !!id);
+      const hasBio = Boolean(layouts.about.bio?.photoId);
+      return Boolean(heroId) && approachFull && hasBio;
+    }
+    if (activeSlug === 'contact' && layouts.contact) {
+      return Boolean(layouts.contact.heroPhotoId);
+    }
+    return false;
+  }, [activeSlug, layouts.about, layouts.contact]);
+
+  const PAGE_FULL_MESSAGE =
+    'This page has the maximum number of photos. Remove a photo first if you want to add another.';
 
   const availablePhotos = useMemo(() => {
     const current = new Set(pagePhotoIds);
@@ -556,13 +674,40 @@ export function AdminPhotosClient() {
       const pagesData = (await pagesRes.json()) as PageContent[];
       const photosData = (await photosRes.json()) as PhotoAsset[];
       const homeData = homeRes.ok ? (await homeRes.json()) as HomeLayout : null;
-      const aboutData = aboutRes.ok ? (await aboutRes.json()) as AboutPageContent : null;
+      let aboutData = aboutRes.ok ? (await aboutRes.json()) as AboutPageContent : null;
       const contactData = contactRes.ok ? (await contactRes.json()) as ContactPageContent : null;
+
+      if (aboutData) {
+        const draftAbout = loadDraftAboutContent();
+        if (draftAbout?.approachItems?.length) {
+          const apiById = new Map(aboutData.approachItems.map((i) => [i.id, i]));
+          const draftIds = draftAbout.approachItems.map((d) => d.id);
+          const seen = new Set<string>();
+          const mergedFromDraftOrder = draftIds
+            .map((id) => {
+              if (seen.has(id)) return null;
+              seen.add(id);
+              return apiById.get(id);
+            })
+            .filter(Boolean) as typeof aboutData.approachItems;
+          const mergedIds = new Set(mergedFromDraftOrder.map((i) => i.id));
+          const newFromApi = aboutData.approachItems.filter(
+            (i) => i.photoId && !mergedIds.has(i.id)
+          );
+          const emptySlots = aboutData.approachItems.filter((i) => !i.photoId);
+          aboutData = {
+            ...aboutData,
+            approachItems: [...mergedFromDraftOrder, ...newFromApi, ...emptySlots].slice(0, 4)
+          };
+        }
+      }
 
       setPages(pagesData);
       setPhotos(photosData);
       setSavedPhotos(photosData);
-      setLayouts({ home: homeData, about: aboutData, contact: contactData });
+      const loadedLayouts = { home: homeData, about: aboutData, contact: contactData };
+      setLayouts(loadedLayouts);
+      setSavedLayouts(loadedLayouts);
       setIsLoading(false);
     }
 
@@ -648,15 +793,65 @@ export function AdminPhotosClient() {
     setDraggedId(photoId);
   }
 
-  function handleDropOnPhoto(targetId: string) {
+  function handleDropOnPhoto(targetId: string, targetSlot?: { section: 'hero' | 'approach' | 'bio' | 'feature'; index?: number }) {
     if (!draggedId || draggedId === targetId) return;
+
+    if (activeSlug === 'about' && layouts.about && targetSlot?.section === 'bio') {
+      const heroId = layouts.about.heroPhotoId || '';
+      const approachItems = layouts.about.approachItems || [];
+      const approachIds = Array.from({ length: ABOUT_MAX_APPROACH_PHOTOS }, (_, i) =>
+        approachItems[i]?.photoId ?? ''
+      );
+      const bioId = layouts.about.bio?.photoId || '';
+
+      const newApproach = approachIds.map((id) => (id === draggedId ? '' : id));
+      if (bioId && bioId !== draggedId) {
+        const emptyIdx = newApproach.findIndex((id) => !id);
+        if (emptyIdx >= 0) newApproach[emptyIdx] = bioId;
+      }
+      updatePagePhotoOrder([heroId, ...newApproach, draggedId], draggedId);
+      setDraggedId(null);
+      return;
+    }
+
     const currentIds = [...pagePhotoIds];
     const from = currentIds.indexOf(draggedId);
     const to = currentIds.indexOf(targetId);
     if (from < 0 || to < 0) return;
-    currentIds.splice(from, 1);
-    currentIds.splice(to, 0, draggedId);
-    updatePagePhotoOrder(currentIds);
+    const reordered = [...currentIds];
+    [reordered[from], reordered[to]] = [reordered[to], reordered[from]];
+    updatePagePhotoOrder(reordered);
+    setDraggedId(null);
+  }
+
+  async function handleDropAtEnd(section: 'homeFeatures' | 'aboutApproach') {
+    if (!draggedId) return;
+
+    if (activeSlug === 'home' && layouts.home && section === 'homeFeatures') {
+      const featureIds = [...(layouts.home.featurePhotoIds || [])];
+      if (!featureIds.includes(draggedId) || featureIds.length < 2) {
+        setDraggedId(null);
+        return;
+      }
+      const reordered = featureIds.filter((id) => id !== draggedId);
+      reordered.push(draggedId);
+      const heroId = layouts.home.heroPhotoId || '';
+      await updatePagePhotoOrder([heroId, ...reordered]);
+    } else if (activeSlug === 'about' && layouts.about && section === 'aboutApproach') {
+      const heroId = layouts.about.heroPhotoId || '';
+      const approachItems = layouts.about.approachItems || [];
+      const approachIds = approachItems.map((item) => item.photoId || '');
+      const bioId = layouts.about.bio?.photoId || '';
+      if (!approachIds.includes(draggedId) || approachIds.filter(Boolean).length < 2) {
+        setDraggedId(null);
+        return;
+      }
+      const reordered = approachIds.filter((id) => id !== draggedId);
+      reordered.push(draggedId);
+      const filled = Array.from({ length: ABOUT_MAX_APPROACH_PHOTOS }, (_, i) => reordered[i] || '');
+      const newIds = [heroId, ...filled, bioId].filter((id) => id !== undefined);
+      await updatePagePhotoOrder(newIds);
+    }
     setDraggedId(null);
   }
 
@@ -690,19 +885,21 @@ export function AdminPhotosClient() {
     } else if (activeSlug === 'about' && layouts.about) {
       const heroId = layouts.about.heroPhotoId || '';
       const approachItems = layouts.about.approachItems || [];
-      const approachIds = approachItems.map((i) => i.photoId).filter(Boolean);
+      const approachIds = Array.from({ length: ABOUT_MAX_APPROACH_PHOTOS }, (_, i) =>
+        approachItems[i]?.photoId ?? ''
+      );
       const bioId = layouts.about.bio?.photoId || '';
 
       if (target.section === 'hero') {
-        const withoutPhoto = approachIds.filter((id) => id !== photoId);
+        const withoutPhoto = approachIds.filter((id) => id && id !== photoId);
         if (heroId && heroId !== photoId && withoutPhoto.length < ABOUT_MAX_APPROACH_PHOTOS) {
           withoutPhoto.unshift(heroId);
         }
-        await updatePagePhotoOrder([photoId, ...withoutPhoto, bioId].filter(Boolean));
+        await updatePagePhotoOrder([photoId, ...withoutPhoto, bioId].filter((id) => id !== undefined));
       } else if (target.section === 'approach') {
-        const slotIndex = target.index ?? approachIds.length;
-        if (slotIndex >= ABOUT_MAX_APPROACH_PHOTOS) return;
-        const withoutPhoto = approachIds.filter((id) => id !== photoId);
+        const slotIndex = target.index ?? approachIds.findIndex((id) => !id);
+        if (slotIndex < 0 || slotIndex >= ABOUT_MAX_APPROACH_PHOTOS) return;
+        const withoutPhoto = approachIds.filter((id) => id && id !== photoId);
         const filled: string[] = [];
         for (let i = 0; i < ABOUT_MAX_APPROACH_PHOTOS; i++) {
           if (i === slotIndex) {
@@ -711,13 +908,14 @@ export function AdminPhotosClient() {
             filled.push(withoutPhoto.shift()!);
           }
         }
-        await updatePagePhotoOrder([heroId, ...filled, bioId].filter(Boolean));
+        await updatePagePhotoOrder([heroId, ...filled, bioId].filter((id) => id !== undefined));
       } else if (target.section === 'bio') {
-        const withoutPhoto = approachIds.filter((id) => id !== photoId);
-        if (bioId && bioId !== photoId && withoutPhoto.length < ABOUT_MAX_APPROACH_PHOTOS) {
-          withoutPhoto.push(bioId);
+        const newApproach = approachIds.map((id) => (id === photoId ? '' : id));
+        if (bioId && bioId !== photoId) {
+          const emptyIdx = newApproach.findIndex((id) => !id);
+          if (emptyIdx >= 0) newApproach[emptyIdx] = bioId;
         }
-        await updatePagePhotoOrder([heroId, ...withoutPhoto, photoId].filter(Boolean));
+        await updatePagePhotoOrder([heroId, ...newApproach, photoId], photoId);
       }
     } else if (activeSlug === 'contact' && layouts.contact) {
       if (target.section === 'hero') {
@@ -727,49 +925,39 @@ export function AdminPhotosClient() {
     setDraggedId(null);
   }
 
-  async function updatePagePhotoOrder(newIds: string[]) {
+  async function updatePagePhotoOrder(newIds: string[], bioPhotoIdOverride?: string) {
     setStatus('Updating order...');
     
     if (activeSlug === 'home' && layouts.home) {
-      // First ID is hero, rest are features
       const heroPhotoId = newIds[0] || '';
-      const featurePhotoIds = newIds.slice(1);
-      
-      const response = await fetch('/api/admin/layouts/home', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ heroPhotoId, featurePhotoIds })
-      });
-      
-      if (response.ok) {
-        const updated = await response.json();
-        setLayouts(prev => ({ ...prev, home: updated }));
-        setStatus('Order updated.');
-        refreshPreview();
-      } else {
-        setStatus('Failed to update order.');
-      }
+      const featurePhotoIds = newIds.slice(1).filter(Boolean);
+      const updated = { ...layouts.home, heroPhotoId, featurePhotoIds };
+      setLayouts((prev) => ({ ...prev, home: updated }));
+      saveDraftHomeLayout({ heroPhotoId, featurePhotoIds });
+      setStatus('Order updated.');
+      refreshPreview();
     } else if (activeSlug === 'about' && layouts.about) {
       const heroPhotoId = newIds[0] || '';
       const existingBioId = layouts.about.bio?.photoId || '';
-      const hasBio = Boolean(existingBioId);
-      const bioCandidate = hasBio && newIds.length >= 2 ? newIds[newIds.length - 1] : '';
-      const bioPhotoId = bioCandidate || existingBioId;
+      const bioIdStillInList = existingBioId && newIds.includes(existingBioId);
+      const bioPhotoId =
+        bioPhotoIdOverride ??
+        (bioIdStillInList ? existingBioId : '');
 
-      const rawApproachIds = hasBio ? newIds.slice(1, newIds.length - 1) : newIds.slice(1);
-      const approachPhotoIds: string[] = [];
-      for (const id of rawApproachIds) {
-        if (!id) continue;
-        if (id === heroPhotoId) continue;
-        if (hasBio && id === bioPhotoId) continue;
-        if (approachPhotoIds.includes(id)) continue;
-        approachPhotoIds.push(id);
-        if (approachPhotoIds.length >= ABOUT_MAX_APPROACH_PHOTOS) break;
-      }
+      const rawApproachIds = bioPhotoId
+        ? newIds.slice(1, newIds.length - 1)
+        : newIds.slice(1);
+      const approachSlotIds = Array.from(
+        { length: ABOUT_MAX_APPROACH_PHOTOS },
+        (_, i) => (rawApproachIds[i] && rawApproachIds[i] !== heroPhotoId && rawApproachIds[i] !== bioPhotoId
+          ? rawApproachIds[i]
+          : '')
+      );
 
       const existingByPhotoId = new Map(
         (layouts.about.approachItems || []).map((item) => [item.photoId, item])
       );
+      const existingByIndex = (layouts.about.approachItems || []);
 
       const createApproachItem = (photoId: string) => {
         const uuid =
@@ -785,65 +973,125 @@ export function AdminPhotosClient() {
         };
       };
 
-      const updatedApproachItems = approachPhotoIds.map(
-        (photoId) => existingByPhotoId.get(photoId) ?? createApproachItem(photoId)
-      );
+      const updatedApproachItems = approachSlotIds.map((photoId, i) => {
+        const existing =
+          photoId
+            ? (existingByPhotoId.get(photoId) ?? existingByIndex[i])
+            : existingByIndex[i];
+        return existing
+          ? { ...existing, photoId: photoId || '' }
+          : createApproachItem(photoId || '');
+      });
 
       const updatedBio = layouts.about.bio
-        ? {
-            ...layouts.about.bio,
-            photoId: bioPhotoId
-          }
-        : undefined;
+        ? { ...layouts.about.bio, photoId: bioPhotoId }
+        : { name: '', photoId: bioPhotoId, paragraphs: [] as string[] };
       
-      const response = await fetch('/api/admin/layouts/about', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...layouts.about,
-          heroPhotoId,
-          approachItems: updatedApproachItems,
-          bio: updatedBio
-        })
+      const updated = {
+        ...layouts.about,
+        heroPhotoId,
+        approachItems: updatedApproachItems,
+        bio: updatedBio
+      };
+      setLayouts((prev) => ({ ...prev, about: updated }));
+      const existingDraft = loadDraftAboutContent();
+      saveDraftAboutContent({
+        ...existingDraft,
+        approachItems: updatedApproachItems.map((i) => ({
+          id: i.id,
+          title: i.title,
+          description: i.description
+        }))
       });
-      
-      if (response.ok) {
-        const updated = await response.json();
-        setLayouts(prev => ({ ...prev, about: updated }));
-        setStatus('Order updated.');
-        refreshPreview();
-      } else {
-        setStatus('Failed to update order.');
-      }
+      setStatus('Order updated.');
+      refreshPreview();
     } else if (activeSlug === 'contact' && layouts.contact) {
-      // For Contact: Just update the hero photo ID
       const heroPhotoId = newIds[0] || '';
-      
-      const response = await fetch('/api/admin/layouts/contact', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ heroPhotoId })
-      });
-      
-      if (response.ok) {
-        const updated = await response.json();
-        setLayouts(prev => ({ ...prev, contact: updated }));
-        setStatus('Order updated.');
-        refreshPreview();
-      } else {
-        setStatus('Failed to update order.');
-      }
+      const updated = { ...layouts.contact, heroPhotoId };
+      setLayouts((prev) => ({ ...prev, contact: updated }));
+      saveDraftContactContent({ heroPhotoId });
+      setStatus('Order updated.');
+      refreshPreview();
     } else {
       setStatus('Reordering not available for this page.');
     }
   }
 
-  async function removeFromGallery(photoId: string) {
-    const newIds = pagePhotoIds.filter(id => id !== photoId);
+  async function removeFromGallery(
+    photoId: string,
+    slot?: { section: 'hero' | 'approach' | 'bio' | 'feature'; index?: number }
+  ) {
+    if (activeSlug === 'about' && layouts.about && slot) {
+      await removeFromAboutSlot(photoId, slot);
+      return;
+    }
+    if (activeSlug === 'home' && layouts.home && slot?.section === 'hero') {
+      const featureIds = (layouts.home.featurePhotoIds || []).filter(Boolean);
+      await updatePagePhotoOrder(['', ...featureIds]);
+      return;
+    }
+    if (activeSlug === 'contact' && layouts.contact && slot?.section === 'hero') {
+      await updatePagePhotoOrder(['']);
+      return;
+    }
+    const newIds = pagePhotoIds.filter((id) => id !== photoId);
     await updatePagePhotoOrder(newIds);
   }
 
-  async function addToGallery(photoId: string) {
+  async function removeFromAboutSlot(
+    photoId: string,
+    slot: { section: 'hero' | 'approach' | 'bio' | 'feature'; index?: number }
+  ) {
+    setStatus('Updating...');
+    const layout = layouts.about!;
+    let heroPhotoId = layout.heroPhotoId || '';
+    let approachItems = [...(layout.approachItems || [])];
+    let bioPhotoId = layout.bio?.photoId || '';
+
+    if (slot.section === 'hero' && photoId === heroPhotoId) {
+      heroPhotoId = '';
+    } else if (slot.section === 'bio' && photoId === bioPhotoId) {
+      bioPhotoId = '';
+    } else if (slot.section === 'approach' && slot.index != null) {
+      const idx = slot.index;
+      while (approachItems.length <= idx) {
+        approachItems.push({
+          id: `approach-slot-${approachItems.length}`,
+          title: '',
+          description: '',
+          photoId: ''
+        });
+      }
+      if (approachItems[idx]?.photoId === photoId) {
+        approachItems = approachItems.map((item, i) =>
+          i === idx ? { ...item, photoId: '' } : item
+        );
+      }
+    }
+
+    const updated = {
+      ...layout,
+      heroPhotoId,
+      approachItems,
+      bio: layout.bio
+        ? { ...layout.bio, photoId: bioPhotoId }
+        : { name: '', photoId: bioPhotoId, paragraphs: [] as string[] }
+    };
+    setLayouts((prev) => ({ ...prev, about: updated }));
+    const existingDraft = loadDraftAboutContent();
+    saveDraftAboutContent({
+      ...existingDraft,
+      approachItems: approachItems.map((i) => ({ id: i.id, title: i.title, description: i.description }))
+    });
+    setStatus('Order updated.');
+    refreshPreview();
+  }
+
+  async function addToGallery(photoId: string, slotHint?: 'hero' | 'approach' | 'bio'): Promise<boolean> {
+    if (isPageFull) {
+      setStatus(PAGE_FULL_MESSAGE);
+      return false;
+    }
     if (activeSlug === 'about' && layouts.about) {
       const currentIds = [...pagePhotoIds];
       const heroId = currentIds[0] || layouts.about.heroPhotoId;
@@ -855,12 +1103,24 @@ export function AdminPhotosClient() {
       );
 
       if (approachIds.includes(photoId) || photoId === heroId || (hasBio && photoId === existingBioId)) {
-        return;
+        return false;
+      }
+
+      const approachSlots = Array.from({ length: ABOUT_MAX_APPROACH_PHOTOS }, (_, i) =>
+        (layouts.about?.approachItems || [])[i]?.photoId ?? ''
+      );
+      const approachFull = approachSlots.every((id) => !!id);
+      const addToBio = heroId && approachFull && (slotHint === 'bio' || !hasBio);
+
+      if (addToBio) {
+        const nextIds = [heroId, ...approachIds, photoId].filter(Boolean);
+        await updatePagePhotoOrder(nextIds, photoId);
+        return true;
       }
 
       if (approachIds.length >= ABOUT_MAX_APPROACH_PHOTOS) {
         setStatus(`Approach & Results supports up to ${ABOUT_MAX_APPROACH_PHOTOS} photos. Remove one before adding another.`);
-        return;
+        return false;
       }
 
       const nextIds = hasBio
@@ -868,16 +1128,23 @@ export function AdminPhotosClient() {
         : [heroId, ...approachIds, photoId];
 
       await updatePagePhotoOrder(nextIds.filter(Boolean));
-      return;
+      return true;
     }
 
     const newIds = [...pagePhotoIds, photoId];
     await updatePagePhotoOrder(newIds);
+    return true;
   }
 
   function handleAddToGalleryClick(photoId: string) {
     const photo = photosById.get(photoId);
     if (!photo) return;
+
+    if (isPageFull) {
+      setAddConfirm({ message: PAGE_FULL_MESSAGE, blocking: true });
+      setOpenMenuId(null);
+      return;
+    }
 
     const hasBio = Boolean(layouts.about?.bio?.photoId);
     const slot = getSlotForAdd(activeSlug, pagePhotoIds, hasBio);
@@ -894,9 +1161,10 @@ export function AdminPhotosClient() {
 
   async function confirmAddToGallery() {
     if (!addConfirm) return;
-    const { photoId } = addConfirm;
+    const { photoId, blocking } = addConfirm;
     setAddConfirm(null);
-    await addToGallery(photoId);
+    if (blocking) return;
+    if (photoId) await addToGallery(photoId);
   }
 
   async function handleFileSelect(file: File | null) {
@@ -975,18 +1243,22 @@ export function AdminPhotosClient() {
     setSavedPhotos((prev) => [...prev, photo]);
     
     // Add to current page
-    await addToGallery(photo.id);
+    const added = await addToGallery(photo.id);
     const hasBio = Boolean(layouts.about?.bio?.photoId);
     const slot = getSlotForAdd(activeSlug, pagePhotoIds, hasBio);
     const mismatchWarning = getMismatchWarning(photo, slot, activeSlug);
-    
+
     setUploadAlt('');
     setUploadMetaTitle('');
     setUploadMetaDescription('');
     setUploadMetaKeywords('');
     setUploadFile(null);
     if (uploadFileInputRef.current) uploadFileInputRef.current.value = '';
-    setStatus(mismatchWarning ? 'Upload complete. ' + mismatchWarning : 'Upload complete and added to page.');
+    if (!added && isPageFull) {
+      setStatus('Upload complete. ' + PAGE_FULL_MESSAGE);
+    } else {
+      setStatus(mismatchWarning ? 'Upload complete. ' + mismatchWarning : 'Upload complete and added to page.');
+    }
     refreshPreview();
   }
 
@@ -1136,17 +1408,24 @@ export function AdminPhotosClient() {
       setStatus(`Uploaded ${i + 1} of ${readyItems.length} photos...`);
     }
     
-    // Add to page if checkbox is checked
-    if (bulkApplyToPage && uploadedPhotoIds.length > 0) {
+    // Add to page if checkbox is checked (skip when About/Contact is full)
+    let pageFullBlocked = false;
+    if (bulkApplyToPage && uploadedPhotoIds.length > 0 && !isPageFull) {
       const newIds = [...pagePhotoIds, ...uploadedPhotoIds];
       await updatePagePhotoOrder(newIds);
+    } else if (bulkApplyToPage && uploadedPhotoIds.length > 0 && isPageFull) {
+      pageFullBlocked = true;
     }
-    
+
     // Remove completed items
     setBulkItems(prev => prev.filter(item => item.status !== 'done'));
-    
+
     setIsBulkProcessing(false);
-    setStatus(`Successfully uploaded ${uploadedPhotoIds.length} photos!`);
+    setStatus(
+      pageFullBlocked
+        ? `Successfully uploaded ${uploadedPhotoIds.length} photos. ${PAGE_FULL_MESSAGE}`
+        : `Successfully uploaded ${uploadedPhotoIds.length} photos!`
+    );
     refreshPreview();
   }
 
@@ -1419,10 +1698,12 @@ export function AdminPhotosClient() {
                   type="checkbox"
                   checked={bulkApplyToPage}
                   onChange={(e) => setBulkApplyToPage(e.target.checked)}
+                  disabled={isPageFull}
                   className={styles.checkbox}
                 />
                 <span className={styles.cardDescriptionSoft}>
                   Apply photos to current page ({pageLabels[activeSlug]})
+                  {isPageFull && ' — Page full, remove a photo first'}
                   <FieldInfoTooltip label="Apply to Page" lines={photoFieldHelp.applyToPage} />
                 </span>
               </label>
@@ -1680,6 +1961,7 @@ export function AdminPhotosClient() {
                   <PagePhotoCard
                     photo={photosById.get(homeSections.hero[0])!}
                     label="Hero"
+                    slotSection="hero"
                     canReorder={canReorder}
                     draggedId={draggedId}
                     dragOverTarget={dragOverTarget}
@@ -1742,6 +2024,19 @@ export function AdminPhotosClient() {
                     />
                   );
                 })}
+                {homeSections.feature.length >= 2 && (
+                  <div
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      handleDropAtEnd('homeFeatures');
+                    }}
+                    className={styles.slotPlaceholder}
+                    style={{ opacity: 0.6 }}
+                  >
+                    <span className={styles.slotPlaceholderHint}>Drop here to move to end</span>
+                  </div>
+                )}
                 <SlotPlaceholder
                   label="Add feature"
                   slotTarget={{ type: 'slot', section: 'feature' }}
@@ -1765,6 +2060,7 @@ export function AdminPhotosClient() {
                   <PagePhotoCard
                     photo={photosById.get(aboutSections.hero[0])!}
                     label="Hero"
+                    slotSection="hero"
                     canReorder={canReorder}
                     draggedId={draggedId}
                     dragOverTarget={dragOverTarget}
@@ -1805,11 +2101,13 @@ export function AdminPhotosClient() {
                     const photo = photosById.get(photoId);
                     if (!photo) return null;
                     return (
-                      <PagePhotoCard
-                        key={photo.id}
-                        photo={photo}
-                        label={`Approach ${slotIndex + 1}`}
-                        canReorder={canReorder}
+                    <PagePhotoCard
+                      key={`approach-${slotIndex}-${photo.id}`}
+                      photo={photo}
+                      label={`Approach ${slotIndex + 1}`}
+                      slotSection="approach"
+                      slotIndex={slotIndex}
+                      canReorder={canReorder}
                         draggedId={draggedId}
                         dragOverTarget={dragOverTarget}
                         onDragStart={handleDragStart}
@@ -1826,7 +2124,6 @@ export function AdminPhotosClient() {
                         aiLoadingKey={aiLoadingKey}
                         photoFieldHelp={photoFieldHelp}
                         styles={styles}
-                        slotIndex={slotIndex}
                       />
                     );
                   }
@@ -1843,6 +2140,19 @@ export function AdminPhotosClient() {
                     />
                   );
                 })}
+                {aboutSections.approach.filter(Boolean).length >= 2 && (
+                  <div
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      handleDropAtEnd('aboutApproach');
+                    }}
+                    className={styles.slotPlaceholder}
+                    style={{ opacity: 0.6 }}
+                  >
+                    <span className={styles.slotPlaceholderHint}>Drop here to move to end</span>
+                  </div>
+                )}
               </div>
             </div>
             <div className={styles.photoSection}>
@@ -1852,6 +2162,7 @@ export function AdminPhotosClient() {
                   <PagePhotoCard
                     photo={photosById.get(aboutSections.bio[0])!}
                     label="Bio"
+                    slotSection="bio"
                     canReorder={canReorder}
                     draggedId={draggedId}
                     dragOverTarget={dragOverTarget}
@@ -1895,6 +2206,7 @@ export function AdminPhotosClient() {
                   <PagePhotoCard
                     photo={photosById.get(contactSections.hero[0])!}
                     label="Hero"
+                    slotSection="hero"
                     canReorder={canReorder}
                     draggedId={draggedId}
                     dragOverTarget={dragOverTarget}
@@ -1942,20 +2254,32 @@ export function AdminPhotosClient() {
           <div className={styles.warningCard} role="alert">
             <p className={styles.warningText}>{addConfirm.message}</p>
             <div className={styles.warningActions}>
-              <button
-                type="button"
-                onClick={() => setAddConfirm(null)}
-                className={styles.libraryActionButton}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmAddToGallery}
-                className={styles.libraryActionButtonPrimary}
-              >
-                Add anyway
-              </button>
+              {addConfirm.blocking ? (
+                <button
+                  type="button"
+                  onClick={() => setAddConfirm(null)}
+                  className={styles.libraryActionButtonPrimary}
+                >
+                  OK
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setAddConfirm(null)}
+                    className={styles.libraryActionButton}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmAddToGallery}
+                    className={styles.libraryActionButtonPrimary}
+                  >
+                    Add anyway
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}

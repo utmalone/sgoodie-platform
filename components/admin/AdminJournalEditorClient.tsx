@@ -110,8 +110,8 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
 
   // Save function for master save
   const savePost = useCallback(async (): Promise<boolean> => {
-    if (!post.title || !post.slug || !post.heroPhotoId) {
-      setStatus('Please fill in title, slug, and select a featured photo.');
+    if (!post.title || !post.slug) {
+      setStatus('Please fill in title and slug.');
       return false;
     }
 
@@ -260,9 +260,11 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
   }
 
   function handleHeroSelect(photoIds: string[]) {
-    if (photoIds[0]) {
-      updateField('heroPhotoId', photoIds[0]);
-    }
+    updateField('heroPhotoId', photoIds[0] || '');
+  }
+
+  function removeFeaturedPhoto() {
+    updateField('heroPhotoId', '');
   }
 
   function handleGallerySelect(photoIds: string[]) {
@@ -282,10 +284,25 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
 
     if (fromIndex < 0 || toIndex < 0) return;
 
-    current.splice(fromIndex, 1);
-    current.splice(toIndex, 0, draggedPhotoId);
+    const reordered = [...current];
+    [reordered[fromIndex], reordered[toIndex]] = [reordered[toIndex], reordered[fromIndex]];
 
-    updateField('galleryPhotoIds', current);
+    updateField('galleryPhotoIds', reordered);
+    refreshPreview();
+  }
+
+  function handleGalleryDropAtEnd() {
+    if (!draggedPhotoId) return;
+
+    const current = [...(post.galleryPhotoIds || [])];
+    if (current.length < 2 || !current.includes(draggedPhotoId)) return;
+
+    const reordered = current.filter((id) => id !== draggedPhotoId);
+    reordered.push(draggedPhotoId);
+
+    updateField('galleryPhotoIds', reordered);
+    setDraggedPhotoId(null);
+    refreshPreview();
   }
 
   function removeFromGallery(photoId: string) {
@@ -507,23 +524,34 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
         <div className={styles.sectionHeader}>
           <div>
             <div className={guidelineStyles.headingRow}>
-              <h2 className={styles.cardTitle}>Featured Photo *</h2>
+              <h2 className={styles.cardTitle}>Featured Photo</h2>
               <PhotoGuidelineTooltip
                 label={journalPhotoGuideline.label}
                 lines={journalPhotoGuideline.lines}
               />
             </div>
             <p className={styles.cardDescription}>
-              Featured image shown on the journal index.
+              Featured image shown on the journal index. Optional.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowHeroSelector(true)}
-            className={styles.heroButton}
-          >
-            {heroPhoto ? 'Change' : 'Select Photo'}
-          </button>
+          <div className={styles.heroButtonRow}>
+            <button
+              type="button"
+              onClick={() => setShowHeroSelector(true)}
+              className={styles.heroButton}
+            >
+              {heroPhoto ? 'Change' : 'Select Photo'}
+            </button>
+            {heroPhoto && (
+              <button
+                type="button"
+                onClick={removeFeaturedPhoto}
+                className={styles.removeButton}
+              >
+                Remove
+              </button>
+            )}
+          </div>
         </div>
         {heroPhoto && (
           <div className={styles.sectionBody}>
@@ -594,6 +622,19 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
                 </button>
               </div>
             ))}
+            {galleryPhotos.length >= 2 && (
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  handleGalleryDropAtEnd();
+                }}
+                className={styles.galleryItem}
+                style={{ opacity: 0.6, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <span className={styles.cardDescription}>Drop here to move to end</span>
+              </div>
+            )}
           </div>
         ) : (
           <p className={styles.emptyText}>No gallery photos added yet.</p>

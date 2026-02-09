@@ -1,5 +1,6 @@
-import { revalidateTag } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { CacheTags } from '@/lib/cache-tags';
+import { portfolioCategories } from '@/lib/admin/portfolio-config';
 
 function revalidateTags(tags: string[]) {
   tags.forEach((tag) => revalidateTag(tag, 'max'));
@@ -11,6 +12,7 @@ function revalidateTags(tags: string[]) {
  */
 export function revalidatePortfolioPages() {
   revalidateTags([CacheTags.projects, CacheTags.workIndex]);
+  portfolioCategories.forEach((cat) => revalidatePath(`/portfolio/${cat}`));
 }
 
 /**

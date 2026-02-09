@@ -55,6 +55,7 @@
   z-index: 40;
   text-transform: none;
   letter-spacing: normal;
+  cursor: default;
 }
 
 .tooltipTrigger:hover .tooltip,

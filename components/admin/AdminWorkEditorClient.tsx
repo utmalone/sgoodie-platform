@@ -400,10 +400,23 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
     
     if (fromIndex < 0 || toIndex < 0) return;
     
-    current.splice(fromIndex, 1);
-    current.splice(toIndex, 0, draggedPhotoId);
+    const reordered = [...current];
+    [reordered[fromIndex], reordered[toIndex]] = [reordered[toIndex], reordered[fromIndex]];
     
-    updateField('galleryPhotoIds', current);
+    updateField('galleryPhotoIds', reordered);
+  }
+
+  function handleGalleryDropAtEnd() {
+    if (!draggedPhotoId) return;
+
+    const current = [...(project.galleryPhotoIds || [])];
+    if (current.length < 2 || !current.includes(draggedPhotoId)) return;
+
+    const reordered = current.filter((id) => id !== draggedPhotoId);
+    reordered.push(draggedPhotoId);
+
+    updateField('galleryPhotoIds', reordered);
+    setDraggedPhotoId(null);
   }
 
   function removeFromGallery(photoId: string) {
@@ -683,6 +696,19 @@ export function AdminWorkEditorClient({ projectId }: AdminWorkEditorClientProps)
                 </button>
               </div>
             ))}
+            {galleryPhotos.length >= 2 && (
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  handleGalleryDropAtEnd();
+                }}
+                className={styles.galleryItem}
+                style={{ opacity: 0.6, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <span className={styles.cardDescription}>Drop here to move to end</span>
+              </div>
+            )}
           </div>
         ) : (
           <p className={styles.emptyText}>No gallery photos added yet.</p>

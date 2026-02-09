@@ -1,5 +1,6 @@
 import type { HomeLayout } from '@/types';
 
+/** Draft can include heroPhotoId and featurePhotoIds for preview (layout changes before Save All) */
 type DraftPayload = {
   homeLayout: Partial<HomeLayout>;
   updatedAt: string;

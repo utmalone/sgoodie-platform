@@ -90,8 +90,8 @@ const aboutSectionHelp = {
     'Tip: the 2nd paragraph is visually emphasized on the site.'
   ],
   approach: [
-    'A 3-card grid (each card has a photo, title, and description).',
-    'Use short titles and keep descriptions concise.'
+    'Up to 4 cards (each card has a photo, title, and description).',
+    'Add photos in the Photo section first. Drag cards to reorder.'
   ],
   featured: [
     'Two-column list of publications under the “Featured In” heading.',
@@ -148,7 +148,8 @@ function pickAboutText(content: AboutPageContent) {
     approachItems: (content.approachItems || []).map((item) => ({
       id: item.id,
       title: item.title,
-      description: item.description
+      description: item.description,
+      photoId: item.photoId
     })),
     featuredTitle: content.featuredTitle,
     featuredPublications: content.featuredPublications,
@@ -199,7 +200,15 @@ export function AdminPagesClient() {
   const [aiLoadingKey, setAiLoadingKey] = useState<string | null>(null);
   const [aiResultKey, setAiResultKey] = useState<string | null>(null);
   const [aiResultSuccess, setAiResultSuccess] = useState(false);
+  const [draggedApproachIndex, setDraggedApproachIndex] = useState<number | null>(null);
+  const [approachDropTarget, setApproachDropTarget] = useState<number | null>(null);
   const aiResultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const emptyDragImage = useMemo(() => {
+    if (typeof document === 'undefined') return null;
+    const img = document.createElement('img');
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    return img;
+  }, []);
   const [isLoading, setIsLoading] = useState(true);
 
   const activeSlug = useMemo<string>(() => {
@@ -331,9 +340,23 @@ export function AdminPagesClient() {
       const latest = (await latestRes.json()) as AboutPageContent;
 
       const currentText = pickAboutText(layouts.about);
-      const currentApproachById = new Map(
-        (currentText.approachItems || []).map((item) => [item.id, item])
+      const latestById = new Map((latest.approachItems || []).map((item) => [item.id, item]));
+      const currentOrder = currentText.approachItems || [];
+
+      const mergedFromCurrent = currentOrder
+        .map((curr) => {
+          const latestItem = latestById.get(curr.id);
+          if (!latestItem) return null;
+          return { ...latestItem, title: curr.title, description: curr.description };
+        })
+        .filter(Boolean) as typeof latest.approachItems;
+
+      const currentIds = new Set(currentOrder.map((i) => i.id));
+      const newFromLatest = (latest.approachItems || []).filter(
+        (i) => i.photoId && !currentIds.has(i.id)
       );
+      const emptySlots = (latest.approachItems || []).filter((i) => !i.photoId);
+      const approachItems = [...mergedFromCurrent, ...newFromLatest, ...emptySlots].slice(0, 4);
 
       const merged: AboutPageContent = {
         ...latest,
@@ -343,15 +366,7 @@ export function AdminPagesClient() {
         heroSubtitleColor: currentText.heroSubtitleColor,
         introParagraphs: currentText.introParagraphs ?? [],
         approachTitle: currentText.approachTitle,
-        approachItems: (latest.approachItems || []).map((item) => {
-          const match = currentApproachById.get(item.id);
-          if (!match) return item;
-          return {
-            ...item,
-            title: match.title,
-            description: match.description
-          };
-        }),
+        approachItems,
         featuredTitle: currentText.featuredTitle,
         featuredPublications: currentText.featuredPublications ?? [],
         bio: {
@@ -559,20 +574,38 @@ export function AdminPagesClient() {
                     }
                   }
                 : null),
-              ...(draftAbout.approachItems
-                ? {
-                    approachItems: aboutData.approachItems.map((item) => {
-                      const match = draftAbout.approachItems?.find(
-                        (draftItem) => draftItem.id === item.id
-                      );
-                      if (!match) return item;
-                      return {
-                        ...item,
-                        title: match.title,
-                        description: match.description
-                      };
-                    })
-                  }
+              ...(draftAbout.approachItems?.length
+                ? (() => {
+                    const apiById = new Map(aboutData.approachItems.map((i) => [i.id, i]));
+                    const draftIds = draftAbout.approachItems!.map((d) => d.id);
+                    const draftById = new Map(draftAbout.approachItems!.map((d) => [d.id, d]));
+                    const seen = new Set<string>();
+                    const mergedFromDraftOrder = draftIds
+                      .map((id) => {
+                        if (seen.has(id)) return null;
+                        seen.add(id);
+                        const apiItem = apiById.get(id);
+                        const draftItem = draftById.get(id);
+                        if (!apiItem) return null;
+                        return {
+                          ...apiItem,
+                          title: draftItem?.title ?? apiItem.title,
+                          description: draftItem?.description ?? apiItem.description
+                        };
+                      })
+                      .filter(Boolean) as typeof aboutData.approachItems;
+                    const mergedIds = new Set(mergedFromDraftOrder.map((i) => i.id));
+                    const newFromApi = aboutData.approachItems.filter(
+                      (i) => i.photoId && !mergedIds.has(i.id)
+                    );
+                    const emptySlots = aboutData.approachItems.filter((i) => !i.photoId);
+                    return {
+                      approachItems: [...mergedFromDraftOrder, ...newFromApi, ...emptySlots].slice(
+                        0,
+                        4
+                      )
+                    };
+                  })()
                 : null)
             }
           : aboutData;
@@ -630,6 +663,18 @@ export function AdminPagesClient() {
 
   const aboutDraftSnapshot = useMemo(() => {
     if (!layouts.about) return null;
+    const seen = new Set<string>();
+    const approachItems = (layouts.about.approachItems || [])
+      .filter((item) => {
+        if (seen.has(item.id)) return false;
+        seen.add(item.id);
+        return true;
+      })
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description
+      }));
     return {
       heroTitle: layouts.about.heroTitle,
       heroSubtitle: layouts.about.heroSubtitle,
@@ -637,11 +682,7 @@ export function AdminPagesClient() {
       heroSubtitleColor: layouts.about.heroSubtitleColor,
       introParagraphs: layouts.about.introParagraphs,
       approachTitle: layouts.about.approachTitle,
-      approachItems: (layouts.about.approachItems || []).map((item) => ({
-        id: item.id,
-        title: item.title,
-        description: item.description
-      })),
+      approachItems,
       featuredTitle: layouts.about.featuredTitle,
       featuredPublications: layouts.about.featuredPublications,
       bio: {
@@ -744,6 +785,29 @@ export function AdminPagesClient() {
       );
       return { ...prev, about: { ...prev.about, approachItems: nextItems } };
     });
+  }
+
+  function reorderApproachItems(fromIndex: number, toIndex: number) {
+    setLayouts((prev) => {
+      if (!prev.about) return prev;
+      const items = prev.about.approachItems || [];
+      const filled = items.filter((i) => i.photoId);
+      const empty = items.filter((i) => !i.photoId);
+      if (fromIndex < 0 || fromIndex >= filled.length || toIndex < 0 || toIndex >= filled.length) return prev;
+      const reordered = [...filled];
+      [reordered[fromIndex], reordered[toIndex]] = [reordered[toIndex], reordered[fromIndex]];
+      const nextItems = [...reordered, ...empty];
+      while (nextItems.length < 4) {
+        nextItems.push({
+          id: `approach-slot-${nextItems.length}-${Date.now()}`,
+          title: '',
+          description: '',
+          photoId: ''
+        });
+      }
+      return { ...prev, about: { ...prev.about, approachItems: nextItems.slice(0, 4) } };
+    });
+    refreshPreview();
   }
 
   function updateFeaturedPublication(index: number, value: string) {
@@ -1347,39 +1411,97 @@ export function AdminPagesClient() {
               </label>
               <p className={styles.cardDescription}>{aboutFieldHelp.approachItems[0]}</p>
               <div className={styles.formGrid}>
-                {(layouts.about.approachItems || []).map((item) => (
-                  <div key={item.id} className={styles.card} style={{ padding: '1rem' }}>
-                    <div className={styles.sectionHeadingRow}>
-                      <p className={styles.sectionLabel}>Card</p>
-                    </div>
-                    <div className={styles.formRow}>
-                      <label className={`${styles.label} ${getAiFixRowClass(`about-approachItem-${item.id}-title`)}`}>
-                        <div className={styles.fieldHeader}>
-                          <span className={styles.labelText}>Title</span>
-                          <AiFixButton onClick={() => handleAiFixApproachItem(item.id, 'title')} loading={aiLoadingKey === `about-approachItem-${item.id}-title`} />
-                        </div>
-                        <input
-                          value={item.title}
-                          onChange={(event) => updateApproachItemText(item.id, 'title', event.target.value)}
-                          className={styles.input}
-                        />
-                      </label>
-                      <label className={`${styles.label} ${getAiFixRowClass(`about-approachItem-${item.id}-description`)}`}>
-                        <div className={styles.fieldHeader}>
-                          <span className={styles.labelText}>Description</span>
-                          <AiFixButton onClick={() => handleAiFixApproachItem(item.id, 'description')} loading={aiLoadingKey === `about-approachItem-${item.id}-description`} />
-                        </div>
-                        <textarea
-                          value={item.description}
-                          onChange={(event) =>
-                            updateApproachItemText(item.id, 'description', event.target.value)
+                {(layouts.about.approachItems || [])
+                  .filter((item) => item.photoId)
+                  .map((item, displayIndex) => {
+                    const photo = photosById.get(item.photoId);
+                    const isDragging = draggedApproachIndex === displayIndex;
+                    const isDropTarget = approachDropTarget === displayIndex;
+                    return (
+                      <div
+                        key={`approach-${displayIndex}-${item.id}`}
+                        className={`${styles.card} ${styles.approachCard} ${isDragging ? styles.approachCardDragging : ''} ${isDropTarget ? styles.approachCardDropTarget : ''}`}
+                        style={{ padding: '1rem' }}
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggedApproachIndex(displayIndex);
+                          e.dataTransfer.effectAllowed = 'move';
+                          e.dataTransfer.setData('text/plain', String(displayIndex));
+                          if (emptyDragImage) {
+                            e.dataTransfer.setDragImage(emptyDragImage, 0, 0);
                           }
-                          className={styles.textarea}
-                        />
-                      </label>
-                    </div>
-                  </div>
-                ))}
+                        }}
+                        onDragEnd={() => {
+                          setDraggedApproachIndex(null);
+                          setApproachDropTarget(null);
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          if (draggedApproachIndex !== null && draggedApproachIndex !== displayIndex) {
+                            setApproachDropTarget(displayIndex);
+                          }
+                        }}
+                        onDragLeave={() => setApproachDropTarget(null)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (draggedApproachIndex !== null && draggedApproachIndex !== displayIndex) {
+                            reorderApproachItems(draggedApproachIndex, displayIndex);
+                          }
+                          setDraggedApproachIndex(null);
+                          setApproachDropTarget(null);
+                        }}
+                      >
+                        <div className={styles.approachCardHeader}>
+                          <div className={styles.approachCardPhoto}>
+                            {photo && (
+                              <Image
+                                src={photo.src}
+                                alt={photo.alt || 'Approach photo'}
+                                fill
+                                sizes="80px"
+                                className={styles.approachCardPhotoImg}
+                                draggable={false}
+                                style={{ pointerEvents: 'none' }}
+                              />
+                            )}
+                          </div>
+                          <div className={styles.approachCardHeaderMeta}>
+                            <p className={styles.sectionLabel}>Card {displayIndex + 1}</p>
+                            <span className={styles.approachCardDragHint}>Drag to reorder</span>
+                          </div>
+                        </div>
+                        <div className={styles.formRow}>
+                          <label className={`${styles.label} ${getAiFixRowClass(`about-approachItem-${item.id}-title`)}`}>
+                            <div className={styles.fieldHeader}>
+                              <span className={styles.labelText}>Title</span>
+                              <AiFixButton onClick={() => handleAiFixApproachItem(item.id, 'title')} loading={aiLoadingKey === `about-approachItem-${item.id}-title`} />
+                            </div>
+                            <input
+                              value={item.title}
+                              onChange={(event) => updateApproachItemText(item.id, 'title', event.target.value)}
+                              className={styles.input}
+                            />
+                          </label>
+                          <label className={`${styles.label} ${getAiFixRowClass(`about-approachItem-${item.id}-description`)}`}>
+                            <div className={styles.fieldHeader}>
+                              <span className={styles.labelText}>Description</span>
+                              <AiFixButton onClick={() => handleAiFixApproachItem(item.id, 'description')} loading={aiLoadingKey === `about-approachItem-${item.id}-description`} />
+                            </div>
+                            <textarea
+                              value={item.description}
+                              onChange={(event) =>
+                                updateApproachItemText(item.id, 'description', event.target.value)
+                              }
+                              className={styles.textarea}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    );
+                  })}
+                {((layouts.about.approachItems || []).filter((i) => i.photoId).length === 0) && (
+                  <p className={styles.cardDescription}>Add photos in the Photo section to create cards for title and description.</p>
+                )}
               </div>
             </div>
 

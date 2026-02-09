@@ -5,6 +5,7 @@ import type { ContactPageContent } from '@/types';
 export type DraftContactContent = Partial<
   Pick<
     ContactPageContent,
+    | 'heroPhotoId'
     | 'heroTitle'
     | 'heroSubtitle'
     | 'heroTitleColor'
@@ -31,9 +32,10 @@ function normalizeDraftContact(raw: unknown): DraftContactContent | null {
   if (!raw || typeof raw !== 'object') return null;
   const data = raw as DraftContactContent & Record<string, unknown>;
   const pick = <K extends keyof DraftContactContent>(key: K) =>
-    typeof data[key] === 'string' ? String(data[key]) : undefined;
+    typeof data[key] === 'string' ? (data[key] as string) : undefined;
 
   return {
+    heroPhotoId: pick('heroPhotoId'),
     heroTitle: pick('heroTitle'),
     heroSubtitle: pick('heroSubtitle'),
     heroTitleColor: pick('heroTitleColor'),

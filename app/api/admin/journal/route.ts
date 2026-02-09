@@ -31,9 +31,9 @@ export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as Partial<JournalPost>;
 
-    if (!payload.title || !payload.slug || !payload.heroPhotoId) {
+    if (!payload.title || !payload.slug) {
       return Response.json(
-        { error: 'Missing required fields: title, slug, heroPhotoId' },
+        { error: 'Missing required fields: title, slug' },
         { status: 400 }
       );
     }
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       date: payload.date || new Date().toISOString().split('T')[0],
       excerpt: payload.excerpt || '',
       body: payload.body || '',
-      heroPhotoId: payload.heroPhotoId,
+      heroPhotoId: payload.heroPhotoId || '',
       galleryPhotoIds: payload.galleryPhotoIds || [],
       credits: payload.credits || []
     });

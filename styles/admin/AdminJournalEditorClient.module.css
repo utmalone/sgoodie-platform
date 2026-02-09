@@ -86,8 +86,16 @@
   @apply flex items-center justify-between;
 }
 
+.heroButtonRow {
+  @apply flex items-center gap-2;
+}
+
 .heroButton {
   @apply rounded-full border border-black/20 px-4 py-2 text-xs uppercase tracking-[0.25em] text-black/60 hover:text-black;
+}
+
+.removeButton {
+  @apply rounded-full border border-red-200 px-4 py-2 text-xs uppercase tracking-[0.25em] text-red-500 hover:bg-red-50 hover:text-red-600;
 }
 
 .sectionBody {

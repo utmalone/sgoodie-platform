@@ -17,12 +17,20 @@ type ContactPageDraftClientProps = {
 const DRAFT_CONTACT_STORAGE_KEY = 'sgoodie.admin.draft.contact';
 const PREVIEW_REFRESH_KEY = 'admin-preview-refresh';
 
+async function fetchPhotoById(id: string): Promise<PhotoAsset | null> {
+  const res = await fetch(`/api/photos?ids=${encodeURIComponent(id)}`);
+  if (!res.ok) return null;
+  const photos: PhotoAsset[] = await res.json();
+  return photos[0] ?? null;
+}
+
 export function ContactPageDraftClient({
   fallbackContent,
   profile,
-  heroPhoto
+  heroPhoto: initialHeroPhoto
 }: ContactPageDraftClientProps) {
   const [draft, setDraft] = useState(() => loadDraftContactContent());
+  const [heroPhoto, setHeroPhoto] = useState<PhotoAsset | null>(initialHeroPhoto);
 
   useEffect(() => {
     const load = () => setDraft(loadDraftContactContent());
@@ -44,6 +52,23 @@ export function ContactPageDraftClient({
 
   const email = content.email || profile.email;
   const phone = content.phone || profile.phone;
+
+  useEffect(() => {
+    const draftHeroId = draft?.heroPhotoId ?? fallbackContent.heroPhotoId;
+    if (!draftHeroId) {
+      setHeroPhoto(null);
+      return;
+    }
+    if (initialHeroPhoto?.id === draftHeroId) {
+      setHeroPhoto(initialHeroPhoto);
+      return;
+    }
+    if (fallbackContent.heroPhotoId === draftHeroId && initialHeroPhoto) {
+      setHeroPhoto(initialHeroPhoto);
+      return;
+    }
+    fetchPhotoById(draftHeroId).then(setHeroPhoto);
+  }, [draft?.heroPhotoId, fallbackContent.heroPhotoId, initialHeroPhoto]);
 
   return (
     <div className={styles.wrapper}>

@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { DraftAboutText } from '@/components/preview/DraftAboutText';
 import { DraftAboutIntroParagraphs } from '@/components/preview/DraftAboutIntroParagraphs';
-import { DraftAboutApproachText } from '@/components/preview/DraftAboutApproachText';
+import { DraftAboutApproachSection } from '@/components/preview/DraftAboutApproachSection';
 import { DraftAboutFeaturedPublications } from '@/components/preview/DraftAboutFeaturedPublications';
 import { DraftAboutBioParagraphs } from '@/components/preview/DraftAboutBioParagraphs';
 import { DraftHeroColors } from '@/components/preview/DraftHeroColors';
@@ -126,44 +126,11 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
             content.approachTitle
           )}
         </h2>
-        <div className={styles.approachGrid}>
-          {content.approachItems.map((item) => {
-            const photo = approachPhotoMap.get(item.photoId);
-            if (!photo) return null;
-            return (
-              <div key={item.id} className={styles.approachCard}>
-                <div className={styles.approachImage}>
-                  <Image
-                    src={photo.src}
-                    alt={photo.alt}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 25vw"
-                    className={styles.approachImg}
-                  />
-                </div>
-                <h3 className={styles.approachTitle}>
-                  {isPreview ? (
-                    <DraftAboutApproachText itemId={item.id} field="title" fallback={item.title} enabled />
-                  ) : (
-                    item.title
-                  )}
-                </h3>
-                <p className={styles.approachDescription}>
-                  {isPreview ? (
-                    <DraftAboutApproachText
-                      itemId={item.id}
-                      field="description"
-                      fallback={item.description}
-                      enabled
-                    />
-                  ) : (
-                    item.description
-                  )}
-                </p>
-              </div>
-            );
-          })}
-        </div>
+        <DraftAboutApproachSection
+          isPreview={isPreview}
+          approachItems={content.approachItems}
+          approachPhotoMap={approachPhotoMap}
+        />
       </section>
 
       {/* Featured In Section */}

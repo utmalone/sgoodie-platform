@@ -95,6 +95,7 @@
   border-radius: 1rem;
   font-size: 0.875rem;
   transition: border-color 0.15s;
+  cursor: text;
 }
 
 .input:focus {
@@ -110,6 +111,7 @@
   font-size: 0.875rem;
   resize: vertical;
   min-height: 80px;
+  cursor: text;
 }
 
 .textarea:focus {
@@ -675,6 +677,83 @@
   border-radius: 1.25rem;
   border: 1px solid rgba(0, 0, 0, 0.08);
   background: rgba(0, 0, 0, 0.02);
+}
+
+/* Approach cards (draggable) */
+.approachCard {
+  cursor: grab;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.approachCard,
+.approachCard * {
+  cursor: grab;
+}
+
+.approachCard .input,
+.approachCard .textarea {
+  cursor: text;
+}
+
+.approachCard:active,
+.approachCard:active * {
+  cursor: grabbing;
+}
+
+.approachCard:active .input,
+.approachCard:active .textarea {
+  cursor: text;
+}
+
+.approachCardDragging,
+.approachCardDragging * {
+  cursor: grabbing;
+}
+
+.approachCardDragging .input,
+.approachCardDragging .textarea {
+  cursor: text;
+}
+
+.approachCardDropTarget {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+.approachCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.approachCardPhoto {
+  position: relative;
+  width: 5rem;
+  height: 3.75rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.approachCardPhotoImg {
+  object-fit: cover;
+}
+
+.approachCardHeaderMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.approachCardDragHint {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(0, 0, 0, 0.4);
 }
 
 /* Quick Link Card */
@@ -1348,6 +1427,7 @@
   border-radius: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   overflow-x: hidden;
+  cursor: default;
 }
 
 @media (min-width: 640px) {

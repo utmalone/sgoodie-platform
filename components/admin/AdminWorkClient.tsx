@@ -76,14 +76,11 @@ export function AdminWorkClient() {
 
     if (fromIndex < 0 || toIndex < 0) return;
 
-    currentOrder.splice(fromIndex, 1);
-    currentOrder.splice(toIndex, 0, draggedId);
+    const reordered = [...currentOrder];
+    [reordered[fromIndex], reordered[toIndex]] = [reordered[toIndex], reordered[fromIndex]];
 
-    // Optimistic update
-    setWorkIndex({ projectIds: currentOrder });
-
-    // Save to server
-    saveOrder(currentOrder);
+    setWorkIndex({ projectIds: reordered });
+    saveOrder(reordered);
   }
 
   async function saveOrder(projectIds: string[]) {

@@ -1,9 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { JournalPost, PhotoAsset } from '@/types';
 import { usePreview } from '@/lib/admin/preview-context';
+import { useSave } from '@/lib/admin/save-context';
+import {
+  loadDraftJournalIndex,
+  saveDraftJournalIndex,
+  clearDraftJournalIndex
+} from '@/lib/admin/draft-journal-index-store';
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -13,27 +19,79 @@ function formatDate(dateStr: string) {
   });
 }
 
+export type JournalIndex = { postIds: string[] };
+
 export function AdminJournalClient() {
   const [posts, setPosts] = useState<JournalPost[]>([]);
+  const [journalIndex, setJournalIndex] = useState<JournalIndex | null>(null);
+  const [savedJournalIndex, setSavedJournalIndex] = useState<JournalIndex | null>(null);
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
   const [status, setStatus] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'recent'>('all');
-  const { openPreview } = usePreview();
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const { openPreview, refreshPreview } = usePreview();
+  const { registerChange, unregisterChange } = useSave();
 
   const photosById = useMemo(() => {
     return new Map(photos.map((photo) => [photo.id, photo]));
   }, [photos]);
 
-  const sortedPosts = useMemo(() => {
-    const sorted = [...posts].sort(
+  const dateSortedPosts = useMemo(() => {
+    return [...posts].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
-    if (filter === 'recent') {
-      return sorted.slice(0, 10);
+  }, [posts]);
+
+  const orderedPosts = useMemo(() => {
+    if (!journalIndex?.postIds?.length) return dateSortedPosts;
+    const byId = new Map(dateSortedPosts.map((p) => [p.id, p]));
+    const ordered = journalIndex.postIds
+      .map((id) => byId.get(id))
+      .filter(Boolean) as JournalPost[];
+    const remaining = dateSortedPosts.filter((p) => !journalIndex.postIds.includes(p.id));
+    return [...ordered, ...remaining];
+  }, [dateSortedPosts, journalIndex]);
+
+  const sortedPosts = useMemo(() => {
+    if (filter === 'recent') return orderedPosts.slice(0, 10);
+    return orderedPosts;
+  }, [orderedPosts, filter]);
+
+  const hasJournalIndexChanges = useMemo(() => {
+    if (!journalIndex || !savedJournalIndex) return false;
+    return JSON.stringify(journalIndex.postIds) !== JSON.stringify(savedJournalIndex.postIds);
+  }, [journalIndex, savedJournalIndex]);
+
+  const saveJournalIndex = useCallback(async (): Promise<boolean> => {
+    if (!journalIndex) return true;
+    try {
+      const res = await fetch('/api/admin/layout/journal', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postIds: journalIndex.postIds })
+      });
+      if (!res.ok) return false;
+      setSavedJournalIndex(journalIndex);
+      clearDraftJournalIndex();
+      refreshPreview();
+      return true;
+    } catch {
+      return false;
     }
-    return sorted;
-  }, [posts, filter]);
+  }, [journalIndex, refreshPreview]);
+
+  useEffect(() => {
+    if (hasJournalIndexChanges && !isLoading) {
+      registerChange({
+        id: 'journal-index',
+        type: 'layout',
+        save: saveJournalIndex
+      });
+    } else {
+      unregisterChange('journal-index');
+    }
+  }, [hasJournalIndexChanges, isLoading, registerChange, unregisterChange, saveJournalIndex]);
 
   useEffect(() => {
     loadData();
@@ -44,9 +102,10 @@ export function AdminJournalClient() {
     setStatus('');
 
     try {
-      const [postsRes, photosRes] = await Promise.all([
+      const [postsRes, photosRes, indexRes] = await Promise.all([
         fetch('/api/admin/journal'),
-        fetch('/api/admin/photos')
+        fetch('/api/admin/photos'),
+        fetch('/api/admin/layout/journal')
       ]);
 
       if (!postsRes.ok || !photosRes.ok) {
@@ -57,14 +116,62 @@ export function AdminJournalClient() {
 
       const postsData = (await postsRes.json()) as JournalPost[];
       const photosData = (await photosRes.json()) as PhotoAsset[];
+      const indexData = indexRes.ok ? ((await indexRes.json()) as JournalIndex) : null;
+      const draft = loadDraftJournalIndex();
+      const mergedIndex = draft ?? indexData ?? { postIds: [] };
 
       setPosts(postsData);
       setPhotos(photosData);
+      setJournalIndex(mergedIndex);
+      setSavedJournalIndex(indexData ?? { postIds: [] });
     } catch {
       setStatus('Unable to load data. Please refresh.');
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function handleDragStart(postId: string) {
+    setDraggedId(postId);
+  }
+
+  function handleDrop(targetId: string) {
+    if (!draggedId || draggedId === targetId) return;
+
+    const currentOrder = orderedPosts.map((p) => p.id);
+    const fromIndex = currentOrder.indexOf(draggedId);
+    const toIndex = currentOrder.indexOf(targetId);
+
+    if (fromIndex < 0 || toIndex < 0) return;
+
+    const reordered = [...currentOrder];
+    [reordered[fromIndex], reordered[toIndex]] = [reordered[toIndex], reordered[fromIndex]];
+
+    const newIndex = { postIds: reordered };
+    setJournalIndex(newIndex);
+    saveDraftJournalIndex(newIndex);
+    setStatus('Order updated.');
+    refreshPreview();
+    setTimeout(() => setStatus(''), 2000);
+  }
+
+  function handleDropAtEnd() {
+    if (!draggedId) return;
+
+    const currentOrder = orderedPosts.map((p) => p.id);
+    const fromIndex = currentOrder.indexOf(draggedId);
+    if (fromIndex < 0) return;
+
+    const reordered = [...currentOrder];
+    reordered.splice(fromIndex, 1);
+    reordered.push(draggedId);
+
+    const newIndex = { postIds: reordered };
+    setJournalIndex(newIndex);
+    saveDraftJournalIndex(newIndex);
+    setStatus('Order updated.');
+    refreshPreview();
+    setTimeout(() => setStatus(''), 2000);
   }
 
   async function handleDelete(post: JournalPost) {
@@ -161,15 +268,35 @@ export function AdminJournalClient() {
             </Link>
           </div>
         ) : (
-          sortedPosts.map((post) => {
-            const heroPhoto = photosById.get(post.heroPhotoId);
+          <>
+            {sortedPosts.map((post, index) => {
+              const heroPhoto = photosById.get(post.heroPhotoId);
 
-            return (
-              <div
-                key={post.id}
-                className="flex items-center gap-4 rounded-2xl border border-black/10 bg-white p-4 shadow-sm"
-              >
-                {/* Thumbnail */}
+              return (
+                <div
+                  key={post.id}
+                  draggable
+                  onDragStart={() => handleDragStart(post.id)}
+                  onDragEnd={() => setDraggedId(null)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleDrop(post.id);
+                    setDraggedId(null);
+                  }}
+                  className={`flex items-center gap-4 rounded-2xl border border-black/10 bg-white p-4 shadow-sm ${
+                    draggedId === post.id ? 'opacity-50' : ''
+                  }`}
+                >
+                  {/* Drag Handle */}
+                  <div className="flex cursor-grab touch-none flex-col items-center justify-center text-black/30 hover:text-black/50">
+                    <span className="text-xs">⋮⋮</span>
+                  </div>
+
+                  {/* Order Number */}
+                  <div className="w-6 text-center text-sm text-black/50">{index + 1}</div>
+
+                  {/* Thumbnail */}
                 <div className="h-16 w-24 overflow-hidden rounded-xl bg-black/5">
                   {heroPhoto ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -229,7 +356,21 @@ export function AdminJournalClient() {
                 </div>
               </div>
             );
-          })
+          })}
+            {sortedPosts.length >= 2 && (
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  handleDropAtEnd();
+                  setDraggedId(null);
+                }}
+                className="flex min-h-[60px] items-center justify-center rounded-2xl border border-dashed border-black/20 bg-black/[0.02] p-4 text-sm text-black/40"
+              >
+                Drop here to move to end
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

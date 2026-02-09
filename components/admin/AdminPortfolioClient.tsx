@@ -1,9 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type { PhotoAsset, Project, WorkIndex } from '@/types';
 import { usePreview } from '@/lib/admin/preview-context';
+import { useSave } from '@/lib/admin/save-context';
+import {
+  loadDraftWorkIndex,
+  saveDraftWorkIndex,
+  clearDraftWorkIndex
+} from '@/lib/admin/draft-work-index-store';
 import {
   portfolioCategories,
   portfolioCategoryLabels,
@@ -14,12 +20,14 @@ import styles from '@/styles/admin/AdminShared.module.css';
 export function AdminPortfolioClient() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [workIndex, setWorkIndex] = useState<WorkIndex | null>(null);
+  const [savedWorkIndex, setSavedWorkIndex] = useState<WorkIndex | null>(null);
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
   const [status, setStatus] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<PortfolioCategory>('hotels');
   const { openPreview, refreshPreview } = usePreview();
+  const { registerChange, unregisterChange } = useSave();
 
   const photosById = useMemo(() => {
     return new Map(photos.map((photo) => [photo.id, photo]));
@@ -38,6 +46,43 @@ export function AdminPortfolioClient() {
     const remaining = categoryProjects.filter((p) => !workIndex.projectIds.includes(p.id));
     return [...ordered, ...remaining];
   }, [categoryProjects, workIndex]);
+
+  const hasWorkIndexChanges = useMemo(() => {
+    if (!workIndex || !savedWorkIndex) return false;
+    return (
+      JSON.stringify(workIndex.projectIds) !== JSON.stringify(savedWorkIndex.projectIds)
+    );
+  }, [workIndex, savedWorkIndex]);
+
+  const saveWorkIndex = useCallback(async (): Promise<boolean> => {
+    if (!workIndex) return true;
+    try {
+      const res = await fetch('/api/admin/layout/work', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectIds: workIndex.projectIds })
+      });
+      if (!res.ok) return false;
+      setSavedWorkIndex(workIndex);
+      clearDraftWorkIndex();
+      refreshPreview();
+      return true;
+    } catch {
+      return false;
+    }
+  }, [workIndex, refreshPreview]);
+
+  useEffect(() => {
+    if (hasWorkIndexChanges && !isLoading) {
+      registerChange({
+        id: 'work-index',
+        type: 'layout',
+        save: saveWorkIndex
+      });
+    } else {
+      unregisterChange('work-index');
+    }
+  }, [hasWorkIndexChanges, isLoading, registerChange, unregisterChange, saveWorkIndex]);
 
   useEffect(() => {
     loadData();
@@ -64,8 +109,12 @@ export function AdminPortfolioClient() {
       const workData = (await workRes.json()) as WorkIndex;
       const photosData = (await photosRes.json()) as PhotoAsset[];
 
+      const draft = loadDraftWorkIndex();
+      const mergedWorkIndex = draft ?? workData;
+
       setProjects(projectsData);
-      setWorkIndex(workData);
+      setWorkIndex(mergedWorkIndex);
+      setSavedWorkIndex(workData);
       setPhotos(photosData);
     } catch {
       setStatus('Unable to load data. Please refresh.');
@@ -87,39 +136,42 @@ export function AdminPortfolioClient() {
 
     if (fromIndex < 0 || toIndex < 0) return;
 
-    currentOrder.splice(fromIndex, 1);
-    currentOrder.splice(toIndex, 0, draggedId);
+    const reordered = [...currentOrder];
+    [reordered[fromIndex], reordered[toIndex]] = [reordered[toIndex], reordered[fromIndex]];
 
     const otherProjects = projects.filter((p) => p.category !== activeCategory);
     const otherIds = otherProjects.map((p) => p.id);
-    const fullOrder = [...currentOrder, ...otherIds.filter((id) => !currentOrder.includes(id))];
+    const fullOrder = [...reordered, ...otherIds.filter((id) => !reordered.includes(id))];
 
-    setWorkIndex({ projectIds: fullOrder });
-    saveOrder(fullOrder);
+    const newIndex = { projectIds: fullOrder };
+    setWorkIndex(newIndex);
+    saveDraftWorkIndex(newIndex);
+    setStatus('Order updated.');
+    refreshPreview();
+    setTimeout(() => setStatus(''), 2000);
   }
 
-  async function saveOrder(projectIds: string[]) {
-    setStatus('Saving order...');
-    try {
-      const res = await fetch('/api/admin/layout/work', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectIds })
-      });
+  function handleDropAtEnd() {
+    if (!draggedId || !workIndex) return;
 
-      if (!res.ok) {
-        setStatus('Failed to save order.');
-        loadData();
-        return;
-      }
+    const currentOrder = [...orderedProjects.map((p) => p.id)];
+    const fromIndex = currentOrder.indexOf(draggedId);
+    if (fromIndex < 0) return;
 
-      setStatus('Order saved.');
-      refreshPreview();
-      setTimeout(() => setStatus(''), 2000);
-    } catch {
-      setStatus('Failed to save order.');
-      loadData();
-    }
+    const reordered = [...currentOrder];
+    reordered.splice(fromIndex, 1);
+    reordered.push(draggedId);
+
+    const otherProjects = projects.filter((p) => p.category !== activeCategory);
+    const otherIds = otherProjects.map((p) => p.id);
+    const fullOrder = [...reordered, ...otherIds.filter((id) => !reordered.includes(id))];
+
+    const newIndex = { projectIds: fullOrder };
+    setWorkIndex(newIndex);
+    saveDraftWorkIndex(newIndex);
+    setStatus('Order updated.');
+    refreshPreview();
+    setTimeout(() => setStatus(''), 2000);
   }
 
   async function handleToggleStatus(project: Project) {
@@ -328,6 +380,20 @@ export function AdminPortfolioClient() {
               </div>
             );
           })
+        )}
+        {orderedProjects.length >= 2 && (
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              handleDropAtEnd();
+              setDraggedId(null);
+            }}
+            className={styles.projectItem}
+            style={{ opacity: 0.6, minHeight: 60, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed' }}
+          >
+            <span className={styles.projectPath}>Drop here to move to end</span>
+          </div>
         )}
       </div>
     </div>

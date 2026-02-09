@@ -36,18 +36,21 @@ export function DraftHomePhotosSection({
 
     const load = async () => {
       try {
-        const layoutRes = await fetch('/api/admin/layouts/home');
+        const [layoutRes, draft] = await Promise.all([
+          fetch('/api/admin/layouts/home'),
+          Promise.resolve(typeof window !== 'undefined' ? loadDraftHomeLayout() : null)
+        ]);
         if (!layoutRes.ok) return;
         const layout = await layoutRes.json();
 
-        // Apply saved colors from API
-        setHeroTitleColor(layout.heroTitleColor || undefined);
-        setHeroSubtitleColor(layout.heroSubtitleColor || undefined);
+        // Merge draft layout over API - draft takes precedence for preview (unsaved changes)
+        const heroPhotoId = draft?.heroPhotoId ?? layout.heroPhotoId;
+        const featurePhotoIds = draft?.featurePhotoIds ?? layout.featurePhotoIds ?? [];
 
-        const ids = [
-          layout.heroPhotoId,
-          ...(layout.featurePhotoIds || [])
-        ].filter(Boolean);
+        setHeroTitleColor(draft?.heroTitleColor ?? layout.heroTitleColor ?? undefined);
+        setHeroSubtitleColor(draft?.heroSubtitleColor ?? layout.heroSubtitleColor ?? undefined);
+
+        const ids = [heroPhotoId, ...featurePhotoIds].filter(Boolean);
         if (ids.length === 0) {
           setHeroPhoto(null);
           setFeaturePhotos([]);
@@ -57,11 +60,9 @@ export function DraftHomePhotosSection({
         if (!photosRes.ok) return;
         const photos: PhotoAsset[] = await photosRes.json();
         const photoMap = new Map(photos.map((p) => [p.id, p]));
-        setHeroPhoto(layout.heroPhotoId ? photoMap.get(layout.heroPhotoId) ?? null : null);
+        setHeroPhoto(heroPhotoId ? photoMap.get(heroPhotoId) ?? null : null);
         setFeaturePhotos(
-          (layout.featurePhotoIds || [])
-            .map((id: string) => photoMap.get(id))
-            .filter(Boolean)
+          featurePhotoIds.map((id: string) => photoMap.get(id)).filter(Boolean)
         );
       } catch {
         // Keep existing data on error
@@ -70,9 +71,9 @@ export function DraftHomePhotosSection({
 
     load();
 
-    // React to admin changes: storage event fires in other tabs when admin calls refreshPreview()
+    // React to admin changes: storage event when admin calls refreshPreview() or updates draft
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === PREVIEW_REFRESH_KEY) load();
+      if (event.key === PREVIEW_REFRESH_KEY || event.key === HOME_LAYOUT_DRAFT_KEY) load();
     };
     window.addEventListener('storage', handleStorage);
 
