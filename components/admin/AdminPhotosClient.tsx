@@ -76,6 +76,188 @@ function getAspectRatioLabel(width: number, height: number): string {
 const MAX_BULK_PHOTOS = 50;
 const ABOUT_MAX_APPROACH_PHOTOS = 4;
 
+/** Drop target: either a photo (reorder) or a slot (section + index) */
+type DropTarget =
+  | { type: 'photo'; id: string }
+  | { type: 'slot'; section: 'hero' | 'feature' | 'approach' | 'bio'; index?: number };
+
+/** Renders a single photo card with drag/drop and edit controls */
+function PagePhotoCard({
+  photo,
+  label,
+  canReorder,
+  draggedId,
+  dragOverTarget,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDropOnPhoto,
+  onDropOnSlot,
+  togglePhotoDetails,
+  removeFromGallery,
+  expandedPhotoId,
+  updatePhotoField,
+  getAiFixRowClass,
+  handleAiFixPhoto,
+  aiLoadingKey,
+  photoFieldHelp,
+  styles,
+  slotIndex
+}: {
+  photo: PhotoAsset;
+  label: string;
+  canReorder: boolean;
+  draggedId: string | null;
+  dragOverTarget: DropTarget | null;
+  onDragStart: (id: string) => void;
+  onDragOver: (t: DropTarget) => void;
+  onDragLeave: () => void;
+  onDropOnPhoto: (id: string) => void;
+  onDropOnSlot: (t: DropTarget & { type: 'slot' }) => void;
+  togglePhotoDetails: (id: string) => void;
+  removeFromGallery: (id: string) => void;
+  expandedPhotoId: string | null;
+  updatePhotoField: (id: string, f: 'alt' | 'metaTitle' | 'metaDescription' | 'metaKeywords', v: string) => void;
+  getAiFixRowClass: (k: string) => string;
+  handleAiFixPhoto: (id: string, f: 'alt' | 'metaTitle' | 'metaDescription' | 'metaKeywords', m: 'text' | 'seo') => void;
+  aiLoadingKey: string | null;
+  photoFieldHelp: Record<string, string[]>;
+  styles: Record<string, string>;
+  slotIndex?: number;
+}) {
+  const isTargetPhoto = dragOverTarget?.type === 'photo' && dragOverTarget.id === photo.id;
+  const isTargetSlot = dragOverTarget?.type === 'slot' && dragOverTarget.section === 'approach' && dragOverTarget.index === slotIndex;
+
+  return (
+    <div
+      key={photo.id}
+      draggable={canReorder}
+      onDragStart={() => onDragStart(photo.id)}
+      onDragEnd={() => {
+        onDragLeave();
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        if (!isTargetPhoto) onDragOver({ type: 'photo', id: photo.id });
+      }}
+      onDragLeave={onDragLeave}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDragLeave();
+        onDropOnPhoto(photo.id);
+      }}
+      className={`${styles.photoCard} ${canReorder ? styles.photoCardDraggable : ''} ${
+        draggedId === photo.id ? styles.photoCardDragging : ''
+      } ${(isTargetPhoto || isTargetSlot) ? styles.photoCardDropTarget : ''}`}
+    >
+      <div className={styles.photoPreviewLarge}>
+        <Image src={photo.src} alt={photo.alt} fill className={styles.photoImage} sizes="(max-width: 768px) 100vw, 33vw" />
+        <div className={styles.photoBadge}>{label}</div>
+      </div>
+      <div className={styles.photoCardMeta}>
+        <span className={styles.truncate}>{photo.alt || 'Untitled photo'}</span>
+        <div className={styles.bulkItemMeta}>
+          <button type="button" onClick={() => togglePhotoDetails(photo.id)} className={styles.textButton}>
+            {expandedPhotoId === photo.id ? 'Close' : 'Edit'}
+          </button>
+          <button type="button" onClick={() => removeFromGallery(photo.id)} className={styles.textButton}>
+            Remove
+          </button>
+        </div>
+      </div>
+      {expandedPhotoId === photo.id && (
+        <div className={styles.detailsPanel}>
+          <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-alt`)}`}>
+            <div className={styles.buttonRow}>
+              <span className={styles.inlineLabel}>
+                Alt Text
+                <FieldInfoTooltip label="Alt Text" lines={photoFieldHelp.altText} />
+              </span>
+              <AiFixButton onClick={() => handleAiFixPhoto(photo.id, 'alt', 'text')} loading={aiLoadingKey === `photo-${photo.id}-alt`} />
+            </div>
+            <input value={photo.alt || ''} onChange={(e) => updatePhotoField(photo.id, 'alt', e.target.value)} className={styles.inputTiny} />
+          </label>
+          <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-metaTitle`)}`}>
+            <div className={styles.buttonRow}>
+              <span className={styles.inlineLabel}>
+                Meta Title
+                <FieldInfoTooltip label="Meta Title" lines={photoFieldHelp.metaTitle} />
+              </span>
+              <AiFixButton onClick={() => handleAiFixPhoto(photo.id, 'metaTitle', 'seo')} loading={aiLoadingKey === `photo-${photo.id}-metaTitle`} />
+            </div>
+            <input value={photo.metaTitle || ''} onChange={(e) => updatePhotoField(photo.id, 'metaTitle', e.target.value)} className={styles.inputTiny} />
+          </label>
+          <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-metaDescription`)}`}>
+            <div className={styles.buttonRow}>
+              <span className={styles.inlineLabel}>
+                Meta Description
+                <FieldInfoTooltip label="Meta Description" lines={photoFieldHelp.metaDescription} />
+              </span>
+              <AiFixButton onClick={() => handleAiFixPhoto(photo.id, 'metaDescription', 'seo')} loading={aiLoadingKey === `photo-${photo.id}-metaDescription`} />
+            </div>
+            <textarea value={photo.metaDescription || ''} onChange={(e) => updatePhotoField(photo.id, 'metaDescription', e.target.value)} className={styles.textareaMedium} />
+          </label>
+          <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-metaKeywords`)}`}>
+            <div className={styles.buttonRow}>
+              <span className={styles.inlineLabel}>
+                Meta Keywords
+                <FieldInfoTooltip label="Meta Keywords" lines={photoFieldHelp.metaKeywords} />
+              </span>
+              <AiFixButton onClick={() => handleAiFixPhoto(photo.id, 'metaKeywords', 'seo')} loading={aiLoadingKey === `photo-${photo.id}-metaKeywords`} />
+            </div>
+            <textarea value={photo.metaKeywords || ''} onChange={(e) => updatePhotoField(photo.id, 'metaKeywords', e.target.value)} className={styles.textareaShort} />
+          </label>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Grey placeholder slot for empty section positions */
+function SlotPlaceholder({
+  label,
+  slotTarget,
+  dragOverTarget,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  styles
+}: {
+  label: string;
+  slotTarget: DropTarget & { type: 'slot' };
+  dragOverTarget: DropTarget | null;
+  onDragOver: (t: DropTarget) => void;
+  onDragLeave: () => void;
+  onDrop: (t: DropTarget & { type: 'slot' }) => void;
+  styles: Record<string, string>;
+}) {
+  const isTarget =
+    dragOverTarget?.type === 'slot' &&
+    dragOverTarget.section === slotTarget.section &&
+    (slotTarget.index == null || dragOverTarget.index === slotTarget.index);
+
+  return (
+    <div
+      className={`${styles.slotPlaceholder} ${isTarget ? styles.photoCardDropTarget : ''}`}
+      onDragOver={(e) => {
+        e.preventDefault();
+        if (!isTarget) onDragOver(slotTarget);
+      }}
+      onDragLeave={onDragLeave}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDragLeave();
+        onDrop(slotTarget);
+      }}
+    >
+      <div className={styles.slotPlaceholderInner}>
+        <span className={styles.slotPlaceholderText}>{label}</span>
+        <span className={styles.slotPlaceholderHint}>Drop photo here</span>
+      </div>
+    </div>
+  );
+}
+
 const photoFieldHelp = {
   selectPhoto: [
     'Choose an image file to upload.',
@@ -153,6 +335,7 @@ export function AdminPhotosClient() {
   
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [dragOverTarget, setDragOverTarget] = useState<DropTarget | null>(null);
   const [expandedPhotoId, setExpandedPhotoId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [addConfirm, setAddConfirm] = useState<{ photoId: string; message: string } | null>(null);
@@ -305,6 +488,37 @@ export function AdminPhotosClient() {
       .filter(Boolean) as PhotoAsset[];
   }, [pagePhotoIds, photosById]);
 
+  /** Sectioned data for Home: hero (1 slot) + features (unlimited) */
+  const homeSections = useMemo(() => {
+    const heroId = layouts.home?.heroPhotoId || '';
+    const featureIds = layouts.home?.featurePhotoIds || [];
+    return {
+      hero: heroId ? [heroId] : [],
+      feature: featureIds
+    };
+  }, [layouts.home]);
+
+  /** Sectioned data for About: hero (1) + approach (4 slots) + bio (1) */
+  const aboutSections = useMemo(() => {
+    const heroId = layouts.about?.heroPhotoId || '';
+    const approachItems = layouts.about?.approachItems || [];
+    const approachIds = approachItems.map((i) => i.photoId).filter(Boolean);
+    const bioId = layouts.about?.bio?.photoId || '';
+    return {
+      hero: heroId ? [heroId] : [],
+      approach: approachIds,
+      bio: bioId ? [bioId] : []
+    };
+  }, [layouts.about]);
+
+  /** Sectioned data for Contact: hero (1 slot) */
+  const contactSections = useMemo(() => {
+    const heroId = layouts.contact?.heroPhotoId || '';
+    return {
+      hero: heroId ? [heroId] : []
+    };
+  }, [layouts.contact]);
+
   const availablePhotos = useMemo(() => {
     const current = new Set(pagePhotoIds);
     return photos.filter((photo) => !current.has(photo.id));
@@ -434,18 +648,82 @@ export function AdminPhotosClient() {
     setDraggedId(photoId);
   }
 
-  async function handleDrop(targetId: string) {
+  function handleDropOnPhoto(targetId: string) {
     if (!draggedId || draggedId === targetId) return;
-    
     const currentIds = [...pagePhotoIds];
     const from = currentIds.indexOf(draggedId);
     const to = currentIds.indexOf(targetId);
     if (from < 0 || to < 0) return;
-    
     currentIds.splice(from, 1);
     currentIds.splice(to, 0, draggedId);
-    
-    await updatePagePhotoOrder(currentIds);
+    updatePagePhotoOrder(currentIds);
+    setDraggedId(null);
+  }
+
+  async function handleDropOnSlot(target: DropTarget & { type: 'slot' }) {
+    if (!draggedId || target.type !== 'slot') return;
+    const photoId = draggedId;
+    const fromLibrary = !pagePhotoIds.includes(photoId);
+
+    if (fromLibrary) {
+      setStatus('Adding photo...');
+    }
+
+    if (activeSlug === 'home' && layouts.home) {
+      const heroId = layouts.home.heroPhotoId || '';
+      const featureIds = [...(layouts.home.featurePhotoIds || [])];
+      if (target.section === 'hero') {
+        const oldHero = heroId;
+        const withoutPhoto = featureIds.filter((id) => id !== photoId);
+        if (oldHero && oldHero !== photoId) withoutPhoto.unshift(oldHero);
+        await updatePagePhotoOrder([photoId, ...withoutPhoto]);
+      } else if (target.section === 'feature') {
+        const withoutPhoto = featureIds.filter((id) => id !== photoId);
+        if (heroId === photoId) {
+          const newHero = withoutPhoto[0] || '';
+          await updatePagePhotoOrder([newHero, ...withoutPhoto.slice(1), photoId]);
+        } else {
+          withoutPhoto.push(photoId);
+          await updatePagePhotoOrder([heroId, ...withoutPhoto]);
+        }
+      }
+    } else if (activeSlug === 'about' && layouts.about) {
+      const heroId = layouts.about.heroPhotoId || '';
+      const approachItems = layouts.about.approachItems || [];
+      const approachIds = approachItems.map((i) => i.photoId).filter(Boolean);
+      const bioId = layouts.about.bio?.photoId || '';
+
+      if (target.section === 'hero') {
+        const withoutPhoto = approachIds.filter((id) => id !== photoId);
+        if (heroId && heroId !== photoId && withoutPhoto.length < ABOUT_MAX_APPROACH_PHOTOS) {
+          withoutPhoto.unshift(heroId);
+        }
+        await updatePagePhotoOrder([photoId, ...withoutPhoto, bioId].filter(Boolean));
+      } else if (target.section === 'approach') {
+        const slotIndex = target.index ?? approachIds.length;
+        if (slotIndex >= ABOUT_MAX_APPROACH_PHOTOS) return;
+        const withoutPhoto = approachIds.filter((id) => id !== photoId);
+        const filled: string[] = [];
+        for (let i = 0; i < ABOUT_MAX_APPROACH_PHOTOS; i++) {
+          if (i === slotIndex) {
+            filled.push(photoId);
+          } else if (withoutPhoto.length > 0) {
+            filled.push(withoutPhoto.shift()!);
+          }
+        }
+        await updatePagePhotoOrder([heroId, ...filled, bioId].filter(Boolean));
+      } else if (target.section === 'bio') {
+        const withoutPhoto = approachIds.filter((id) => id !== photoId);
+        if (bioId && bioId !== photoId && withoutPhoto.length < ABOUT_MAX_APPROACH_PHOTOS) {
+          withoutPhoto.push(bioId);
+        }
+        await updatePagePhotoOrder([heroId, ...withoutPhoto, photoId].filter(Boolean));
+      }
+    } else if (activeSlug === 'contact' && layouts.contact) {
+      if (target.section === 'hero') {
+        await updatePagePhotoOrder([photoId]);
+      }
+    }
     setDraggedId(null);
   }
 
@@ -1379,172 +1657,277 @@ export function AdminPhotosClient() {
         <div>
           <h2 className={styles.cardTitle}>Page Photos</h2>
           <p className={styles.cardDescription}>
-            {canReorder 
-              ? 'Drag and drop to reorder. The first photo (index 0) automatically becomes the hero.' 
+            {canReorder
+              ? 'Drag photos into sections. Drop on a section to assign. You can reorder within sections.'
               : 'Photos assigned to this page.'}
           </p>
           {pageGuidelines.length > 0 && (
             <div className={styles.guidanceRow}>
-              <span className={styles.guidanceLabel}>
-                Recommended sizes
-              </span>
+              <span className={styles.guidanceLabel}>Recommended sizes</span>
               {pageGuidelines.map((guideline) => (
                 <PhotoGuidelineRow key={guideline.label} guideline={guideline} align="left" />
               ))}
             </div>
           )}
-          {canReorder && galleryPhotos.length > 1 && (
-            <p className={styles.tip}>
-              💡 Tip: Drag any photo to the first position to make it the hero
-            </p>
-          )}
         </div>
-        <div className={styles.formGridThree}>
-          {galleryPhotos.length === 0 && (
-            <p className={styles.emptyTextInline}>No photos assigned to this page yet.</p>
-          )}
-          {galleryPhotos.map((photo, index) => (
-            <div
-              key={photo.id}
-              draggable={canReorder}
-              onDragStart={() => handleDragStart(photo.id)}
-              onDragEnd={() => {
-                setDraggedId(null);
-                setDragOverId(null);
-              }}
-              onDragOver={(event) => {
-                event.preventDefault();
-                if (dragOverId !== photo.id) {
-                  setDragOverId(photo.id);
-                }
-              }}
-              onDragLeave={() => {
-                setDragOverId(null);
-              }}
-              onDrop={() => {
-                setDragOverId(null);
-                handleDrop(photo.id);
-              }}
-              className={`${styles.photoCard} ${
-                canReorder ? styles.photoCardDraggable : ''
-              } ${
-                draggedId === photo.id ? styles.photoCardDragging : ''
-              } ${
-                dragOverId === photo.id && draggedId !== photo.id ? styles.photoCardDropTarget : ''
-              }`}
-            >
-              <div className={styles.photoPreviewLarge}>
-                <Image
-                  src={photo.src}
-                  alt={photo.alt}
-                  fill
-                  className={styles.photoImage}
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
-                <div className={styles.photoBadge}>
-                  {getPhotoLabel(photo.id, index)}
-                </div>
+
+        {activeSlug === 'home' && canReorder && (
+          <div className={styles.photoSections}>
+            <div className={styles.photoSection}>
+              <h3 className={styles.sectionLabel}>Hero (1 photo)</h3>
+              <div className={styles.sectionSlots}>
+                {homeSections.hero.length > 0 ? (
+                  <PagePhotoCard
+                    photo={photosById.get(homeSections.hero[0])!}
+                    label="Hero"
+                    canReorder={canReorder}
+                    draggedId={draggedId}
+                    dragOverTarget={dragOverTarget}
+                    onDragStart={handleDragStart}
+                    onDragOver={(t) => setDragOverTarget(t)}
+                    onDragLeave={() => setDragOverTarget(null)}
+                    onDropOnPhoto={handleDropOnPhoto}
+                    onDropOnSlot={handleDropOnSlot}
+                    togglePhotoDetails={togglePhotoDetails}
+                    removeFromGallery={removeFromGallery}
+                    expandedPhotoId={expandedPhotoId}
+                    updatePhotoField={updatePhotoField}
+                    getAiFixRowClass={getAiFixRowClass}
+                    handleAiFixPhoto={handleAiFixPhoto}
+                    aiLoadingKey={aiLoadingKey}
+                    photoFieldHelp={photoFieldHelp}
+                    styles={styles}
+                  />
+                ) : (
+                  <SlotPlaceholder
+                    label="Hero"
+                    slotTarget={{ type: 'slot', section: 'hero' }}
+                    dragOverTarget={dragOverTarget}
+                    onDragOver={setDragOverTarget}
+                    onDragLeave={() => setDragOverTarget(null)}
+                    onDrop={handleDropOnSlot}
+                    styles={styles}
+                  />
+                )}
               </div>
-              <div className={styles.photoCardMeta}>
-                <span className={styles.truncate}>{photo.alt || 'Untitled photo'}</span>
-                <div className={styles.bulkItemMeta}>
-                  <button
-                    type="button"
-                    onClick={() => togglePhotoDetails(photo.id)}
-                    className={styles.textButton}
-                  >
-                    {expandedPhotoId === photo.id ? 'Close' : 'Edit'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeFromGallery(photo.id)}
-                    className={styles.textButton}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-              {expandedPhotoId === photo.id && (
-                <div className={styles.detailsPanel}>
-                  <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-alt`)}`}>
-                    <div className={styles.buttonRow}>
-                      <span className={styles.inlineLabel}>
-                        Alt Text
-                        <FieldInfoTooltip label="Alt Text" lines={photoFieldHelp.altText} />
-                      </span>
-                      <AiFixButton
-                        onClick={() => handleAiFixPhoto(photo.id, 'alt', 'text')}
-                        loading={aiLoadingKey === `photo-${photo.id}-alt`}
-                      />
-                    </div>
-                    <input
-                      value={photo.alt || ''}
-                      onChange={(event) => updatePhotoField(photo.id, 'alt', event.target.value)}
-                      className={styles.inputTiny}
-                    />
-                  </label>
-                  <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-metaTitle`)}`}>
-                    <div className={styles.buttonRow}>
-                      <span className={styles.inlineLabel}>
-                        Meta Title
-                        <FieldInfoTooltip label="Meta Title" lines={photoFieldHelp.metaTitle} />
-                      </span>
-                      <AiFixButton
-                        onClick={() => handleAiFixPhoto(photo.id, 'metaTitle', 'seo')}
-                        loading={aiLoadingKey === `photo-${photo.id}-metaTitle`}
-                      />
-                    </div>
-                    <input
-                      value={photo.metaTitle || ''}
-                      onChange={(event) =>
-                        updatePhotoField(photo.id, 'metaTitle', event.target.value)
-                      }
-                      className={styles.inputTiny}
-                    />
-                  </label>
-                  <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-metaDescription`)}`}>
-                    <div className={styles.buttonRow}>
-                      <span className={styles.inlineLabel}>
-                        Meta Description
-                        <FieldInfoTooltip label="Meta Description" lines={photoFieldHelp.metaDescription} />
-                      </span>
-                      <AiFixButton
-                        onClick={() => handleAiFixPhoto(photo.id, 'metaDescription', 'seo')}
-                        loading={aiLoadingKey === `photo-${photo.id}-metaDescription`}
-                      />
-                    </div>
-                    <textarea
-                      value={photo.metaDescription || ''}
-                      onChange={(event) =>
-                        updatePhotoField(photo.id, 'metaDescription', event.target.value)
-                      }
-                      className={styles.textareaMedium}
-                    />
-                  </label>
-                  <label className={`${styles.block} ${getAiFixRowClass(`photo-${photo.id}-metaKeywords`)}`}>
-                    <div className={styles.buttonRow}>
-                      <span className={styles.inlineLabel}>
-                        Meta Keywords
-                        <FieldInfoTooltip label="Meta Keywords" lines={photoFieldHelp.metaKeywords} />
-                      </span>
-                      <AiFixButton
-                        onClick={() => handleAiFixPhoto(photo.id, 'metaKeywords', 'seo')}
-                        loading={aiLoadingKey === `photo-${photo.id}-metaKeywords`}
-                      />
-                    </div>
-                    <textarea
-                      value={photo.metaKeywords || ''}
-                      onChange={(event) =>
-                        updatePhotoField(photo.id, 'metaKeywords', event.target.value)
-                      }
-                      className={styles.textareaShort}
-                    />
-                  </label>
-                </div>
-              )}
             </div>
-          ))}
-        </div>
+            <div className={styles.photoSection}>
+              <h3 className={styles.sectionLabel}>Feature Photos</h3>
+              <div className={styles.sectionSlots}>
+                {homeSections.feature.map((id, idx) => {
+                  const photo = photosById.get(id);
+                  if (!photo) return null;
+                  return (
+                    <PagePhotoCard
+                      key={photo.id}
+                      photo={photo}
+                      label={`Feature ${idx + 1}`}
+                      canReorder={canReorder}
+                      draggedId={draggedId}
+                      dragOverTarget={dragOverTarget}
+                      onDragStart={handleDragStart}
+                      onDragOver={(t) => setDragOverTarget(t)}
+                      onDragLeave={() => setDragOverTarget(null)}
+                      onDropOnPhoto={handleDropOnPhoto}
+                      onDropOnSlot={handleDropOnSlot}
+                      togglePhotoDetails={togglePhotoDetails}
+                      removeFromGallery={removeFromGallery}
+                      expandedPhotoId={expandedPhotoId}
+                      updatePhotoField={updatePhotoField}
+                      getAiFixRowClass={getAiFixRowClass}
+                      handleAiFixPhoto={handleAiFixPhoto}
+                      aiLoadingKey={aiLoadingKey}
+                      photoFieldHelp={photoFieldHelp}
+                      styles={styles}
+                    />
+                  );
+                })}
+                <SlotPlaceholder
+                  label="Add feature"
+                  slotTarget={{ type: 'slot', section: 'feature' }}
+                  dragOverTarget={dragOverTarget}
+                  onDragOver={setDragOverTarget}
+                  onDragLeave={() => setDragOverTarget(null)}
+                  onDrop={handleDropOnSlot}
+                  styles={styles}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeSlug === 'about' && canReorder && (
+          <div className={styles.photoSections}>
+            <div className={styles.photoSection}>
+              <h3 className={styles.sectionLabel}>Hero (1 photo)</h3>
+              <div className={styles.sectionSlots}>
+                {aboutSections.hero.length > 0 ? (
+                  <PagePhotoCard
+                    photo={photosById.get(aboutSections.hero[0])!}
+                    label="Hero"
+                    canReorder={canReorder}
+                    draggedId={draggedId}
+                    dragOverTarget={dragOverTarget}
+                    onDragStart={handleDragStart}
+                    onDragOver={(t) => setDragOverTarget(t)}
+                    onDragLeave={() => setDragOverTarget(null)}
+                    onDropOnPhoto={handleDropOnPhoto}
+                    onDropOnSlot={handleDropOnSlot}
+                    togglePhotoDetails={togglePhotoDetails}
+                    removeFromGallery={removeFromGallery}
+                    expandedPhotoId={expandedPhotoId}
+                    updatePhotoField={updatePhotoField}
+                    getAiFixRowClass={getAiFixRowClass}
+                    handleAiFixPhoto={handleAiFixPhoto}
+                    aiLoadingKey={aiLoadingKey}
+                    photoFieldHelp={photoFieldHelp}
+                    styles={styles}
+                  />
+                ) : (
+                  <SlotPlaceholder
+                    label="Hero"
+                    slotTarget={{ type: 'slot', section: 'hero' }}
+                    dragOverTarget={dragOverTarget}
+                    onDragOver={setDragOverTarget}
+                    onDragLeave={() => setDragOverTarget(null)}
+                    onDrop={handleDropOnSlot}
+                    styles={styles}
+                  />
+                )}
+              </div>
+            </div>
+            <div className={styles.photoSection}>
+              <h3 className={styles.sectionLabel}>Approach & Results (4 photos)</h3>
+              <div className={styles.sectionSlots}>
+                {[0, 1, 2, 3].map((slotIndex) => {
+                  const photoId = aboutSections.approach[slotIndex];
+                  if (photoId) {
+                    const photo = photosById.get(photoId);
+                    if (!photo) return null;
+                    return (
+                      <PagePhotoCard
+                        key={photo.id}
+                        photo={photo}
+                        label={`Approach ${slotIndex + 1}`}
+                        canReorder={canReorder}
+                        draggedId={draggedId}
+                        dragOverTarget={dragOverTarget}
+                        onDragStart={handleDragStart}
+                        onDragOver={(t) => setDragOverTarget(t)}
+                        onDragLeave={() => setDragOverTarget(null)}
+                        onDropOnPhoto={handleDropOnPhoto}
+                        onDropOnSlot={handleDropOnSlot}
+                        togglePhotoDetails={togglePhotoDetails}
+                        removeFromGallery={removeFromGallery}
+                        expandedPhotoId={expandedPhotoId}
+                        updatePhotoField={updatePhotoField}
+                        getAiFixRowClass={getAiFixRowClass}
+                        handleAiFixPhoto={handleAiFixPhoto}
+                        aiLoadingKey={aiLoadingKey}
+                        photoFieldHelp={photoFieldHelp}
+                        styles={styles}
+                        slotIndex={slotIndex}
+                      />
+                    );
+                  }
+                  return (
+                    <SlotPlaceholder
+                      key={`approach-${slotIndex}`}
+                      label={`Slot ${slotIndex + 1}`}
+                      slotTarget={{ type: 'slot', section: 'approach', index: slotIndex }}
+                      dragOverTarget={dragOverTarget}
+                      onDragOver={setDragOverTarget}
+                      onDragLeave={() => setDragOverTarget(null)}
+                      onDrop={handleDropOnSlot}
+                      styles={styles}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+            <div className={styles.photoSection}>
+              <h3 className={styles.sectionLabel}>Bio (1 photo)</h3>
+              <div className={styles.sectionSlots}>
+                {aboutSections.bio.length > 0 ? (
+                  <PagePhotoCard
+                    photo={photosById.get(aboutSections.bio[0])!}
+                    label="Bio"
+                    canReorder={canReorder}
+                    draggedId={draggedId}
+                    dragOverTarget={dragOverTarget}
+                    onDragStart={handleDragStart}
+                    onDragOver={(t) => setDragOverTarget(t)}
+                    onDragLeave={() => setDragOverTarget(null)}
+                    onDropOnPhoto={handleDropOnPhoto}
+                    onDropOnSlot={handleDropOnSlot}
+                    togglePhotoDetails={togglePhotoDetails}
+                    removeFromGallery={removeFromGallery}
+                    expandedPhotoId={expandedPhotoId}
+                    updatePhotoField={updatePhotoField}
+                    getAiFixRowClass={getAiFixRowClass}
+                    handleAiFixPhoto={handleAiFixPhoto}
+                    aiLoadingKey={aiLoadingKey}
+                    photoFieldHelp={photoFieldHelp}
+                    styles={styles}
+                  />
+                ) : (
+                  <SlotPlaceholder
+                    label="Bio"
+                    slotTarget={{ type: 'slot', section: 'bio' }}
+                    dragOverTarget={dragOverTarget}
+                    onDragOver={setDragOverTarget}
+                    onDragLeave={() => setDragOverTarget(null)}
+                    onDrop={handleDropOnSlot}
+                    styles={styles}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeSlug === 'contact' && canReorder && (
+          <div className={styles.photoSections}>
+            <div className={styles.photoSection}>
+              <h3 className={styles.sectionLabel}>Hero (1 photo)</h3>
+              <div className={styles.sectionSlots}>
+                {contactSections.hero.length > 0 ? (
+                  <PagePhotoCard
+                    photo={photosById.get(contactSections.hero[0])!}
+                    label="Hero"
+                    canReorder={canReorder}
+                    draggedId={draggedId}
+                    dragOverTarget={dragOverTarget}
+                    onDragStart={handleDragStart}
+                    onDragOver={(t) => setDragOverTarget(t)}
+                    onDragLeave={() => setDragOverTarget(null)}
+                    onDropOnPhoto={handleDropOnPhoto}
+                    onDropOnSlot={handleDropOnSlot}
+                    togglePhotoDetails={togglePhotoDetails}
+                    removeFromGallery={removeFromGallery}
+                    expandedPhotoId={expandedPhotoId}
+                    updatePhotoField={updatePhotoField}
+                    getAiFixRowClass={getAiFixRowClass}
+                    handleAiFixPhoto={handleAiFixPhoto}
+                    aiLoadingKey={aiLoadingKey}
+                    photoFieldHelp={photoFieldHelp}
+                    styles={styles}
+                  />
+                ) : (
+                  <SlotPlaceholder
+                    label="Hero"
+                    slotTarget={{ type: 'slot', section: 'hero' }}
+                    dragOverTarget={dragOverTarget}
+                    onDragOver={setDragOverTarget}
+                    onDragLeave={() => setDragOverTarget(null)}
+                    onDrop={handleDropOnSlot}
+                    styles={styles}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Photo Library */}
@@ -1586,7 +1969,16 @@ export function AdminPhotosClient() {
                 <h3 className={styles.libraryGroupTitle}>{LIBRARY_GROUP_LABELS[key]}</h3>
                 <div className={styles.gridThreeTight}>
                   {groupPhotos.map((photo) => (
-                    <div key={photo.id} className={styles.libraryCard}>
+                    <div
+                      key={photo.id}
+                      className={`${styles.libraryCard} ${canReorder ? styles.libraryCardDraggable : ''}`}
+                      draggable={canReorder}
+                      onDragStart={() => handleDragStart(photo.id)}
+                      onDragEnd={() => {
+                        setDraggedId(null);
+                        setDragOverTarget(null);
+                      }}
+                    >
                       <div className={styles.libraryRow}>
                         <div className={styles.libraryInfo}>
                           <div className={styles.photoPreviewSmall}>

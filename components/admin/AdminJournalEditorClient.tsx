@@ -111,7 +111,7 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
   // Save function for master save
   const savePost = useCallback(async (): Promise<boolean> => {
     if (!post.title || !post.slug || !post.heroPhotoId) {
-      setStatus('Please fill in title, slug, and select a hero photo.');
+      setStatus('Please fill in title, slug, and select a featured photo.');
       return false;
     }
 
@@ -502,19 +502,19 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
         </div>
       </section>
 
-      {/* Hero Photo */}
+      {/* Featured Photo */}
       <section className={styles.card}>
         <div className={styles.sectionHeader}>
           <div>
             <div className={guidelineStyles.headingRow}>
-              <h2 className={styles.cardTitle}>Hero Photo *</h2>
+              <h2 className={styles.cardTitle}>Featured Photo *</h2>
               <PhotoGuidelineTooltip
                 label={journalPhotoGuideline.label}
                 lines={journalPhotoGuideline.lines}
               />
             </div>
             <p className={styles.cardDescription}>
-              Main image shown on the journal index.
+              Featured image shown on the journal index.
             </p>
           </div>
           <button
@@ -631,7 +631,7 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
         onClose={() => setShowHeroSelector(false)}
         onSelect={handleHeroSelect}
         selectedIds={post.heroPhotoId ? [post.heroPhotoId] : []}
-        title="Select Hero Photo"
+        title="Select Featured Photo"
       />
       <AdminPhotoSelector
         isOpen={showGallerySelector}
