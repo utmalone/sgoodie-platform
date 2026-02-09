@@ -59,3 +59,13 @@ export function revalidateAllPages() {
 export function revalidatePhotosImmediate() {
   revalidateTag(CacheTags.photos, { expire: 0 });
 }
+
+/**
+ * Immediately expire layout caches so the preview tab shows updated photos
+ * when layout/photo assignments change (e.g. reorder, add, remove photos).
+ */
+export function revalidateLayoutsImmediate() {
+  revalidateTag(CacheTags.layoutHome, { expire: 0 });
+  revalidateTag(CacheTags.layoutAbout, { expire: 0 });
+  revalidateTag(CacheTags.layoutContact, { expire: 0 });
+}

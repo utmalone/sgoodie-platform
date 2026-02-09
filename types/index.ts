@@ -176,6 +176,10 @@ export type SiteProfile = {
   title: string;
   email: string;
   phone: string;
+  /** Hero title color (hex, e.g. #ffffff). Applied to all hero titles site-wide. */
+  heroTitleColor?: string;
+  /** Hero subtitle color (hex, e.g. #ffffff). Applied to all hero subtitles site-wide. */
+  heroSubtitleColor?: string;
   address: {
     street: string;
     city: string;

@@ -245,6 +245,51 @@
   color: rgba(0, 0, 0, 0.4);
 }
 
+/* Hero Color Picker */
+.colorPickerRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.colorPicker {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.125rem;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  background: #fff;
+}
+
+.colorPicker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.colorPicker::-webkit-color-swatch {
+  border: none;
+  border-radius: 0.25rem;
+}
+
+.colorHexInput {
+  flex: 1;
+  min-width: 6rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-family: ui-monospace, monospace;
+  color: #000;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0.75rem;
+  box-sizing: border-box;
+}
+
+.colorHexInput:focus {
+  outline: none;
+  border-color: rgba(0, 0, 0, 0.4);
+}
+
 /* Profile Photo Section */
 .photoSection {
   display: flex;

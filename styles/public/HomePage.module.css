@@ -23,13 +23,14 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   font-family: var(--font-display), sans-serif;
+  color: var(--hero-title-color, #ffffff);
 }
 
 .heroSubtitle {
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.22em;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--hero-subtitle-color, rgba(255, 255, 255, 0.8));
 }
 
 .heroBody {

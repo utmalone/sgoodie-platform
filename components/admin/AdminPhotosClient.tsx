@@ -472,7 +472,7 @@ export function AdminPhotosClient() {
         setStatus('Failed to update order.');
       }
     } else if (activeSlug === 'about' && layouts.about) {
-      const heroPhotoId = newIds[0] || layouts.about.heroPhotoId;
+      const heroPhotoId = newIds[0] || '';
       const existingBioId = layouts.about.bio?.photoId || '';
       const hasBio = Boolean(existingBioId);
       const bioCandidate = hasBio && newIds.length >= 2 ? newIds[newIds.length - 1] : '';

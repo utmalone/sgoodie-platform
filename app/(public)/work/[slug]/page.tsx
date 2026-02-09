@@ -125,14 +125,14 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
       )}
 
       <div className={styles.pager}>
-        {previousProject ? (
+        {previousProject && previousProject.status !== 'draft' ? (
           <Link href={buildUrl(previousProject.slug)} className={styles.pagerLink}>
             Previous
           </Link>
         ) : (
           <span className={styles.pagerMuted}>Previous</span>
         )}
-        {nextProject ? (
+        {nextProject && nextProject.status !== 'draft' ? (
           <Link href={buildUrl(nextProject.slug)} className={styles.pagerLink}>
             Next
           </Link>

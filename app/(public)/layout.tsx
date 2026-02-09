@@ -17,8 +17,16 @@ export default async function PublicLayout({ children }: { children: React.React
     facebook: profile.social.facebook.url || '',
   };
 
+  const heroTitleColor = profile.heroTitleColor || '#ffffff';
+  const heroSubtitleColor = profile.heroSubtitleColor || 'rgba(255, 255, 255, 0.85)';
+
   return (
     <div className={layoutStyles.page}>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `:root{--hero-title-color:${heroTitleColor};--hero-subtitle-color:${heroSubtitleColor}}`
+        }}
+      />
       <Suspense fallback={null}>
         <PreviewBanner />
       </Suspense>

@@ -20,6 +20,11 @@ body {
   overflow-x: hidden;
 }
 
+/* Push main content down when preview banner is visible (header is fixed below banner) */
+body.preview-banner-visible #main-content {
+  padding-top: calc(4rem + var(--preview-banner-height, 2rem));
+}
+
 html {
   overflow-x: hidden;
 }

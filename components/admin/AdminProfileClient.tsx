@@ -89,6 +89,12 @@ const profileFieldHelp = {
   ],
   confirmPassword: [
     'Re-enter the new password to confirm.'
+  ],
+  heroTitleColor: [
+    'Color of hero titles across all pages (Home, About, Contact, Journal, Portfolio).'
+  ],
+  heroSubtitleColor: [
+    'Color of hero subtitles across all pages. Slightly dimmer than the title by default.'
   ]
 };
 
@@ -339,6 +345,64 @@ export function AdminProfileClient() {
               ))}
             </select>
           </div>
+        </div>
+      </section>
+
+      {/* Hero Colors */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2>Hero Colors</h2>
+          <p>Font colors for hero titles and subtitles on all pages (Home, About, Contact, Journal, Portfolio).</p>
+        </div>
+        <div className={`${styles.formGrid} ${styles.formGrid2}`}>
+          <label className={styles.formLabel}>
+            <span className={styles.labelText}>
+              Hero Title Color
+              <FieldInfoTooltip label="Hero Title Color" lines={profileFieldHelp.heroTitleColor} />
+            </span>
+            <div className={styles.colorPickerRow}>
+              <input
+                type="color"
+                value={profile.heroTitleColor || '#ffffff'}
+                onChange={(e) => updateField('heroTitleColor', e.target.value)}
+                className={styles.colorPicker}
+                aria-label="Hero title color"
+              />
+              <input
+                type="text"
+                value={profile.heroTitleColor || '#ffffff'}
+                onChange={(e) => updateField('heroTitleColor', e.target.value)}
+                className={styles.colorHexInput}
+                placeholder="#ffffff"
+              />
+            </div>
+          </label>
+          <label className={styles.formLabel}>
+            <span className={styles.labelText}>
+              Hero Subtitle Color
+              <FieldInfoTooltip label="Hero Subtitle Color" lines={profileFieldHelp.heroSubtitleColor} />
+            </span>
+            <div className={styles.colorPickerRow}>
+              <input
+                type="color"
+                value={
+                  profile.heroSubtitleColor?.startsWith('#')
+                    ? profile.heroSubtitleColor
+                    : '#e6e6e6'
+                }
+                onChange={(e) => updateField('heroSubtitleColor', e.target.value)}
+                className={styles.colorPicker}
+                aria-label="Hero subtitle color"
+              />
+              <input
+                type="text"
+                value={profile.heroSubtitleColor || ''}
+                onChange={(e) => updateField('heroSubtitleColor', e.target.value)}
+                className={styles.colorHexInput}
+                placeholder="#e6e6e6 (leave empty for default)"
+              />
+            </div>
+          </label>
         </div>
       </section>
 

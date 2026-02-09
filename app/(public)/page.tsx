@@ -3,6 +3,7 @@ import { FullBleedHero } from '@/components/portfolio/FullBleedHero';
 import { HomeGalleryGrid } from '@/components/portfolio/HomeGalleryGrid';
 import { DraftPageText } from '@/components/preview/DraftPageText';
 import { DraftHomeLayoutText } from '@/components/preview/DraftHomeLayoutText';
+import { DraftHomePhotosSection } from '@/components/preview/DraftHomePhotosSection';
 import { getHomeLayout } from '@/lib/data/home';
 import { getPageBySlug } from '@/lib/data/pages';
 import { getPhotosByIds } from '@/lib/data/photos';
@@ -24,6 +25,21 @@ type HomePageProps = {
   searchParams: Promise<{ preview?: string }>;
 };
 
+const introMark = (
+  <div className={styles.introMark}>
+    <svg viewBox="0 0 48 24" aria-hidden="true">
+      <path
+        d="M8 16 L24 6 L24 18 L40 8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  </div>
+);
+
 export default async function HomePage({ searchParams }: HomePageProps) {
   const { preview } = await searchParams;
   const isPreview = preview === 'draft';
@@ -33,52 +49,62 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const [heroPhoto] = await getPhotosByIds([layout.heroPhotoId]);
   const featurePhotos = await getPhotosByIds(layout.featurePhotoIds);
 
+  const heroContent = (
+    <div className={styles.heroContent}>
+      <p className={styles.heroEyebrow}>S.Goodie Photography</p>
+      <h1 className={styles.heroTitle}>
+        {isPreview ? (
+          <DraftPageText slug="home" field="title" fallback={page.title} enabled />
+        ) : (
+          page.title
+        )}
+      </h1>
+      <p className={styles.heroSubtitle}>
+        {isPreview ? (
+          <DraftPageText slug="home" field="intro" fallback={page.intro} enabled />
+        ) : (
+          page.intro
+        )}
+      </p>
+    </div>
+  );
+
+  const introContent = (
+    <>
+      {introMark}
+      <p className={styles.introText}>
+        {isPreview ? (
+          <DraftHomeLayoutText field="introText" fallback={layout.introText} enabled />
+        ) : (
+          layout.introText
+        )}
+      </p>
+    </>
+  );
+
+  if (isPreview) {
+    return (
+      <div className={styles.wrapper}>
+        <DraftHomePhotosSection
+          isPreview
+          initialHeroPhoto={heroPhoto}
+          initialFeaturePhotos={featurePhotos}
+          heroContent={heroContent}
+          introContent={introContent}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.wrapper}>
       {heroPhoto && (
         <FullBleedHero photo={heroPhoto} minHeight="screen">
-          <div className={styles.heroContent}>
-            <p className={styles.heroEyebrow}>S.Goodie Photography</p>
-            <h1 className={styles.heroTitle}>
-              {isPreview ? (
-                <DraftPageText slug="home" field="title" fallback={page.title} enabled />
-              ) : (
-                page.title
-              )}
-            </h1>
-            <p className={styles.heroSubtitle}>
-              {isPreview ? (
-                <DraftPageText slug="home" field="intro" fallback={page.intro} enabled />
-              ) : (
-                page.intro
-              )}
-            </p>
-          </div>
+          {heroContent}
         </FullBleedHero>
       )}
-
       <section className={styles.introSection}>
-        <div className={styles.introWrapper}>
-          <div className={styles.introMark}>
-            <svg viewBox="0 0 48 24" aria-hidden="true">
-              <path
-                d="M8 16 L24 6 L24 18 L40 8"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <p className={styles.introText}>
-            {isPreview ? (
-              <DraftHomeLayoutText field="introText" fallback={layout.introText} enabled />
-            ) : (
-              layout.introText
-            )}
-          </p>
-        </div>
+        <div className={styles.introWrapper}>{introContent}</div>
         <HomeGalleryGrid photos={featurePhotos} />
       </section>
     </div>

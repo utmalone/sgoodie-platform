@@ -1730,13 +1730,57 @@ export function AdminPagesClient() {
             <div className={styles.formGrid}>
               <p className={styles.sectionLabel}>Hero</p>
               {heroPhoto ? (
-                <div className={styles.imagePreview}>
-                  <Image
-                    src={heroPhoto.src}
-                    alt={heroPhoto.alt}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 400px"
-                  />
+                <div className={styles.heroPreviewLarge}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={heroPhoto.src} alt={heroPhoto.alt} />
+                  {activeMainSlug === 'home' ? (
+                    <>
+                      <div className={styles.heroPreviewHomeOverlay} aria-hidden="true" />
+                      <div className={styles.heroPreviewHomeTextBlock} aria-hidden="true">
+                        <p className={styles.heroPreviewHomeEyebrow}>S.Goodie Photography</p>
+                        <p className={styles.heroPreviewHomeTitle}>
+                          {activePage.title || 'Page Title'}
+                        </p>
+                        <p className={styles.heroPreviewHomeSubtitle}>
+                          {activePage.intro || 'Page Subtitle'}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className={styles.heroPreviewPageOverlay} aria-hidden="true" />
+                      <div className={styles.heroPreviewPageTextBlock} aria-hidden="true">
+                        {activeMainSlug === 'about' && layouts.about ? (
+                          <>
+                            <p className={styles.heroPreviewPageTitle}>
+                              {layouts.about.heroTitle || 'Hero Title'}
+                            </p>
+                            <p className={styles.heroPreviewPageSubtitle}>
+                              {layouts.about.heroSubtitle || 'Hero Subtitle'}
+                            </p>
+                          </>
+                        ) : activeMainSlug === 'contact' && layouts.contact ? (
+                          <>
+                            <p className={styles.heroPreviewPageTitle}>
+                              {layouts.contact.heroTitle || 'Hero Title'}
+                            </p>
+                            <p className={styles.heroPreviewPageSubtitle}>
+                              {layouts.contact.heroSubtitle || 'Hero Subtitle'}
+                            </p>
+                          </>
+                        ) : activeMainSlug === 'journal' ? (
+                          <>
+                            <p className={styles.heroPreviewPageTitle}>
+                              {activePage.title || 'Hero Title'}
+                            </p>
+                            <p className={styles.heroPreviewPageSubtitle}>
+                              {activePage.intro || 'Hero Subtitle'}
+                            </p>
+                          </>
+                        ) : null}
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className={styles.imagePreviewEmpty}>

@@ -129,7 +129,10 @@ export function SiteHeader({ socialLinks }: SiteHeaderProps) {
   const dropdownClass = isScrolled ? styles.dropdownScrolled : styles.dropdownHero;
 
   return (
-    <header className={`${styles.header} ${headerClass}`}>
+    <header
+      className={`${styles.header} ${headerClass}`}
+      style={isDraftPreview ? { top: 'var(--preview-banner-height, 2rem)' } : undefined}
+    >
       <a href="#main-content" className={styles.skipLink}>
         Skip to Content
       </a>

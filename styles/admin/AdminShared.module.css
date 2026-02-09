@@ -921,6 +921,7 @@
   overflow: hidden;
   border-radius: 1rem;
   background: rgba(0, 0, 0, 0.05);
+  container-type: inline-size;
 }
 
 .heroPreviewLarge img {
@@ -934,9 +935,9 @@
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.08) 0%,
-    rgba(0, 0, 0, 0.32) 55%,
-    rgba(0, 0, 0, 0.08) 100%
+    rgba(0, 0, 0, 0.1) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    rgba(0, 0, 0, 0.1) 100%
   );
   pointer-events: none;
 }
@@ -948,15 +949,15 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  padding: 1.5rem;
+  gap: 1.11cqw;
+  padding: 1.5cqw;
   text-align: center;
   z-index: 1;
 }
 
 .heroPreviewSubtitleText {
-  font-size: 10px;
-  font-weight: 900;
+  font-size: 0.76cqw;
+  font-weight: 1000;
   text-transform: uppercase;
   letter-spacing: 0.35em;
   color: rgba(255, 255, 255, 0.85);
@@ -965,11 +966,98 @@
 .heroPreviewTitleText {
   font-weight: 600;
   letter-spacing: 0.5em;
-  font-family: var(--font-display), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-  color: #fff;
+  font-family: var(--font-display), sans-serif;
+  color: var(--hero-title-color, #ffffff);
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-  font-size: 0.95rem;
-  line-height: 1.4;
+  font-size: 1.28cqw;
+}
+
+/* Page Hero Preview - About / Journal / Contact (centered layout) */
+.heroPreviewPageOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.1) 0%,
+    rgba(0, 0, 0, 0.25) 50%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
+  pointer-events: none;
+}
+
+.heroPreviewPageTextBlock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.67cqw;
+  padding: 1.5cqw;
+  text-align: center;
+  z-index: 1;
+}
+
+.heroPreviewPageTitle {
+  font-size: 2.22cqw;
+  font-weight: 500;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: var(--hero-title-color, #ffffff);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.heroPreviewPageSubtitle {
+  font-size: 0.76cqw;
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--hero-subtitle-color, rgba(255, 255, 255, 0.85));
+}
+
+/* Page Hero Preview - Home (bottom-aligned layout) */
+.heroPreviewHomeOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+.heroPreviewHomeTextBlock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.67cqw;
+  padding: 0 6cqw;
+  padding-bottom: 4.5cqw;
+  text-align: center;
+  z-index: 1;
+}
+
+.heroPreviewHomeEyebrow {
+  font-size: 1.11cqw;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.heroPreviewHomeTitle {
+  font-size: 1.11cqw;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-family: var(--font-display), sans-serif;
+  color: var(--hero-title-color, #ffffff);
+}
+
+.heroPreviewHomeSubtitle {
+  font-size: 0.625cqw;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--hero-subtitle-color, rgba(255, 255, 255, 0.8));
 }
 
 /* Caption Card */

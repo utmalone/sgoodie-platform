@@ -13,6 +13,8 @@ const defaultProfile: SiteProfile = {
   title: 'Architecture & Interiors Photographer',
   email: 'hello@sgoodie.com',
   phone: '(202) 555-0194',
+  heroTitleColor: '#ffffff',
+  heroSubtitleColor: undefined, /* uses rgba(255,255,255,0.85) when unset */
   address: {
     street: '',
     city: 'Washington',
