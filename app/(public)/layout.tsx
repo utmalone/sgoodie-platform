@@ -30,7 +30,7 @@ export default async function PublicLayout({ children }: { children: React.React
       <Suspense fallback={null}>
         <PreviewBanner />
       </Suspense>
-      <SiteHeader socialLinks={socialLinks} />
+      <SiteHeader siteName={profile.name} socialLinks={socialLinks} />
       <main id="main-content" className={`${layoutStyles.container} ${layoutStyles.main}`}>
         {children}
       </main>

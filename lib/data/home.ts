@@ -11,7 +11,8 @@ const HOME_SLUG = 'home-page';
 const defaultHomeLayout: HomeLayout = {
   heroPhotoId: '',
   featurePhotoIds: [],
-  introText: 'Creating photographs that not only document spaces, but celebrate the artistry, vision, and craft behind them.'
+  introText: 'Creating photographs that not only document spaces, but celebrate the artistry, vision, and craft behind them.',
+  heroEyebrow: 'S.Goodie Photography'
 };
 
 function normalizeHomeLayout(layout: Partial<HomeLayout> | null | undefined): HomeLayout {
@@ -23,6 +24,8 @@ function normalizeHomeLayout(layout: Partial<HomeLayout> | null | undefined): Ho
       : defaultHomeLayout.featurePhotoIds,
     introText:
       typeof layout?.introText === 'string' ? layout.introText : defaultHomeLayout.introText,
+    ...(typeof layout?.heroEyebrow === 'string' ? { heroEyebrow: layout.heroEyebrow } : { heroEyebrow: defaultHomeLayout.heroEyebrow }),
+    ...(typeof layout?.heroEyebrowColor === 'string' ? { heroEyebrowColor: layout.heroEyebrowColor } : {}),
     ...(typeof layout?.heroTitleColor === 'string' ? { heroTitleColor: layout.heroTitleColor } : {}),
     ...(typeof layout?.heroSubtitleColor === 'string' ? { heroSubtitleColor: layout.heroSubtitleColor } : {})
   };

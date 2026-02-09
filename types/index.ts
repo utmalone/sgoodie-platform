@@ -104,6 +104,10 @@ export type HomeLayout = {
   heroPhotoId: string;
   featurePhotoIds: string[];
   introText: string;
+  /** Main brand title shown above the hero (e.g., "S.Goodie Photography"). */
+  heroEyebrow?: string;
+  /** Color for the hero eyebrow text (hex, e.g. #ffffff). */
+  heroEyebrowColor?: string;
   heroTitleColor?: string;
   heroSubtitleColor?: string;
 };

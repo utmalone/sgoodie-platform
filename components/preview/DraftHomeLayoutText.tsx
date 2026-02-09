@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import type { HomeLayout } from '@/types';
 import { loadDraftHomeLayout } from '@/lib/admin/draft-home-layout-store';
 
-type HomeTextField = keyof Pick<HomeLayout, 'introText'>;
+type HomeTextField = keyof Pick<HomeLayout, 'introText' | 'heroEyebrow'>;
 
 type DraftHomeLayoutTextProps = {
   field: HomeTextField;

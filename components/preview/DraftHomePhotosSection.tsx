@@ -28,6 +28,7 @@ export function DraftHomePhotosSection({
 }: DraftHomePhotosSectionProps) {
   const [heroPhoto, setHeroPhoto] = useState(initialHeroPhoto);
   const [featurePhotos, setFeaturePhotos] = useState(initialFeaturePhotos);
+  const [heroEyebrowColor, setHeroEyebrowColor] = useState<string | undefined>();
   const [heroTitleColor, setHeroTitleColor] = useState<string | undefined>();
   const [heroSubtitleColor, setHeroSubtitleColor] = useState<string | undefined>();
 
@@ -47,6 +48,7 @@ export function DraftHomePhotosSection({
         const heroPhotoId = draft?.heroPhotoId ?? layout.heroPhotoId;
         const featurePhotoIds = draft?.featurePhotoIds ?? layout.featurePhotoIds ?? [];
 
+        setHeroEyebrowColor(draft?.heroEyebrowColor ?? layout.heroEyebrowColor ?? undefined);
         setHeroTitleColor(draft?.heroTitleColor ?? layout.heroTitleColor ?? undefined);
         setHeroSubtitleColor(draft?.heroSubtitleColor ?? layout.heroSubtitleColor ?? undefined);
 
@@ -96,6 +98,7 @@ export function DraftHomePhotosSection({
     const loadDraftColors = () => {
       const draft = loadDraftHomeLayout();
       if (draft) {
+        if (typeof draft.heroEyebrowColor === 'string') setHeroEyebrowColor(draft.heroEyebrowColor || undefined);
         if (typeof draft.heroTitleColor === 'string') setHeroTitleColor(draft.heroTitleColor || undefined);
         if (typeof draft.heroSubtitleColor === 'string') setHeroSubtitleColor(draft.heroSubtitleColor || undefined);
       }
@@ -122,6 +125,7 @@ export function DraftHomePhotosSection({
           photo={heroPhoto}
           minHeight="screen"
           style={{
+            ...(heroEyebrowColor ? { '--hero-eyebrow-color': heroEyebrowColor } : {}),
             ...(heroTitleColor ? { '--hero-title-color': heroTitleColor } : {}),
             ...(heroSubtitleColor ? { '--hero-subtitle-color': heroSubtitleColor } : {})
           } as React.CSSProperties}

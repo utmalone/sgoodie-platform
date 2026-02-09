@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { loadDraftProfile } from '@/lib/admin/draft-profile-store';
 import layoutStyles from '@/styles/public/layout.module.css';
 import styles from '@/styles/public/SiteHeader.module.css';
 import {
@@ -29,6 +30,7 @@ interface SocialLinks {
 }
 
 interface SiteHeaderProps {
+  siteName?: string;
   socialLinks?: SocialLinks;
 }
 
@@ -80,14 +82,36 @@ function useScrollY(enabled: boolean) {
   );
 }
 
-export function SiteHeader({ socialLinks }: SiteHeaderProps) {
+const DRAFT_PROFILE_KEY = 'sgoodie.admin.draft.profile';
+const PREVIEW_REFRESH_KEY = 'admin-preview-refresh';
+
+export function SiteHeader({ siteName = 'S.Goodie', socialLinks }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [portfolioOpen, setPortfolioOpen] = useState(false);
   const [mobilePortfolioOpen, setMobilePortfolioOpen] = useState(false);
+  const [draftSiteName, setDraftSiteName] = useState<string | null>(null);
   const portfolioRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isDraftPreview = searchParams.get('preview') === 'draft';
+
+  useEffect(() => {
+    if (!isDraftPreview) return;
+    const load = () => {
+      const draft = loadDraftProfile();
+      setDraftSiteName(draft?.name ?? null);
+    };
+    load();
+    const pollId = window.setInterval(load, 500);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === DRAFT_PROFILE_KEY || event.key === PREVIEW_REFRESH_KEY) load();
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.clearInterval(pollId);
+    };
+  }, [isDraftPreview]);
 
   const buildHref = useMemo(() => {
     if (!isDraftPreview) return (href: string) => href;
@@ -138,7 +162,7 @@ export function SiteHeader({ socialLinks }: SiteHeaderProps) {
       </a>
       <div className={`${layoutStyles.container} ${styles.inner}`}>
         <Link href={buildHref('/')} className={styles.logo}>
-          S.Goodie
+          {isDraftPreview && draftSiteName !== null ? draftSiteName : siteName}
         </Link>
         <nav className={styles.nav}>
           {/* Portfolio dropdown */}

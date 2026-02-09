@@ -35,7 +35,8 @@ const emptyPage: PageContent = {
 const emptyHomeLayout: HomeLayout = {
   heroPhotoId: '',
   featurePhotoIds: [],
-  introText: ''
+  introText: '',
+  heroEyebrow: 'S.Goodie Photography'
 };
 
 const pageFieldHelp = {
@@ -62,6 +63,10 @@ const pageFieldHelp = {
 };
 
 const homeLayoutFieldHelp = {
+  heroEyebrow: [
+    'Main brand title shown above the hero (e.g., "S.Goodie Photography").',
+    'This appears as the large primary title on the home page.'
+  ],
   introText: [
     'Short statement shown on the home page above the gallery grid.',
     'Example: Creating photographs that not only document spaces...'
@@ -230,11 +235,17 @@ export function AdminPagesClient() {
   const isHomeLayoutDirty = useMemo(() => {
     const currentIntro = layouts.home?.introText ?? '';
     const savedIntro = savedHomeLayout?.introText ?? '';
+    const currentEyebrow = layouts.home?.heroEyebrow ?? '';
+    const savedEyebrow = savedHomeLayout?.heroEyebrow ?? '';
+    const currentEyebrowColor = layouts.home?.heroEyebrowColor ?? '';
+    const savedEyebrowColor = savedHomeLayout?.heroEyebrowColor ?? '';
     const currentTitleColor = layouts.home?.heroTitleColor ?? '';
     const savedTitleColor = savedHomeLayout?.heroTitleColor ?? '';
     const currentSubtitleColor = layouts.home?.heroSubtitleColor ?? '';
     const savedSubtitleColor = savedHomeLayout?.heroSubtitleColor ?? '';
     return currentIntro !== savedIntro
+      || currentEyebrow !== savedEyebrow
+      || currentEyebrowColor !== savedEyebrowColor
       || currentTitleColor !== savedTitleColor
       || currentSubtitleColor !== savedSubtitleColor;
   }, [layouts.home, savedHomeLayout]);
@@ -307,6 +318,8 @@ export function AdminPagesClient() {
   const saveHomeLayout = useCallback(async (): Promise<boolean> => {
     const payload: Partial<HomeLayout> = {
       introText: layouts.home?.introText ?? '',
+      heroEyebrow: layouts.home?.heroEyebrow,
+      heroEyebrowColor: layouts.home?.heroEyebrowColor,
       heroTitleColor: layouts.home?.heroTitleColor,
       heroSubtitleColor: layouts.home?.heroSubtitleColor
     };
@@ -646,6 +659,8 @@ export function AdminPagesClient() {
 
   const homeLayoutDraftDeps = [
     layouts.home?.introText,
+    layouts.home?.heroEyebrow,
+    layouts.home?.heroEyebrowColor,
     layouts.home?.heroTitleColor,
     layouts.home?.heroSubtitleColor
   ];
@@ -655,6 +670,8 @@ export function AdminPagesClient() {
     if (!layouts.home) return;
     saveDraftHomeLayout({
       introText: layouts.home.introText,
+      heroEyebrow: layouts.home.heroEyebrow,
+      heroEyebrowColor: layouts.home.heroEyebrowColor,
       heroTitleColor: layouts.home.heroTitleColor,
       heroSubtitleColor: layouts.home.heroSubtitleColor
     });
@@ -1093,6 +1110,11 @@ export function AdminPagesClient() {
     });
   }
 
+  function getActiveHeroEyebrowColor(): string {
+    if (activeMainSlug === 'home') return layouts.home?.heroEyebrowColor || '';
+    return '';
+  }
+
   function getActiveHeroTitleColor(): string {
     if (activeMainSlug === 'home') return layouts.home?.heroTitleColor || '';
     if (activeMainSlug === 'about') return layouts.about?.heroTitleColor || '';
@@ -1109,14 +1131,23 @@ export function AdminPagesClient() {
     return '';
   }
 
-  function handleHeroColorChange(field: 'heroTitleColor' | 'heroSubtitleColor', value: string) {
-    if (activeMainSlug === 'home') updateHomeLayoutField(field, value);
-    else if (activeMainSlug === 'about') updateAboutField(field, value);
-    else if (activeMainSlug === 'contact') updateContactField(field, value);
-    else if (activeMainSlug === 'journal') updateField(field, value);
+  function handleHeroColorChange(
+    field: 'heroEyebrowColor' | 'heroTitleColor' | 'heroSubtitleColor',
+    value: string
+  ) {
+    if (activeMainSlug === 'home') {
+      updateHomeLayoutField(field, value);
+    } else if (activeMainSlug === 'about' && (field === 'heroTitleColor' || field === 'heroSubtitleColor')) {
+      updateAboutField(field, value);
+    } else if (activeMainSlug === 'contact' && (field === 'heroTitleColor' || field === 'heroSubtitleColor')) {
+      updateContactField(field, value);
+    } else if (activeMainSlug === 'journal' && (field === 'heroTitleColor' || field === 'heroSubtitleColor')) {
+      updateField(field, value);
+    }
   }
 
   function handleResetHeroColors() {
+    if (activeMainSlug === 'home') handleHeroColorChange('heroEyebrowColor', '');
     handleHeroColorChange('heroTitleColor', '');
     handleHeroColorChange('heroSubtitleColor', '');
   }
@@ -1212,13 +1243,56 @@ export function AdminPagesClient() {
             Editing: {pageLabels[activeMainSlug]} page
           </p>
           <div className={styles.formGrid}>
-            {['home', 'journal'].includes(activeMainSlug) && (
+            {activeMainSlug === 'home' && (
+              <label className={`${styles.label} ${getAiFixRowClass('homeLayout-heroEyebrow')}`}>
+                <div className={styles.fieldHeader}>
+                  <span className={styles.labelText}>
+                    Title
+                    <FieldInfoTooltip
+                      label="Title"
+                      lines={homeLayoutFieldHelp.heroEyebrow}
+                      align="right"
+                    />
+                  </span>
+                </div>
+                <input
+                  value={layouts.home?.heroEyebrow ?? 'S.Goodie Photography'}
+                  onChange={(event) => updateHomeLayoutField('heroEyebrow', event.target.value)}
+                  className={styles.input}
+                  placeholder="S.Goodie Photography"
+                />
+              </label>
+            )}
+            {activeMainSlug === 'home' && (
               <label className={`${styles.label} ${getAiFixRowClass('page-title')}`}>
                 <div className={styles.fieldHeader}>
                   <span className={styles.labelText}>
-                    {activeMainSlug === 'journal' ? 'Hero Title' : 'Title'}
+                    Subtitle
                     <FieldInfoTooltip
-                      label={activeMainSlug === 'journal' ? 'Hero Title' : 'Title'}
+                      label="Subtitle"
+                      lines={[
+                        'Subtitle shown under the main title on the home hero.',
+                        'Example: Where Design Meets the Lens - Architecture + Interiors'
+                      ]}
+                      align="right"
+                    />
+                  </span>
+                  <AiFixButton onClick={() => handleAiFixPage('title', 'text')} loading={aiLoadingKey === 'page-title'} />
+                </div>
+                <input
+                  value={activePage.title}
+                  onChange={(event) => updateField('title', event.target.value)}
+                  className={styles.input}
+                />
+              </label>
+            )}
+            {activeMainSlug === 'journal' && (
+              <label className={`${styles.label} ${getAiFixRowClass('page-title')}`}>
+                <div className={styles.fieldHeader}>
+                  <span className={styles.labelText}>
+                    Hero Title
+                    <FieldInfoTooltip
+                      label="Hero Title"
                       lines={pageFieldHelp.title}
                       align="right"
                     />
@@ -1913,6 +1987,9 @@ export function AdminPagesClient() {
                   <div
                     className={styles.heroPreviewLarge}
                     style={{
+                      ...(activeMainSlug === 'home' && getActiveHeroEyebrowColor()
+                        ? { '--hero-eyebrow-color': getActiveHeroEyebrowColor() } as React.CSSProperties
+                        : {}),
                       ...(getActiveHeroTitleColor() ? { '--hero-title-color': getActiveHeroTitleColor() } as React.CSSProperties : {}),
                       ...(getActiveHeroSubtitleColor() ? { '--hero-subtitle-color': getActiveHeroSubtitleColor() } as React.CSSProperties : {})
                     }}
@@ -1923,12 +2000,14 @@ export function AdminPagesClient() {
                       <>
                         <div className={styles.heroPreviewHomeOverlay} aria-hidden="true" />
                         <div className={styles.heroPreviewHomeTextBlock} aria-hidden="true">
-                          <p className={styles.heroPreviewHomeEyebrow}>S.Goodie Photography</p>
+                          <p className={styles.heroPreviewHomeEyebrow}>
+                            {layouts.home?.heroEyebrow || 'S.Goodie Photography'}
+                          </p>
                           <p className={styles.heroPreviewHomeTitle}>
-                            {activePage.title || 'Page Title'}
+                            {activePage.title || 'Subtitle'}
                           </p>
                           <p className={styles.heroPreviewHomeSubtitle}>
-                            {activePage.intro || 'Page Subtitle'}
+                            {activePage.intro || 'Intro'}
                           </p>
                         </div>
                       </>
@@ -1969,8 +2048,31 @@ export function AdminPagesClient() {
                     )}
                   </div>
                   <div className={styles.heroColorPickerPanel}>
+                    {activeMainSlug === 'home' && (
+                      <div>
+                        <span className={styles.heroColorLabel}>Title Color</span>
+                        <div className={styles.heroColorPickerRow}>
+                          <input
+                            type="color"
+                            value={getActiveHeroEyebrowColor() || '#ffffff'}
+                            onChange={(e) => handleHeroColorChange('heroEyebrowColor', e.target.value)}
+                            className={styles.heroColorPicker}
+                            aria-label="Hero title (eyebrow) color"
+                          />
+                          <input
+                            type="text"
+                            value={getActiveHeroEyebrowColor()}
+                            onChange={(e) => handleHeroColorChange('heroEyebrowColor', e.target.value)}
+                            className={styles.heroColorHexInput}
+                            placeholder="#ffffff"
+                          />
+                        </div>
+                      </div>
+                    )}
                     <div>
-                      <span className={styles.heroColorLabel}>Title Color</span>
+                      <span className={styles.heroColorLabel}>
+                        {activeMainSlug === 'home' ? 'Subtitle Color' : 'Title Color'}
+                      </span>
                       <div className={styles.heroColorPickerRow}>
                         <input
                           type="color"
@@ -1989,7 +2091,9 @@ export function AdminPagesClient() {
                       </div>
                     </div>
                     <div>
-                      <span className={styles.heroColorLabel}>Subtitle Color</span>
+                      <span className={styles.heroColorLabel}>
+                        {activeMainSlug === 'home' ? 'Intro Color' : 'Subtitle Color'}
+                      </span>
                       <div className={styles.heroColorPickerRow}>
                         <input
                           type="color"

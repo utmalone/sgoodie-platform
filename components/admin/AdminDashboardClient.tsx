@@ -8,6 +8,7 @@ import { clearDraftPages } from '@/lib/admin/draft-store';
 import { clearDraftHomeLayout } from '@/lib/admin/draft-home-layout-store';
 import { clearDraftAboutContent } from '@/lib/admin/draft-about-store';
 import { clearDraftContactContent } from '@/lib/admin/draft-contact-store';
+import { clearDraftProfile } from '@/lib/admin/draft-profile-store';
 import { FieldInfoTooltip } from './FieldInfoTooltip';
 
 type ModelResponse = {
@@ -300,6 +301,7 @@ export function AdminDashboardClient() {
                 clearDraftHomeLayout();
                 clearDraftAboutContent();
                 clearDraftContactContent();
+                clearDraftProfile();
                 finishBatchProgress('Complete!');
               } else if (event.type === 'error') {
                 throw new Error(event.message);

@@ -15,7 +15,7 @@
   font-weight: 1000;
   text-transform: uppercase;
   letter-spacing: 0.28em;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--hero-eyebrow-color, rgba(255, 255, 255, 0.8));
 }
 
 .heroTitle {

@@ -49,9 +49,16 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const [heroPhoto] = await getPhotosByIds([layout.heroPhotoId]);
   const featurePhotos = await getPhotosByIds(layout.featurePhotoIds);
 
+  const heroEyebrowText = layout.heroEyebrow ?? 'S.Goodie Photography';
   const heroContent = (
     <div className={styles.heroContent}>
-      <p className={styles.heroEyebrow}>S.Goodie Photography</p>
+      <p className={styles.heroEyebrow}>
+        {isPreview ? (
+          <DraftHomeLayoutText field="heroEyebrow" fallback={heroEyebrowText} enabled />
+        ) : (
+          heroEyebrowText
+        )}
+      </p>
       <h1 className={styles.heroTitle}>
         {isPreview ? (
           <DraftPageText slug="home" field="title" fallback={page.title} enabled />
@@ -103,6 +110,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           photo={heroPhoto}
           minHeight="screen"
           style={{
+            ...(layout.heroEyebrowColor ? { '--hero-eyebrow-color': layout.heroEyebrowColor } : {}),
             ...(layout.heroTitleColor ? { '--hero-title-color': layout.heroTitleColor } : {}),
             ...(layout.heroSubtitleColor ? { '--hero-subtitle-color': layout.heroSubtitleColor } : {})
           } as React.CSSProperties}

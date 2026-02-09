@@ -6,13 +6,14 @@ import Image from 'next/image';
 import type { SiteProfile, PhotoAsset } from '@/types';
 import { useSave } from '@/lib/admin/save-context';
 import { usePreview } from '@/lib/admin/preview-context';
+import { saveDraftProfile, clearDraftProfile } from '@/lib/admin/draft-profile-store';
 import { FieldInfoTooltip } from './FieldInfoTooltip';
 import styles from '@/styles/admin/AdminProfile.module.css';
 
 const profileFieldHelp = {
   name: [
-    'Name shown on the website.',
-    'Example: S.Goodie Studio.'
+    'Brand name shown in the site header (logo) and elsewhere.',
+    'Example: S.Goodie'
   ],
   title: [
     'Your role or tagline shown under your name.',
@@ -139,6 +140,7 @@ export function AdminProfileClient() {
         const updated = await response.json();
         setSavedProfile(updated);
         refreshPreview();
+        clearDraftProfile();
         return true;
       }
       return false;
@@ -189,6 +191,11 @@ export function AdminProfileClient() {
 
     load();
   }, [router]);
+
+  useEffect(() => {
+    if (!profile || isLoading) return;
+    saveDraftProfile({ name: profile.name });
+  }, [profile?.name, isLoading]);
 
   async function handlePasswordChange() {
     if (newPassword !== confirmPassword) {
