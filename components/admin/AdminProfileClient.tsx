@@ -195,7 +195,7 @@ export function AdminProfileClient() {
   useEffect(() => {
     if (!profile || isLoading) return;
     saveDraftProfile({ name: profile.name });
-  }, [profile?.name, isLoading]);
+  }, [profile, isLoading]);
 
   async function handlePasswordChange() {
     if (newPassword !== confirmPassword) {

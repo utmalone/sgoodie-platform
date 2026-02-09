@@ -56,15 +56,15 @@ export function ContactPageDraftClient({
   useEffect(() => {
     const draftHeroId = draft?.heroPhotoId ?? fallbackContent.heroPhotoId;
     if (!draftHeroId) {
-      setHeroPhoto(null);
+      queueMicrotask(() => setHeroPhoto(null));
       return;
     }
     if (initialHeroPhoto?.id === draftHeroId) {
-      setHeroPhoto(initialHeroPhoto);
+      queueMicrotask(() => setHeroPhoto(initialHeroPhoto));
       return;
     }
     if (fallbackContent.heroPhotoId === draftHeroId && initialHeroPhoto) {
-      setHeroPhoto(initialHeroPhoto);
+      queueMicrotask(() => setHeroPhoto(initialHeroPhoto));
       return;
     }
     fetchPhotoById(draftHeroId).then(setHeroPhoto);

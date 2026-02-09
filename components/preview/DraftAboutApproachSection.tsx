@@ -42,7 +42,7 @@ export function DraftAboutApproachSection({
 
   useEffect(() => {
     if (!isPreview) {
-      setOrderedItems(approachItems);
+      queueMicrotask(() => setOrderedItems(approachItems));
       return;
     }
 

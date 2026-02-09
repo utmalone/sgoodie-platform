@@ -28,7 +28,7 @@ export function DraftPortfolioProjectsSection({
 
   useEffect(() => {
     if (!isPreview) {
-      setItems(initialItems);
+      queueMicrotask(() => setItems(initialItems));
       return;
     }
 

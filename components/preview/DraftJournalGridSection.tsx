@@ -27,7 +27,7 @@ export function DraftJournalGridSection({
 
   useEffect(() => {
     if (!isPreview) {
-      setOrderedPosts(allPosts);
+      queueMicrotask(() => setOrderedPosts(allPosts));
       return;
     }
 
