@@ -48,7 +48,7 @@ export function JournalPhotoGrid({ photos }: JournalPhotoGridProps) {
               src={photo.src}
               alt={photo.alt}
               fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 33vw"
               className={styles.image}
             />
           </button>

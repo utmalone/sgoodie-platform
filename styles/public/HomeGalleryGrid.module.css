@@ -2,7 +2,8 @@
   display: grid;
   gap: 5rem;
   padding-top: 3rem;
-  padding-inline: clamp(1.5rem, 6vw, 6rem);
+  /* This grid is rendered inside the page container; avoid double-gutters on tablets/phones */
+  padding-inline: 0;
 }
 
 .item {
@@ -31,8 +32,9 @@
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding-inline: clamp(1.5rem, 6vw, 6rem);
   }
 }

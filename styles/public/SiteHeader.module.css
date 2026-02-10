@@ -212,7 +212,8 @@
   letter-spacing: 0.3em;
   background: none;
   border: none;
-  padding: 0;
+  /* Larger tap target on touch devices (menu button is hidden on desktop) */
+  padding: 0.5rem 0.25rem;
   cursor: pointer;
 }
 
@@ -227,14 +228,18 @@
 .mobilePanel {
   border-top: 1px solid var(--line);
   background: var(--paper);
+  /* Prevent a tall menu from overflowing behind the viewport on phones/tablets */
+  max-height: calc(100vh - 4rem - var(--preview-banner-height, 0px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .mobilePanelInner {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  padding: 1.5rem 0;
-  font-size: 10px;
+  padding: 1.5rem 0 calc(1.5rem + env(safe-area-inset-bottom));
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.3em;
 }
@@ -305,7 +310,8 @@
   color: var(--ink);
 }
 
-@media (min-width: 768px) {
+/* Show the full nav on desktop-like devices; keep the menu button for tablets/touch */
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
   .nav {
     display: flex;
   }

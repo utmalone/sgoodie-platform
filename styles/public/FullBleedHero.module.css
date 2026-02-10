@@ -11,10 +11,12 @@
 
 .minScreen {
   min-height: 100vh;
+  min-height: 100svh;
 }
 
 .minTall {
   min-height: 80vh;
+  min-height: 80svh;
 }
 
 .image {
@@ -46,6 +48,6 @@
   align-items: center;
   justify-content: flex-end;
   padding: 0 6vw;
-  padding-bottom: 8vh;
+  padding-bottom: calc(8vh + env(safe-area-inset-bottom));
   text-align: center;
 }

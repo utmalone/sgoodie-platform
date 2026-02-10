@@ -87,7 +87,7 @@ export default async function PortfolioCategoryPage({ params, searchParams }: Pa
   }, []);
 
   return (
-    <main id="main-content" className={styles.wrapper}>
+    <div className={styles.wrapper}>
       {/* Page Title */}
       <header className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>
@@ -123,6 +123,6 @@ export default async function PortfolioCategoryPage({ params, searchParams }: Pa
           No {categoryLabel.toLowerCase()} projects yet. Check back soon!
         </p>
       )}
-    </main>
+    </div>
   );
 }

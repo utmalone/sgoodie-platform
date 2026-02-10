@@ -15,6 +15,7 @@
   position: relative;
   width: 100%;
   min-height: 75vh;
+  min-height: 75svh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -115,7 +116,7 @@
   line-height: 1;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .gridSection {
     padding: 8rem 0;
   }

@@ -15,6 +15,7 @@
   position: relative;
   width: 100%;
   min-height: 75vh;
+  min-height: 75svh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,7 +67,8 @@
 /* Contact Section */
 .contactSection {
   padding: 5rem 0;
-  padding-inline: clamp(1.5rem, 5vw, 6rem);
+  /* Rendered inside the page container; avoid double-gutters on tablets/phones */
+  padding-inline: 0;
 }
 
 .contactGrid {
@@ -169,7 +171,7 @@
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .contactGrid {
     grid-template-columns: 1fr 1fr;
     gap: 6rem;

@@ -85,15 +85,19 @@ function useScrollY(enabled: boolean) {
 const DRAFT_PROFILE_KEY = 'sgoodie.admin.draft.profile';
 const PREVIEW_REFRESH_KEY = 'admin-preview-refresh';
 
-export function SiteHeader({ siteName = 'S.Goodie', socialLinks }: SiteHeaderProps) {
+type SiteHeaderInnerProps = {
+  siteName: string;
+  socialLinks?: SocialLinks;
+  pathname: string;
+  isDraftPreview: boolean;
+};
+
+function SiteHeaderInner({ siteName, socialLinks, pathname, isDraftPreview }: SiteHeaderInnerProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [portfolioOpen, setPortfolioOpen] = useState(false);
   const [mobilePortfolioOpen, setMobilePortfolioOpen] = useState(false);
   const [draftSiteName, setDraftSiteName] = useState<string | null>(null);
   const portfolioRef = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const isDraftPreview = searchParams.get('preview') === 'draft';
 
   useEffect(() => {
     if (!isDraftPreview) return;
@@ -144,6 +148,48 @@ export function SiteHeader({ siteName = 'S.Goodie', socialLinks }: SiteHeaderPro
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Prevent background scrolling while the mobile menu is open.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [menuOpen]);
+
+  // If the viewport becomes "desktop-like", ensure the mobile menu is closed.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
+    const handleChange = () => {
+      if (mq.matches) {
+        setMenuOpen(false);
+        setMobilePortfolioOpen(false);
+      }
+    };
+    handleChange();
+
+    // Older Safari versions used addListener/removeListener on MediaQueryList.
+    const mqAny = mq as unknown as {
+      addEventListener?: (type: 'change', listener: () => void) => void;
+      removeEventListener?: (type: 'change', listener: () => void) => void;
+      addListener?: (listener: () => void) => void;
+      removeListener?: (listener: () => void) => void;
+    };
+
+    if (typeof mqAny.addEventListener === 'function') {
+      mqAny.addEventListener('change', handleChange);
+      return () => mqAny.removeEventListener?.('change', handleChange);
+    }
+
+    mqAny.addListener?.(handleChange);
+    return () => mqAny.removeListener?.(handleChange);
   }, []);
 
   const headerClass = isScrolled ? styles.headerScrolled : styles.headerHero;
@@ -259,12 +305,14 @@ export function SiteHeader({ siteName = 'S.Goodie', socialLinks }: SiteHeaderPro
           type="button"
           onClick={() => setMenuOpen((open) => !open)}
           className={`${styles.menuButton} ${menuButtonClass}`}
+          aria-expanded={menuOpen}
+          aria-controls="site-mobile-menu"
         >
           {menuOpen ? 'Close Menu' : 'Open Menu'}
         </button>
       </div>
       {menuOpen && (
-        <div className={styles.mobilePanel}>
+        <div id="site-mobile-menu" className={styles.mobilePanel}>
           <div className={`${layoutStyles.container} ${styles.mobilePanelInner}`}>
             {/* Mobile Portfolio accordion */}
             <div className={styles.mobileAccordion}>
@@ -340,5 +388,24 @@ export function SiteHeader({ siteName = 'S.Goodie', socialLinks }: SiteHeaderPro
         </div>
       )}
     </header>
+  );
+}
+
+export function SiteHeader({ siteName = 'S.Goodie', socialLinks }: SiteHeaderProps) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isDraftPreview = searchParams.get('preview') === 'draft';
+  const search = searchParams.toString();
+  const routeKey = search ? `${pathname}?${search}` : pathname;
+
+  // Key the inner header by route so mobile menus/panels always reset on navigation.
+  return (
+    <SiteHeaderInner
+      key={routeKey}
+      siteName={siteName}
+      socialLinks={socialLinks}
+      pathname={pathname}
+      isDraftPreview={isDraftPreview}
+    />
   );
 }

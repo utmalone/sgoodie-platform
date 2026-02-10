@@ -31,7 +31,7 @@ export function WorkGalleryGrid({ items, isPreview = false, category }: WorkGall
               src={photo.src}
               alt={photo.alt}
               fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw"
               className={styles.image}
             />
             <div className={styles.overlay}>

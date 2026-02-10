@@ -38,7 +38,8 @@
 /* Content Section */
 .contentSection {
   padding-block: 5rem;
-  padding-inline: clamp(1.5rem, 5vw, 6rem);
+  /* Rendered inside the page container; avoid double-gutters on tablets/phones */
+  padding-inline: 0;
 }
 
 .contentGrid {
@@ -105,7 +106,8 @@
 /* Back Section */
 .backSection {
   padding-block: 3rem;
-  padding-inline: clamp(1.5rem, 5vw, 6rem);
+  /* Rendered inside the page container; avoid double-gutters on tablets/phones */
+  padding-inline: 0;
   border-top: 1px solid var(--line);
 }
 
@@ -134,7 +136,7 @@
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .header {
     padding-block: 6rem;
   }
@@ -151,5 +153,9 @@
   .contentSection {
     padding-block: 8rem;
     padding-inline: clamp(6rem, 10vw, 12rem);
+  }
+
+  .backSection {
+    padding-inline: clamp(1.5rem, 5vw, 6rem);
   }
 }
