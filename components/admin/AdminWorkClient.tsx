@@ -225,7 +225,7 @@ export function AdminWorkClient() {
                 }`}
               >
                 {/* Drag Handle */}
-                <div className="cursor-grab text-black/30 hover:text-black/50">
+                <div className="cursor-move text-black/30 hover:text-black/50">
                   <span className="text-lg">::</span>
                 </div>
 

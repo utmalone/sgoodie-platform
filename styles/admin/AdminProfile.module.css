@@ -225,6 +225,7 @@
   background-color: #fff;
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 0.75rem;
+  cursor: default;
   transition: border-color 0.2s;
   box-sizing: border-box;
 }

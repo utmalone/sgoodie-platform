@@ -9,25 +9,42 @@ import { isMockMode, getAllItems, getItem, putItem, deleteItem } from './db';
 const PHOTOS_FILE = 'photos.json';
 const TABLE_NAME = 'photos';
 
+function normalizePhotoAsset(raw: unknown): PhotoAsset | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const data = raw as Partial<PhotoAsset> & Record<string, unknown>;
+
+  if (typeof data.id !== 'string' || data.id.trim() === '') return null;
+  if (typeof data.src !== 'string' || data.src.trim() === '') return null;
+
+  const width = typeof data.width === 'number' && Number.isFinite(data.width) ? data.width : 0;
+  const height = typeof data.height === 'number' && Number.isFinite(data.height) ? data.height : 0;
+
+  return {
+    id: data.id,
+    src: data.src,
+    alt: typeof data.alt === 'string' ? data.alt : '',
+    width,
+    height,
+    createdAt: typeof data.createdAt === 'string' ? data.createdAt : new Date(0).toISOString(),
+    metaTitle: typeof data.metaTitle === 'string' ? data.metaTitle : '',
+    metaDescription: typeof data.metaDescription === 'string' ? data.metaDescription : '',
+    metaKeywords: typeof data.metaKeywords === 'string' ? data.metaKeywords : ''
+  };
+}
+
 async function loadAllPhotos(): Promise<PhotoAsset[]> {
   if (isMockMode()) {
     const photos = await readJson<PhotoAsset[]>(PHOTOS_FILE);
-    return photos.map((photo) => ({
-      ...photo,
-      metaTitle: photo.metaTitle ?? '',
-      metaDescription: photo.metaDescription ?? '',
-      metaKeywords: photo.metaKeywords ?? ''
-    }));
+    return photos
+      .map((photo) => normalizePhotoAsset(photo))
+      .filter(Boolean) as PhotoAsset[];
   }
 
   // DynamoDB mode - return empty array if no data
-  const photos = await getAllItems<PhotoAsset>(TABLE_NAME);
-  return photos.map((photo) => ({
-    ...photo,
-    metaTitle: photo.metaTitle ?? '',
-    metaDescription: photo.metaDescription ?? '',
-    metaKeywords: photo.metaKeywords ?? ''
-  }));
+  const photos = await getAllItems<unknown>(TABLE_NAME);
+  return photos
+    .map((photo) => normalizePhotoAsset(photo))
+    .filter(Boolean) as PhotoAsset[];
 }
 
 const getAllPhotosCached = unstable_cache(

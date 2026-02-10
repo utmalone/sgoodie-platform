@@ -430,30 +430,64 @@ export function AdminPhotosClient() {
   // Save layouts to API (called by Save All)
   const saveLayouts = useCallback(async (): Promise<boolean> => {
     try {
+      const knownPhotoIds = new Set(photos.map((photo) => photo.id));
       if (layouts.home) {
+        const heroPhotoId =
+          layouts.home.heroPhotoId && knownPhotoIds.has(layouts.home.heroPhotoId)
+            ? layouts.home.heroPhotoId
+            : '';
+        const featurePhotoIds = Array.from(
+          new Set(
+            (layouts.home.featurePhotoIds || [])
+              .filter((id): id is string => typeof id === 'string' && id.trim() !== '')
+              .filter((id) => id !== heroPhotoId && knownPhotoIds.has(id))
+          )
+        );
         const res = await fetch('/api/admin/layouts/home', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            heroPhotoId: layouts.home.heroPhotoId || '',
-            featurePhotoIds: layouts.home.featurePhotoIds || []
+            heroPhotoId,
+            featurePhotoIds
           })
         });
         if (!res.ok) return false;
       }
       if (layouts.about) {
+        const sanitizedAbout: typeof layouts.about = {
+          ...layouts.about,
+          heroPhotoId:
+            layouts.about.heroPhotoId && knownPhotoIds.has(layouts.about.heroPhotoId)
+              ? layouts.about.heroPhotoId
+              : '',
+          approachItems: (layouts.about.approachItems || []).map((item) => ({
+            ...item,
+            photoId: item.photoId && knownPhotoIds.has(item.photoId) ? item.photoId : ''
+          })),
+          bio: {
+            ...layouts.about.bio,
+            photoId:
+              layouts.about.bio?.photoId && knownPhotoIds.has(layouts.about.bio.photoId)
+                ? layouts.about.bio.photoId
+                : ''
+          }
+        };
         const res = await fetch('/api/admin/layouts/about', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(layouts.about)
+          body: JSON.stringify(sanitizedAbout)
         });
         if (!res.ok) return false;
       }
       if (layouts.contact) {
+        const heroPhotoId =
+          layouts.contact.heroPhotoId && knownPhotoIds.has(layouts.contact.heroPhotoId)
+            ? layouts.contact.heroPhotoId
+            : '';
         const res = await fetch('/api/admin/layouts/contact', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ heroPhotoId: layouts.contact.heroPhotoId || '' })
+          body: JSON.stringify({ heroPhotoId })
         });
         if (!res.ok) return false;
       }
@@ -463,7 +497,7 @@ export function AdminPhotosClient() {
     } catch {
       return false;
     }
-  }, [layouts, refreshPreview]);
+  }, [layouts, refreshPreview, photos]);
 
   // Save function for master save
   const savePhotos = useCallback(async (): Promise<boolean> => {
@@ -828,20 +862,31 @@ export function AdminPhotosClient() {
     if (!draggedId) return;
 
     if (activeSlug === 'home' && layouts.home && section === 'homeFeatures') {
-      const featureIds = [...(layouts.home.featurePhotoIds || [])];
+      const featureIds = (layouts.home.featurePhotoIds || []).filter((id) => photosById.has(id));
       if (!featureIds.includes(draggedId) || featureIds.length < 2) {
         setDraggedId(null);
         return;
       }
       const reordered = featureIds.filter((id) => id !== draggedId);
       reordered.push(draggedId);
-      const heroId = layouts.home.heroPhotoId || '';
+      const heroId =
+        layouts.home.heroPhotoId && photosById.has(layouts.home.heroPhotoId)
+          ? layouts.home.heroPhotoId
+          : '';
       await updatePagePhotoOrder([heroId, ...reordered]);
     } else if (activeSlug === 'about' && layouts.about && section === 'aboutApproach') {
-      const heroId = layouts.about.heroPhotoId || '';
+      const heroId =
+        layouts.about.heroPhotoId && photosById.has(layouts.about.heroPhotoId)
+          ? layouts.about.heroPhotoId
+          : '';
       const approachItems = layouts.about.approachItems || [];
-      const approachIds = approachItems.map((item) => item.photoId || '');
-      const bioId = layouts.about.bio?.photoId || '';
+      const approachIds = approachItems
+        .map((item) => (item.photoId && photosById.has(item.photoId) ? item.photoId : ''))
+        .filter((id) => id !== heroId);
+      const bioId =
+        layouts.about.bio?.photoId && photosById.has(layouts.about.bio.photoId)
+          ? layouts.about.bio.photoId
+          : '';
       if (!approachIds.includes(draggedId) || approachIds.filter(Boolean).length < 2) {
         setDraggedId(null);
         return;
@@ -865,8 +910,11 @@ export function AdminPhotosClient() {
     }
 
     if (activeSlug === 'home' && layouts.home) {
-      const heroId = layouts.home.heroPhotoId || '';
-      const featureIds = [...(layouts.home.featurePhotoIds || [])];
+      const heroId =
+        layouts.home.heroPhotoId && photosById.has(layouts.home.heroPhotoId)
+          ? layouts.home.heroPhotoId
+          : '';
+      const featureIds = (layouts.home.featurePhotoIds || []).filter((id) => photosById.has(id) && id !== heroId);
       if (target.section === 'hero') {
         const oldHero = heroId;
         const withoutPhoto = featureIds.filter((id) => id !== photoId);
@@ -883,12 +931,18 @@ export function AdminPhotosClient() {
         }
       }
     } else if (activeSlug === 'about' && layouts.about) {
-      const heroId = layouts.about.heroPhotoId || '';
+      const heroId =
+        layouts.about.heroPhotoId && photosById.has(layouts.about.heroPhotoId)
+          ? layouts.about.heroPhotoId
+          : '';
       const approachItems = layouts.about.approachItems || [];
       const approachIds = Array.from({ length: ABOUT_MAX_APPROACH_PHOTOS }, (_, i) =>
-        approachItems[i]?.photoId ?? ''
+        (approachItems[i]?.photoId && photosById.has(approachItems[i]?.photoId) ? approachItems[i]!.photoId : '')
       );
-      const bioId = layouts.about.bio?.photoId || '';
+      const bioId =
+        layouts.about.bio?.photoId && photosById.has(layouts.about.bio.photoId)
+          ? layouts.about.bio.photoId
+          : '';
 
       if (target.section === 'hero') {
         const withoutPhoto = approachIds.filter((id) => id && id !== photoId);
@@ -929,20 +983,34 @@ export function AdminPhotosClient() {
     setStatus('Updating order...');
     
     if (activeSlug === 'home' && layouts.home) {
-      const heroPhotoId = newIds[0] || '';
-      const featurePhotoIds = newIds.slice(1).filter(Boolean);
+      const heroPhotoId = newIds[0] && photosById.has(newIds[0]) ? newIds[0] : '';
+      const featurePhotoIds = Array.from(
+        new Set(
+          newIds
+            .slice(1)
+            .filter((id): id is string => typeof id === 'string' && id.trim() !== '')
+            .filter((id) => id !== heroPhotoId && photosById.has(id))
+        )
+      );
       const updated = { ...layouts.home, heroPhotoId, featurePhotoIds };
       setLayouts((prev) => ({ ...prev, home: updated }));
       saveDraftHomeLayout({ heroPhotoId, featurePhotoIds });
       setStatus('Order updated.');
       refreshPreview();
     } else if (activeSlug === 'about' && layouts.about) {
-      const heroPhotoId = newIds[0] || '';
-      const existingBioId = layouts.about.bio?.photoId || '';
+      const heroPhotoId = newIds[0] && photosById.has(newIds[0]) ? newIds[0] : '';
+      const existingBioId =
+        layouts.about.bio?.photoId && photosById.has(layouts.about.bio.photoId)
+          ? layouts.about.bio.photoId
+          : '';
       const bioIdStillInList = existingBioId && newIds.includes(existingBioId);
-      const bioPhotoId =
+      let bioPhotoId =
         bioPhotoIdOverride ??
         (bioIdStillInList ? existingBioId : '');
+
+      if (bioPhotoId && !photosById.has(bioPhotoId)) {
+        bioPhotoId = '';
+      }
 
       const rawApproachIds = bioPhotoId
         ? newIds.slice(1, newIds.length - 1)
@@ -950,7 +1018,7 @@ export function AdminPhotosClient() {
       const approachSlotIds = Array.from(
         { length: ABOUT_MAX_APPROACH_PHOTOS },
         (_, i) => (rawApproachIds[i] && rawApproachIds[i] !== heroPhotoId && rawApproachIds[i] !== bioPhotoId
-          ? rawApproachIds[i]
+          ? (photosById.has(rawApproachIds[i]) ? rawApproachIds[i] : '')
           : '')
       );
 
@@ -1006,7 +1074,7 @@ export function AdminPhotosClient() {
       setStatus('Order updated.');
       refreshPreview();
     } else if (activeSlug === 'contact' && layouts.contact) {
-      const heroPhotoId = newIds[0] || '';
+      const heroPhotoId = newIds[0] && photosById.has(newIds[0]) ? newIds[0] : '';
       const updated = { ...layouts.contact, heroPhotoId };
       setLayouts((prev) => ({ ...prev, contact: updated }));
       saveDraftContactContent({ heroPhotoId });
@@ -1498,6 +1566,11 @@ export function AdminPhotosClient() {
   // Enable reordering for pages with photos
   const canReorder = activeSlug === 'home' || activeSlug === 'about' || activeSlug === 'contact';
 
+  const homeHeroPhoto = activeSlug === 'home' && homeSections.hero[0] ? photosById.get(homeSections.hero[0]) ?? null : null;
+  const aboutHeroPhoto = activeSlug === 'about' && aboutSections.hero[0] ? photosById.get(aboutSections.hero[0]) ?? null : null;
+  const aboutBioPhoto = activeSlug === 'about' && aboutSections.bio[0] ? photosById.get(aboutSections.bio[0]) ?? null : null;
+  const contactHeroPhoto = activeSlug === 'contact' && contactSections.hero[0] ? photosById.get(contactSections.hero[0]) ?? null : null;
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -1957,9 +2030,9 @@ export function AdminPhotosClient() {
             <div className={styles.photoSection}>
               <h3 className={styles.sectionLabel}>Hero (1 photo)</h3>
               <div className={styles.sectionSlots}>
-                {homeSections.hero.length > 0 ? (
+                {homeHeroPhoto ? (
                   <PagePhotoCard
-                    photo={photosById.get(homeSections.hero[0])!}
+                    photo={homeHeroPhoto}
                     label="Hero"
                     slotSection="hero"
                     canReorder={canReorder}
@@ -1982,7 +2055,7 @@ export function AdminPhotosClient() {
                   />
                 ) : (
                   <SlotPlaceholder
-                    label="Hero"
+                    label={homeSections.hero.length > 0 ? 'Hero (missing photo)' : 'Hero'}
                     slotTarget={{ type: 'slot', section: 'hero' }}
                     dragOverTarget={dragOverTarget}
                     onDragOver={setDragOverTarget}
@@ -1998,7 +2071,20 @@ export function AdminPhotosClient() {
               <div className={styles.sectionSlots}>
                 {homeSections.feature.map((id, idx) => {
                   const photo = photosById.get(id);
-                  if (!photo) return null;
+                  if (!photo) {
+                    return (
+                      <SlotPlaceholder
+                        key={`home-feature-missing-${idx}`}
+                        label={`Feature ${idx + 1} (missing photo)`}
+                        slotTarget={{ type: 'slot', section: 'feature', index: idx }}
+                        dragOverTarget={dragOverTarget}
+                        onDragOver={setDragOverTarget}
+                        onDragLeave={() => setDragOverTarget(null)}
+                        onDrop={handleDropOnSlot}
+                        styles={styles}
+                      />
+                    );
+                  }
                   return (
                     <PagePhotoCard
                       key={photo.id}
@@ -2056,9 +2142,9 @@ export function AdminPhotosClient() {
             <div className={styles.photoSection}>
               <h3 className={styles.sectionLabel}>Hero (1 photo)</h3>
               <div className={styles.sectionSlots}>
-                {aboutSections.hero.length > 0 ? (
+                {aboutHeroPhoto ? (
                   <PagePhotoCard
-                    photo={photosById.get(aboutSections.hero[0])!}
+                    photo={aboutHeroPhoto}
                     label="Hero"
                     slotSection="hero"
                     canReorder={canReorder}
@@ -2081,7 +2167,7 @@ export function AdminPhotosClient() {
                   />
                 ) : (
                   <SlotPlaceholder
-                    label="Hero"
+                    label={aboutSections.hero.length > 0 ? 'Hero (missing photo)' : 'Hero'}
                     slotTarget={{ type: 'slot', section: 'hero' }}
                     dragOverTarget={dragOverTarget}
                     onDragOver={setDragOverTarget}
@@ -2099,7 +2185,20 @@ export function AdminPhotosClient() {
                   const photoId = aboutSections.approach[slotIndex];
                   if (photoId) {
                     const photo = photosById.get(photoId);
-                    if (!photo) return null;
+                    if (!photo) {
+                      return (
+                        <SlotPlaceholder
+                          key={`approach-${slotIndex}`}
+                          label={`Slot ${slotIndex + 1} (missing photo)`}
+                          slotTarget={{ type: 'slot', section: 'approach', index: slotIndex }}
+                          dragOverTarget={dragOverTarget}
+                          onDragOver={setDragOverTarget}
+                          onDragLeave={() => setDragOverTarget(null)}
+                          onDrop={handleDropOnSlot}
+                          styles={styles}
+                        />
+                      );
+                    }
                     return (
                     <PagePhotoCard
                       key={`approach-${slotIndex}-${photo.id}`}
@@ -2158,9 +2257,9 @@ export function AdminPhotosClient() {
             <div className={styles.photoSection}>
               <h3 className={styles.sectionLabel}>Bio (1 photo)</h3>
               <div className={styles.sectionSlots}>
-                {aboutSections.bio.length > 0 ? (
+                {aboutBioPhoto ? (
                   <PagePhotoCard
-                    photo={photosById.get(aboutSections.bio[0])!}
+                    photo={aboutBioPhoto}
                     label="Bio"
                     slotSection="bio"
                     canReorder={canReorder}
@@ -2183,7 +2282,7 @@ export function AdminPhotosClient() {
                   />
                 ) : (
                   <SlotPlaceholder
-                    label="Bio"
+                    label={aboutSections.bio.length > 0 ? 'Bio (missing photo)' : 'Bio'}
                     slotTarget={{ type: 'slot', section: 'bio' }}
                     dragOverTarget={dragOverTarget}
                     onDragOver={setDragOverTarget}
@@ -2202,9 +2301,9 @@ export function AdminPhotosClient() {
             <div className={styles.photoSection}>
               <h3 className={styles.sectionLabel}>Hero (1 photo)</h3>
               <div className={styles.sectionSlots}>
-                {contactSections.hero.length > 0 ? (
+                {contactHeroPhoto ? (
                   <PagePhotoCard
-                    photo={photosById.get(contactSections.hero[0])!}
+                    photo={contactHeroPhoto}
                     label="Hero"
                     slotSection="hero"
                     canReorder={canReorder}
@@ -2227,7 +2326,7 @@ export function AdminPhotosClient() {
                   />
                 ) : (
                   <SlotPlaceholder
-                    label="Hero"
+                    label={contactSections.hero.length > 0 ? 'Hero (missing photo)' : 'Hero'}
                     slotTarget={{ type: 'slot', section: 'hero' }}
                     dragOverTarget={dragOverTarget}
                     onDragOver={setDragOverTarget}

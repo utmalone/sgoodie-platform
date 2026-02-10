@@ -289,7 +289,7 @@ export function AdminJournalClient() {
                   }`}
                 >
                   {/* Drag Handle */}
-                  <div className="flex cursor-grab touch-none flex-col items-center justify-center text-black/30 hover:text-black/50">
+                  <div className="flex cursor-move touch-none flex-col items-center justify-center text-black/30 hover:text-black/50">
                     <span className="text-xs">⋮⋮</span>
                   </div>
 
