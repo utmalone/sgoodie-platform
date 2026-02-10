@@ -2,6 +2,8 @@ import { requireAdminApi } from '@/lib/auth/require-admin-api';
 import { revalidateLayoutsImmediate } from '@/lib/admin/revalidate';
 import { getHomeLayout, updateHomeLayout } from '@/lib/data/home';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const session = await requireAdminApi();
   if (!session) {
@@ -9,7 +11,7 @@ export async function GET() {
   }
 
   const layout = await getHomeLayout();
-  return Response.json(layout);
+  return Response.json(layout, { headers: { 'Cache-Control': 'no-store' } });
 }
 
 export async function PUT(request: Request) {

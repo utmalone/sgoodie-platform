@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { loadDraftProject } from '@/lib/admin/draft-project-store';
+import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import styles from '@/styles/public/ProjectHero.module.css';
 
 type ProjectHeroDraftTextProps = {
@@ -19,29 +20,14 @@ export function ProjectHeroDraftText({
   fallbackSubtitle,
   enabled = false
 }: ProjectHeroDraftTextProps) {
-  const [draft, setDraft] = useState(() => loadDraftProject(projectId));
-
   const draftKey = useMemo(() => `sgoodie.admin.draft.project.${projectId}`, [projectId]);
+  const signal = usePreviewKeySignal([draftKey, PREVIEW_REFRESH_KEY], enabled);
 
-  useEffect(() => {
-    if (!enabled) return;
-
-    const load = () => setDraft(loadDraftProject(projectId));
-    load();
-
-    const pollId = window.setInterval(load, 500);
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key !== draftKey && event.key !== PREVIEW_REFRESH_KEY) return;
-      load();
-    };
-
-    window.addEventListener('storage', handleStorage);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      window.clearInterval(pollId);
-    };
-  }, [draftKey, enabled, projectId]);
+  const draft = useMemo(() => {
+    if (!enabled) return null;
+    void signal; // Recompute when draft project changes.
+    return loadDraftProject(projectId);
+  }, [enabled, projectId, signal]);
 
   const title = draft?.title ?? fallbackTitle;
   const subtitle = draft?.subtitle ?? fallbackSubtitle ?? '';
@@ -53,4 +39,3 @@ export function ProjectHeroDraftText({
     </>
   );
 }
-

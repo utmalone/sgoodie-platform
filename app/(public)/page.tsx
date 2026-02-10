@@ -94,6 +94,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <div className={styles.wrapper}>
         <DraftHomePhotosSection
           isPreview
+          initialLayout={layout}
           initialHeroPhoto={heroPhoto}
           initialFeaturePhotos={featurePhotos}
           heroContent={heroContent}

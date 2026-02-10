@@ -3,10 +3,11 @@ import { getJournalIndex, updateJournalIndex } from '@/lib/data/journal-index';
 import { revalidateJournalPages } from '@/lib/admin/revalidate';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const index = await getJournalIndex();
-  return Response.json(index);
+  return Response.json(index, { headers: { 'Cache-Control': 'no-store' } });
 }
 
 export async function PUT(request: Request) {

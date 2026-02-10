@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { loadDraftProfile } from '@/lib/admin/draft-profile-store';
+import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import layoutStyles from '@/styles/public/layout.module.css';
 import styles from '@/styles/public/SiteHeader.module.css';
 import {
@@ -96,26 +97,16 @@ function SiteHeaderInner({ siteName, socialLinks, pathname, isDraftPreview }: Si
   const [menuOpen, setMenuOpen] = useState(false);
   const [portfolioOpen, setPortfolioOpen] = useState(false);
   const [mobilePortfolioOpen, setMobilePortfolioOpen] = useState(false);
-  const [draftSiteName, setDraftSiteName] = useState<string | null>(null);
   const portfolioRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!isDraftPreview) return;
-    const load = () => {
-      const draft = loadDraftProfile();
-      setDraftSiteName(draft?.name ?? null);
-    };
-    load();
-    const pollId = window.setInterval(load, 500);
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === DRAFT_PROFILE_KEY || event.key === PREVIEW_REFRESH_KEY) load();
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      window.clearInterval(pollId);
-    };
-  }, [isDraftPreview]);
+  const draftSignal = usePreviewKeySignal([DRAFT_PROFILE_KEY, PREVIEW_REFRESH_KEY], isDraftPreview);
+
+  const draftSiteName = useMemo(() => {
+    if (!isDraftPreview) return null;
+    void draftSignal; // Recompute when the preview signal changes.
+    const draft = loadDraftProfile();
+    return draft?.name ?? null;
+  }, [draftSignal, isDraftPreview]);
 
   const buildHref = useMemo(() => {
     if (!isDraftPreview) return (href: string) => href;

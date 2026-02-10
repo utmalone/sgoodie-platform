@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import type { HomeLayout } from '@/types';
 import { loadDraftHomeLayout } from '@/lib/admin/draft-home-layout-store';
+import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 
 type HomeTextField = keyof Pick<HomeLayout, 'introText' | 'heroEyebrow'>;
 
@@ -20,32 +21,15 @@ export function DraftHomeLayoutText({
   fallback,
   enabled = false
 }: DraftHomeLayoutTextProps) {
-  const [draftValue, setDraftValue] = useState<string | null>(null);
+  const signal = usePreviewKeySignal([HOME_LAYOUT_DRAFT_KEY, PREVIEW_REFRESH_KEY], enabled);
 
-  useEffect(() => {
-    if (!enabled) return;
-
-    const load = () => {
-      const draft = loadDraftHomeLayout();
-      const value = draft?.[field];
-      setDraftValue(typeof value === 'string' ? value : null);
-    };
-
-    load();
-
-    const pollId = window.setInterval(load, 500);
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key !== HOME_LAYOUT_DRAFT_KEY && event.key !== PREVIEW_REFRESH_KEY) return;
-      load();
-    };
-
-    window.addEventListener('storage', handleStorage);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      window.clearInterval(pollId);
-    };
-  }, [enabled, field]);
+  const draftValue = useMemo(() => {
+    if (!enabled) return null;
+    void signal; // Recompute when draft home layout changes.
+    const draft = loadDraftHomeLayout();
+    const value = draft?.[field];
+    return typeof value === 'string' ? value : null;
+  }, [enabled, field, signal]);
 
   if (!enabled) return fallback;
   return draftValue ?? fallback;

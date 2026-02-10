@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import Image from 'next/image';
+import { useQuery } from '@tanstack/react-query';
 import { ContactForm } from '@/components/portfolio/ContactForm';
 import { InstagramFeed } from '@/components/portfolio/InstagramFeed';
 import type { ContactPageContent, PhotoAsset, SiteProfile } from '@/types';
 import { loadDraftContactContent } from '@/lib/admin/draft-contact-store';
+import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import styles from '@/styles/public/ContactPage.module.css';
 
 type ContactPageDraftClientProps = {
@@ -18,7 +20,7 @@ const DRAFT_CONTACT_STORAGE_KEY = 'sgoodie.admin.draft.contact';
 const PREVIEW_REFRESH_KEY = 'admin-preview-refresh';
 
 async function fetchPhotoById(id: string): Promise<PhotoAsset | null> {
-  const res = await fetch(`/api/photos?ids=${encodeURIComponent(id)}`);
+  const res = await fetch(`/api/photos?ids=${encodeURIComponent(id)}`, { cache: 'no-store' });
   if (!res.ok) return null;
   const photos: PhotoAsset[] = await res.json();
   return photos[0] ?? null;
@@ -29,46 +31,43 @@ export function ContactPageDraftClient({
   profile,
   heroPhoto: initialHeroPhoto
 }: ContactPageDraftClientProps) {
-  const [draft, setDraft] = useState(() => loadDraftContactContent());
-  const [heroPhoto, setHeroPhoto] = useState<PhotoAsset | null>(initialHeroPhoto);
+  const draftSignal = usePreviewKeySignal([DRAFT_CONTACT_STORAGE_KEY]);
+  const refreshSignal = usePreviewKeySignal([PREVIEW_REFRESH_KEY]);
 
-  useEffect(() => {
-    const load = () => setDraft(loadDraftContactContent());
+  const draft = useMemo(() => {
+    void draftSignal; // Recompute when the draft changes in another tab.
+    return loadDraftContactContent();
+  }, [draftSignal]);
 
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key !== DRAFT_CONTACT_STORAGE_KEY && event.key !== PREVIEW_REFRESH_KEY) return;
-      load();
-    };
-
-    const pollId = window.setInterval(load, 500);
-    window.addEventListener('storage', handleStorage);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      window.clearInterval(pollId);
-    };
-  }, []);
-
-  const content = useMemo(() => ({ ...fallbackContent, ...(draft ?? {}) }), [fallbackContent, draft]);
+  const content = useMemo(() => {
+    if (!draft) return fallbackContent;
+    const merged: ContactPageContent = { ...fallbackContent };
+    for (const [key, value] of Object.entries(draft)) {
+      if (value !== undefined) {
+        (merged as Record<string, unknown>)[key] = value;
+      }
+    }
+    return merged;
+  }, [draft, fallbackContent]);
 
   const email = content.email || profile.email;
   const phone = content.phone || profile.phone;
 
-  useEffect(() => {
-    const draftHeroId = draft?.heroPhotoId ?? fallbackContent.heroPhotoId;
-    if (!draftHeroId) {
-      queueMicrotask(() => setHeroPhoto(null));
-      return;
-    }
-    if (initialHeroPhoto?.id === draftHeroId) {
-      queueMicrotask(() => setHeroPhoto(initialHeroPhoto));
-      return;
-    }
-    if (fallbackContent.heroPhotoId === draftHeroId && initialHeroPhoto) {
-      queueMicrotask(() => setHeroPhoto(initialHeroPhoto));
-      return;
-    }
-    fetchPhotoById(draftHeroId).then(setHeroPhoto);
-  }, [draft?.heroPhotoId, fallbackContent.heroPhotoId, initialHeroPhoto]);
+  const heroPhotoId = content.heroPhotoId ?? '';
+  const heroPhotoQuery = useQuery({
+    queryKey: ['preview', 'photos', 'contact-hero', heroPhotoId, refreshSignal],
+    queryFn: () => fetchPhotoById(heroPhotoId),
+    enabled: Boolean(heroPhotoId),
+    placeholderData: () => {
+      if (!heroPhotoId) return null;
+      if (initialHeroPhoto?.id === heroPhotoId) return initialHeroPhoto;
+      if (fallbackContent.heroPhotoId === heroPhotoId && initialHeroPhoto) return initialHeroPhoto;
+      return null;
+    },
+    staleTime: Infinity
+  });
+
+  const heroPhoto = heroPhotoId ? heroPhotoQuery.data ?? null : null;
 
   return (
     <div className={styles.wrapper}>

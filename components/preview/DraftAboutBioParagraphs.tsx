@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { loadDraftAboutContent } from '@/lib/admin/draft-about-store';
+import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 
 type DraftAboutBioParagraphsProps = {
   fallback: string[];
@@ -17,34 +18,15 @@ export function DraftAboutBioParagraphs({
   paragraphClassName,
   enabled = false
 }: DraftAboutBioParagraphsProps) {
-  const [draftParagraphs, setDraftParagraphs] = useState<string[] | null>(null);
+  const signal = usePreviewKeySignal([DRAFT_ABOUT_STORAGE_KEY, PREVIEW_REFRESH_KEY], enabled);
 
-  useEffect(() => {
-    if (!enabled) return;
-
-    const load = () => {
-      const draft = loadDraftAboutContent();
-      const value = draft?.bio?.paragraphs;
-      setDraftParagraphs(Array.isArray(value) ? value : null);
-    };
-
-    load();
-
-    const pollId = window.setInterval(load, 500);
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key !== DRAFT_ABOUT_STORAGE_KEY && event.key !== PREVIEW_REFRESH_KEY) return;
-      load();
-    };
-
-    window.addEventListener('storage', handleStorage);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      window.clearInterval(pollId);
-    };
-  }, [enabled]);
-
-  const paragraphs = enabled && draftParagraphs ? draftParagraphs : fallback;
+  const paragraphs = useMemo(() => {
+    if (!enabled) return fallback;
+    void signal; // Recompute when draft about content changes.
+    const draft = loadDraftAboutContent();
+    const value = draft?.bio?.paragraphs;
+    return Array.isArray(value) ? value : fallback;
+  }, [enabled, fallback, signal]);
 
   return (
     <>

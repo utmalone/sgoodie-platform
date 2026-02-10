@@ -1,10 +1,12 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { PhotoAsset, Project } from '@/types';
 import { EditorialGallery } from '@/components/portfolio/EditorialGallery';
 import { loadDraftProject } from '@/lib/admin/draft-project-store';
+import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import heroStyles from '@/styles/public/ProjectHero.module.css';
 import detailStyles from '@/styles/public/WorkDetailPage.module.css';
 
@@ -19,7 +21,7 @@ const PREVIEW_REFRESH_KEY = 'admin-preview-refresh';
 async function fetchPhotosByIds(ids: string[]) {
   const params = new URLSearchParams();
   params.set('ids', ids.join(','));
-  const res = await fetch(`/api/photos?${params.toString()}`);
+  const res = await fetch(`/api/photos?${params.toString()}`, { cache: 'no-store' });
   if (!res.ok) {
     throw new Error('Failed to load photos');
   }
@@ -31,37 +33,30 @@ export function ProjectPageDraftClient({
   initialPhotos,
   enabled = false
 }: ProjectPageDraftClientProps) {
-  const [draft, setDraft] = useState(() => loadDraftProject(fallbackProject.id));
-
   const draftKey = useMemo(
     () => `sgoodie.admin.draft.project.${fallbackProject.id}`,
     [fallbackProject.id]
   );
 
-  useEffect(() => {
-    if (!enabled) return;
+  const draftSignal = usePreviewKeySignal([draftKey], enabled);
+  const refreshSignal = usePreviewKeySignal([PREVIEW_REFRESH_KEY], enabled);
 
-    const load = () => setDraft(loadDraftProject(fallbackProject.id));
-    load();
+  const draft = useMemo(() => {
+    if (!enabled) return null;
+    void draftSignal; // Recompute when draft project changes.
+    return loadDraftProject(fallbackProject.id);
+  }, [draftSignal, enabled, fallbackProject.id]);
 
-    const pollId = window.setInterval(load, 500);
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key !== draftKey && event.key !== PREVIEW_REFRESH_KEY) return;
-      load();
-    };
-
-    window.addEventListener('storage', handleStorage);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      window.clearInterval(pollId);
-    };
-  }, [draftKey, enabled, fallbackProject.id]);
-
-  const project = useMemo(
-    () => ({ ...fallbackProject, ...(draft ?? {}) }),
-    [draft, fallbackProject]
-  );
+  const project = useMemo(() => {
+    if (!draft) return fallbackProject;
+    const merged: Project = { ...fallbackProject };
+    for (const [key, value] of Object.entries(draft)) {
+      if (value !== undefined) {
+        (merged as Record<string, unknown>)[key] = value;
+      }
+    }
+    return merged;
+  }, [draft, fallbackProject]);
 
   const requestedPhotoIds = useMemo(() => {
     const ids = [project.heroPhotoId, ...(project.galleryPhotoIds || [])]
@@ -72,33 +67,18 @@ export function ProjectPageDraftClient({
 
   const requestedPhotoKey = useMemo(() => requestedPhotoIds.join(','), [requestedPhotoIds]);
 
-  const [photosById, setPhotosById] = useState<Map<string, PhotoAsset>>(
-    () => new Map(initialPhotos.map((photo) => [photo.id, photo]))
-  );
+  const photosQuery = useQuery({
+    queryKey: ['preview', 'photos', 'project', fallbackProject.id, requestedPhotoKey, refreshSignal],
+    queryFn: () => fetchPhotosByIds(requestedPhotoIds),
+    enabled: enabled && requestedPhotoIds.length > 0,
+    placeholderData: (previous) => previous ?? initialPhotos,
+    staleTime: Infinity
+  });
 
-  useEffect(() => {
-    if (!enabled) return;
-    if (!requestedPhotoKey) return;
-
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const ids = requestedPhotoKey.split(',').filter(Boolean);
-        if (!ids.length) return;
-        const photos = await fetchPhotosByIds(ids);
-        if (cancelled) return;
-        setPhotosById(new Map(photos.map((photo) => [photo.id, photo])));
-      } catch (err) {
-        // Keep initial photos if the request fails.
-        console.error(err);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [enabled, requestedPhotoKey]);
+  const photosById = useMemo(() => {
+    const photos = photosQuery.data ?? initialPhotos;
+    return new Map(photos.map((photo) => [photo.id, photo]));
+  }, [initialPhotos, photosQuery.data]);
 
   const heroPhoto = photosById.get(project.heroPhotoId) ?? null;
   const galleryPhotos = (project.galleryPhotoIds || [])

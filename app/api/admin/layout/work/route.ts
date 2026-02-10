@@ -3,10 +3,11 @@ import { getWorkIndex, updateWorkIndex } from '@/lib/data/work';
 import { revalidatePortfolioPages } from '@/lib/admin/revalidate';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const layout = await getWorkIndex();
-  return Response.json(layout);
+  return Response.json(layout, { headers: { 'Cache-Control': 'no-store' } });
 }
 
 export async function PUT(request: Request) {

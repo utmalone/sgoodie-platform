@@ -1,11 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import type { ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import type { HomeLayout } from '@/types';
 import type { PhotoAsset } from '@/types';
 import { FullBleedHero } from '@/components/portfolio/FullBleedHero';
 import { HomeGalleryGrid } from '@/components/portfolio/HomeGalleryGrid';
 import { loadDraftHomeLayout } from '@/lib/admin/draft-home-layout-store';
+import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import styles from '@/styles/public/HomePage.module.css';
 
 const PREVIEW_REFRESH_KEY = 'admin-preview-refresh';
@@ -13,6 +16,7 @@ const HOME_LAYOUT_DRAFT_KEY = 'sgoodie.admin.draft.homeLayout';
 
 type DraftHomePhotosSectionProps = {
   isPreview: boolean;
+  initialLayout: HomeLayout;
   initialHeroPhoto: PhotoAsset | null;
   initialFeaturePhotos: PhotoAsset[];
   heroContent: ReactNode;
@@ -21,102 +25,88 @@ type DraftHomePhotosSectionProps = {
 
 export function DraftHomePhotosSection({
   isPreview,
+  initialLayout,
   initialHeroPhoto,
   initialFeaturePhotos,
   heroContent,
   introContent
 }: DraftHomePhotosSectionProps) {
-  const [heroPhoto, setHeroPhoto] = useState(initialHeroPhoto);
-  const [featurePhotos, setFeaturePhotos] = useState(initialFeaturePhotos);
-  const [heroEyebrowColor, setHeroEyebrowColor] = useState<string | undefined>();
-  const [heroTitleColor, setHeroTitleColor] = useState<string | undefined>();
-  const [heroSubtitleColor, setHeroSubtitleColor] = useState<string | undefined>();
+  const draftSignal = usePreviewKeySignal([HOME_LAYOUT_DRAFT_KEY], isPreview);
+  const refreshSignal = usePreviewKeySignal([PREVIEW_REFRESH_KEY], isPreview);
 
-  useEffect(() => {
-    if (!isPreview) return;
+  const draftLayout = useMemo(() => {
+    if (!isPreview) return null;
+    void draftSignal; // Recompute when draft home layout changes.
+    return loadDraftHomeLayout();
+  }, [draftSignal, isPreview]);
 
-    const load = async () => {
-      try {
-        const [layoutRes, draft] = await Promise.all([
-          fetch('/api/admin/layouts/home'),
-          Promise.resolve(typeof window !== 'undefined' ? loadDraftHomeLayout() : null)
-        ]);
-        if (!layoutRes.ok) return;
-        const layout = await layoutRes.json();
+  const layoutQuery = useQuery({
+    queryKey: ['admin', 'layout', 'home', refreshSignal],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/layouts/home', { cache: 'no-store' });
+      if (!res.ok) return null;
+      return (await res.json()) as HomeLayout;
+    },
+    enabled: isPreview,
+    staleTime: Infinity
+  });
 
-        // Merge draft layout over API - draft takes precedence for preview (unsaved changes)
-        const heroPhotoId = draft?.heroPhotoId ?? layout.heroPhotoId;
-        const featurePhotoIds = draft?.featurePhotoIds ?? layout.featurePhotoIds ?? [];
+  const effectiveLayout = useMemo(() => {
+    const savedLayout = layoutQuery.data ?? initialLayout;
+    if (!draftLayout) return savedLayout;
 
-        setHeroEyebrowColor(draft?.heroEyebrowColor ?? layout.heroEyebrowColor ?? undefined);
-        setHeroTitleColor(draft?.heroTitleColor ?? layout.heroTitleColor ?? undefined);
-        setHeroSubtitleColor(draft?.heroSubtitleColor ?? layout.heroSubtitleColor ?? undefined);
-
-        const ids = [heroPhotoId, ...featurePhotoIds].filter(Boolean);
-        if (ids.length === 0) {
-          setHeroPhoto(null);
-          setFeaturePhotos([]);
-          return;
-        }
-        const photosRes = await fetch(`/api/photos?ids=${encodeURIComponent(ids.join(','))}`);
-        if (!photosRes.ok) return;
-        const photos: PhotoAsset[] = await photosRes.json();
-        const photoMap = new Map(photos.map((p) => [p.id, p]));
-        setHeroPhoto(heroPhotoId ? photoMap.get(heroPhotoId) ?? null : null);
-        setFeaturePhotos(
-          featurePhotoIds.map((id: string) => photoMap.get(id)).filter(Boolean)
-        );
-      } catch {
-        // Keep existing data on error
+    const merged: HomeLayout = { ...savedLayout };
+    for (const [key, value] of Object.entries(draftLayout)) {
+      if (value !== undefined) {
+        (merged as Record<string, unknown>)[key] = value;
       }
-    };
+    }
+    return merged;
+  }, [draftLayout, initialLayout, layoutQuery.data]);
 
-    load();
+  const photoIds = useMemo(() => {
+    const ids = [effectiveLayout.heroPhotoId, ...(effectiveLayout.featurePhotoIds || [])]
+      .filter((id): id is string => typeof id === 'string' && id.trim() !== '')
+      .map((id) => id.trim());
+    return Array.from(new Set(ids));
+  }, [effectiveLayout.featurePhotoIds, effectiveLayout.heroPhotoId]);
 
-    // React to admin changes: storage event when admin calls refreshPreview() or updates draft
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === PREVIEW_REFRESH_KEY || event.key === HOME_LAYOUT_DRAFT_KEY) load();
-    };
-    window.addEventListener('storage', handleStorage);
+  const photoIdsKey = useMemo(() => photoIds.join(','), [photoIds]);
+  const initialPhotos = useMemo(() => {
+    const photos: PhotoAsset[] = [];
+    if (initialHeroPhoto) photos.push(initialHeroPhoto);
+    initialFeaturePhotos.forEach((photo) => photos.push(photo));
+    return photos;
+  }, [initialFeaturePhotos, initialHeroPhoto]);
 
-    // Load when tab becomes visible (in case a storage event was missed while backgrounded)
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') load();
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
+  const photosQuery = useQuery({
+    queryKey: ['preview', 'photos', 'home', photoIdsKey, refreshSignal],
+    queryFn: async () => {
+      if (!photoIds.length) return [];
+      const res = await fetch(`/api/photos?ids=${encodeURIComponent(photoIds.join(','))}`, {
+        cache: 'no-store'
+      });
+      if (!res.ok) return [];
+      return (await res.json()) as PhotoAsset[];
+    },
+    enabled: isPreview,
+    placeholderData: (previous) => previous ?? initialPhotos,
+    staleTime: Infinity
+  });
 
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
-  }, [isPreview]);
+  const photoMap = useMemo(() => {
+    const photos = photosQuery.data ?? initialPhotos;
+    return new Map(photos.map((photo) => [photo.id, photo]));
+  }, [initialPhotos, photosQuery.data]);
 
-  // Poll draft store for unsaved color changes
-  useEffect(() => {
-    if (!isPreview) return;
+  const heroPhoto = photoMap.get(effectiveLayout.heroPhotoId) ?? null;
+  const featurePhotos = (effectiveLayout.featurePhotoIds || [])
+    .map((id) => photoMap.get(id))
+    .filter(Boolean) as PhotoAsset[];
 
-    const loadDraftColors = () => {
-      const draft = loadDraftHomeLayout();
-      if (draft) {
-        if (typeof draft.heroEyebrowColor === 'string') setHeroEyebrowColor(draft.heroEyebrowColor || undefined);
-        if (typeof draft.heroTitleColor === 'string') setHeroTitleColor(draft.heroTitleColor || undefined);
-        if (typeof draft.heroSubtitleColor === 'string') setHeroSubtitleColor(draft.heroSubtitleColor || undefined);
-      }
-    };
-
-    loadDraftColors();
-
-    const pollId = window.setInterval(loadDraftColors, 500);
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === HOME_LAYOUT_DRAFT_KEY) loadDraftColors();
-    };
-    window.addEventListener('storage', handleStorage);
-
-    return () => {
-      window.clearInterval(pollId);
-      window.removeEventListener('storage', handleStorage);
-    };
-  }, [isPreview]);
+  const heroEyebrowColor = effectiveLayout.heroEyebrowColor || undefined;
+  const heroTitleColor = effectiveLayout.heroTitleColor || undefined;
+  const heroSubtitleColor = effectiveLayout.heroSubtitleColor || undefined;
 
   return (
     <>

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { loadDraftAboutContent } from '@/lib/admin/draft-about-store';
+import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 
 type AboutTextField =
   | 'heroTitle'
@@ -24,36 +25,15 @@ export function DraftAboutText({
   fallback,
   enabled = false
 }: DraftAboutTextProps) {
-  const [draftValue, setDraftValue] = useState<string | null>(null);
+  const signal = usePreviewKeySignal([DRAFT_ABOUT_STORAGE_KEY, PREVIEW_REFRESH_KEY], enabled);
 
-  useEffect(() => {
-    if (!enabled) return;
-
-    const load = () => {
-      const draft = loadDraftAboutContent();
-      const value =
-        field === 'bioName'
-          ? draft?.bio?.name
-          : draft?.[field];
-
-      setDraftValue(typeof value === 'string' ? value : null);
-    };
-
-    load();
-
-    const pollId = window.setInterval(load, 500);
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key !== DRAFT_ABOUT_STORAGE_KEY && event.key !== PREVIEW_REFRESH_KEY) return;
-      load();
-    };
-
-    window.addEventListener('storage', handleStorage);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      window.clearInterval(pollId);
-    };
-  }, [enabled, field]);
+  const draftValue = useMemo(() => {
+    if (!enabled) return null;
+    void signal; // Recompute when draft about content changes.
+    const draft = loadDraftAboutContent();
+    const value = field === 'bioName' ? draft?.bio?.name : draft?.[field];
+    return typeof value === 'string' ? value : null;
+  }, [enabled, field, signal]);
 
   if (!enabled) return fallback;
   return draftValue ?? fallback;

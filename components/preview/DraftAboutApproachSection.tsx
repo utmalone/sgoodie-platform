@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import Image from 'next/image';
 import type { ApproachItem } from '@/types';
 import type { PhotoAsset } from '@/types';
 import { loadDraftAboutContent } from '@/lib/admin/draft-about-store';
 import { DraftAboutApproachText } from '@/components/preview/DraftAboutApproachText';
+import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import styles from '@/styles/public/AboutPage.module.css';
 
 const PREVIEW_REFRESH_KEY = 'admin-preview-refresh';
@@ -38,35 +39,15 @@ export function DraftAboutApproachSection({
   approachItems,
   approachPhotoMap
 }: DraftAboutApproachSectionProps) {
-  const [orderedItems, setOrderedItems] = useState(approachItems);
+  const signal = usePreviewKeySignal([DRAFT_ABOUT_KEY, PREVIEW_REFRESH_KEY], isPreview);
 
-  useEffect(() => {
-    if (!isPreview) {
-      queueMicrotask(() => setOrderedItems(approachItems));
-      return;
-    }
-
-    const load = () => {
-      const draft = loadDraftAboutContent();
-      const draftIds = draft?.approachItems?.map((i) => i.id).filter(Boolean) ?? [];
-      setOrderedItems(applyDraftOrder(approachItems, draftIds));
-    };
-
-    load();
-
-    const pollId = window.setInterval(load, 500);
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === DRAFT_ABOUT_KEY || event.key === PREVIEW_REFRESH_KEY) load();
-    };
-    window.addEventListener('storage', handleStorage);
-
-    return () => {
-      window.clearInterval(pollId);
-      window.removeEventListener('storage', handleStorage);
-    };
-  }, [isPreview, approachItems]);
-
-  const items = isPreview ? orderedItems : approachItems;
+  const items = useMemo(() => {
+    if (!isPreview) return approachItems;
+    void signal; // Recompute when draft about content changes.
+    const draft = loadDraftAboutContent();
+    const draftIds = draft?.approachItems?.map((i) => i.id).filter(Boolean) ?? [];
+    return applyDraftOrder(approachItems, draftIds);
+  }, [approachItems, isPreview, signal]);
 
   return (
     <div className={styles.approachGrid}>

@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { loadDraftAboutContent } from '@/lib/admin/draft-about-store';
 import { loadDraftPages } from '@/lib/admin/draft-store';
+import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 
 type DraftHeroColorsProps = {
   store: 'about' | 'pages';
@@ -13,6 +14,10 @@ type DraftHeroColorsProps = {
   children: ReactNode;
 };
 
+const DRAFT_ABOUT_STORAGE_KEY = 'sgoodie.admin.draft.about';
+const DRAFT_PAGES_STORAGE_KEY = 'sgoodie.admin.draft';
+const PREVIEW_REFRESH_KEY = 'admin-preview-refresh';
+
 export function DraftHeroColors({
   store,
   slug,
@@ -20,31 +25,32 @@ export function DraftHeroColors({
   savedSubtitleColor,
   children
 }: DraftHeroColorsProps) {
-  const [titleColor, setTitleColor] = useState(savedTitleColor);
-  const [subtitleColor, setSubtitleColor] = useState(savedSubtitleColor);
+  const keys = store === 'about'
+    ? [DRAFT_ABOUT_STORAGE_KEY, PREVIEW_REFRESH_KEY]
+    : [DRAFT_PAGES_STORAGE_KEY, PREVIEW_REFRESH_KEY];
+  const signal = usePreviewKeySignal(keys);
 
-  useEffect(() => {
-    const load = () => {
-      if (store === 'about') {
-        const draft = loadDraftAboutContent();
-        if (draft) {
-          setTitleColor(draft.heroTitleColor || savedTitleColor);
-          setSubtitleColor(draft.heroSubtitleColor || savedSubtitleColor);
-        }
-      } else if (store === 'pages' && slug) {
-        const pages = loadDraftPages();
-        const page = pages?.find((p) => p.slug === slug);
-        if (page) {
-          setTitleColor(page.heroTitleColor || savedTitleColor);
-          setSubtitleColor(page.heroSubtitleColor || savedSubtitleColor);
-        }
-      }
-    };
+  const [titleColor, subtitleColor] = useMemo(() => {
+    void signal; // Recompute when the preview signal changes.
+    if (store === 'about') {
+      const draft = loadDraftAboutContent();
+      return [
+        draft?.heroTitleColor || savedTitleColor,
+        draft?.heroSubtitleColor || savedSubtitleColor
+      ];
+    }
 
-    load();
-    const pollId = window.setInterval(load, 500);
-    return () => window.clearInterval(pollId);
-  }, [store, slug, savedTitleColor, savedSubtitleColor]);
+    if (store === 'pages' && slug) {
+      const pages = loadDraftPages();
+      const page = pages?.find((p) => p.slug === slug);
+      return [
+        page?.heroTitleColor || savedTitleColor,
+        page?.heroSubtitleColor || savedSubtitleColor
+      ];
+    }
+
+    return [savedTitleColor, savedSubtitleColor];
+  }, [savedSubtitleColor, savedTitleColor, signal, slug, store]);
 
   const style = {
     ...(titleColor ? { '--hero-title-color': titleColor } : {}),

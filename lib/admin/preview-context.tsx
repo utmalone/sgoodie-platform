@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import { emitPreviewRefresh } from '@/lib/preview/preview-signal';
 
 type PreviewContextType = {
   isOpen: boolean;
@@ -59,11 +60,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
 
   const refreshPreview = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
-    try {
-      window.localStorage.setItem('admin-preview-refresh', String(Date.now()));
-    } catch {
-      // Ignore storage access errors.
-    }
+    emitPreviewRefresh();
   }, []);
 
   useEffect(() => {

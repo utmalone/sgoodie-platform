@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import type { PageContent } from '@/types';
 import { loadDraftPages } from '@/lib/admin/draft-store';
+import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 
 type PageTextField = keyof Pick<
   PageContent,
@@ -29,33 +30,16 @@ export function DraftPageText({
   fallback,
   enabled = false
 }: DraftPageTextProps) {
-  const [draftValue, setDraftValue] = useState<string | null>(null);
+  const signal = usePreviewKeySignal([DRAFT_PAGES_STORAGE_KEY, PREVIEW_REFRESH_KEY], enabled);
 
-  useEffect(() => {
-    if (!enabled) return;
-
-    const load = () => {
-      const pages = loadDraftPages();
-      const page = pages?.find((item) => item.slug === slug);
-      const value = page?.[field];
-      setDraftValue(typeof value === 'string' ? value : null);
-    };
-
-    load();
-
-    const pollId = window.setInterval(load, 500);
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key !== DRAFT_PAGES_STORAGE_KEY && event.key !== PREVIEW_REFRESH_KEY) return;
-      load();
-    };
-
-    window.addEventListener('storage', handleStorage);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      window.clearInterval(pollId);
-    };
-  }, [enabled, field, slug]);
+  const draftValue = useMemo(() => {
+    if (!enabled) return null;
+    void signal; // Recompute when draft pages change.
+    const pages = loadDraftPages();
+    const page = pages?.find((item) => item.slug === slug);
+    const value = page?.[field];
+    return typeof value === 'string' ? value : null;
+  }, [enabled, field, signal, slug]);
 
   if (!enabled) return fallback;
   return draftValue ?? fallback;

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { ProjectCredit } from '@/types';
 import { loadDraftProject } from '@/lib/admin/draft-project-store';
+import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import styles from '@/styles/public/WorkDetailPage.module.css';
 
 type ProjectCreditsDraftClientProps = {
@@ -18,28 +19,14 @@ export function ProjectCreditsDraftClient({
   fallbackCredits,
   enabled = false
 }: ProjectCreditsDraftClientProps) {
-  const [draft, setDraft] = useState(() => loadDraftProject(projectId));
   const draftKey = useMemo(() => `sgoodie.admin.draft.project.${projectId}`, [projectId]);
+  const signal = usePreviewKeySignal([draftKey, PREVIEW_REFRESH_KEY], enabled);
 
-  useEffect(() => {
-    if (!enabled) return;
-
-    const load = () => setDraft(loadDraftProject(projectId));
-    load();
-
-    const pollId = window.setInterval(load, 500);
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key !== draftKey && event.key !== PREVIEW_REFRESH_KEY) return;
-      load();
-    };
-
-    window.addEventListener('storage', handleStorage);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      window.clearInterval(pollId);
-    };
-  }, [draftKey, enabled, projectId]);
+  const draft = useMemo(() => {
+    if (!enabled) return null;
+    void signal; // Recompute when draft project changes.
+    return loadDraftProject(projectId);
+  }, [enabled, projectId, signal]);
 
   const credits = draft?.credits ?? fallbackCredits ?? [];
   if (!credits.length) return null;
@@ -58,4 +45,3 @@ export function ProjectCreditsDraftClient({
     </section>
   );
 }
-

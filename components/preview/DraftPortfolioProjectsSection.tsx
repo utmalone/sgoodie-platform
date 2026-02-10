@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { PhotoAsset, Project, ProjectCategory } from '@/types';
 import { loadDraftWorkIndex } from '@/lib/admin/draft-work-index-store';
 import { WorkGalleryGrid } from '@/components/portfolio/WorkGalleryGrid';
-import styles from '@/styles/public/WorkPage.module.css';
+import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 
 const PREVIEW_REFRESH_KEY = 'admin-preview-refresh';
 const DRAFT_WORK_INDEX_KEY = 'sgoodie.admin.draft.workIndex';
@@ -17,6 +18,12 @@ type DraftPortfolioProjectsSectionProps = {
   category: ProjectCategory;
 };
 
+async function fetchWorkIndex() {
+  const res = await fetch('/api/admin/layout/work', { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to load work index');
+  return (await res.json()) as { projectIds?: string[] };
+}
+
 export function DraftPortfolioProjectsSection({
   isPreview,
   initialItems,
@@ -24,58 +31,44 @@ export function DraftPortfolioProjectsSection({
   photosById,
   category
 }: DraftPortfolioProjectsSectionProps) {
-  const [items, setItems] = useState(initialItems);
+  const draftSignal = usePreviewKeySignal([DRAFT_WORK_INDEX_KEY], isPreview);
+  const refreshSignal = usePreviewKeySignal([PREVIEW_REFRESH_KEY], isPreview);
 
-  useEffect(() => {
-    if (!isPreview) {
-      queueMicrotask(() => setItems(initialItems));
-      return;
-    }
+  const draftIndex = useMemo(() => {
+    if (!isPreview) return null;
+    void draftSignal; // Recompute when draft work index changes.
+    return loadDraftWorkIndex();
+  }, [draftSignal, isPreview]);
 
-    const load = async () => {
-      try {
-        const [workRes, draft] = await Promise.all([
-          fetch('/api/admin/layout/work'),
-          Promise.resolve(typeof window !== 'undefined' ? loadDraftWorkIndex() : null)
-        ]);
-        if (!workRes.ok) return;
-        const workData = await workRes.json();
-        const workIndex = draft ?? workData;
+  const workIndexQuery = useQuery({
+    queryKey: ['admin', 'layout', 'work', refreshSignal],
+    queryFn: fetchWorkIndex,
+    enabled: isPreview,
+    staleTime: Infinity
+  });
 
-        const projectMap = new Map(projects.map((p) => [p.id, p]));
-        const orderedProjects = (workIndex.projectIds || [])
-          .map((id: string) => projectMap.get(id))
-          .filter(Boolean) as Project[];
-        const remaining = projects.filter((p) => !workIndex.projectIds?.includes(p.id));
-        const list = [...orderedProjects, ...remaining];
+  const items = useMemo(() => {
+    if (!isPreview) return initialItems;
 
-        const newItems = list.reduce<Array<{ project: Project; photo: PhotoAsset }>>((acc, project) => {
-          if (!project) return acc;
-          const photo = photosById.get(project.heroPhotoId);
-          if (!photo) return acc;
-          acc.push({ project, photo });
-          return acc;
-        }, []);
+    const workIndex = draftIndex ?? workIndexQuery.data ?? null;
+    const ids = Array.isArray(workIndex?.projectIds) ? workIndex.projectIds : [];
+    if (!ids.length) return initialItems;
 
-        setItems(newItems);
-      } catch {
-        setItems(initialItems);
-      }
-    };
+    const projectMap = new Map(projects.map((project) => [project.id, project]));
+    const orderedProjects = ids
+      .map((id) => projectMap.get(id))
+      .filter(Boolean) as Project[];
+    const idSet = new Set(ids);
+    const remainingProjects = projects.filter((project) => !idSet.has(project.id));
+    const list = [...orderedProjects, ...remainingProjects];
 
-    load();
-
-    const pollId = window.setInterval(load, 500);
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === DRAFT_WORK_INDEX_KEY || event.key === PREVIEW_REFRESH_KEY) load();
-    };
-    window.addEventListener('storage', handleStorage);
-
-    return () => {
-      window.clearInterval(pollId);
-      window.removeEventListener('storage', handleStorage);
-    };
-  }, [isPreview, initialItems, projects, photosById]);
+    return list.reduce<Array<{ project: Project; photo: PhotoAsset }>>((acc, project) => {
+      const photo = photosById.get(project.heroPhotoId);
+      if (!photo) return acc;
+      acc.push({ project, photo });
+      return acc;
+    }, []);
+  }, [draftIndex, initialItems, isPreview, photosById, projects, workIndexQuery.data]);
 
   if (items.length === 0) return null;
 
