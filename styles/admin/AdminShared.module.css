@@ -1345,6 +1345,9 @@
     display: flex;
     gap: 2rem;
     padding: 2rem 1.5rem;
+  }
+
+  .shellWithSidebar {
     padding-left: calc(220px + 3.5rem);
   }
 }

@@ -594,7 +594,7 @@ function AdminShellInner({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div
-        className={`${styles.shell} ${isAuthenticated ? styles.shellMobileChrome : ''}`}
+        className={`${styles.shell} ${isAuthenticated ? styles.shellWithSidebar : ''} ${isAuthenticated ? styles.shellMobileChrome : ''}`}
         style={isOpen ? { display: 'none' } : undefined}
       >
         {isAuthenticated && (
