@@ -1595,3 +1595,280 @@
   margin: -0.25rem 0;
   transition: background 0.3s ease;
 }
+
+/* Mobile Admin Chrome (phones/tablets) */
+.mobileFab {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 0.75rem);
+  z-index: 60;
+  display: none;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(17, 17, 17, 0.92);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.mobileFab:active {
+  transform: translateY(1px);
+}
+
+.mobileFabLeft {
+  left: calc(env(safe-area-inset-left) + 0.75rem);
+}
+
+.mobileFabRight {
+  right: calc(env(safe-area-inset-right) + 0.75rem);
+}
+
+.mobileFabActive {
+  background: rgba(255, 255, 255, 0.96);
+  color: rgba(0, 0, 0, 0.8);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.mobileOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 calc(0.75rem + env(safe-area-inset-right)) calc(0.75rem + env(safe-area-inset-bottom)) calc(0.75rem + env(safe-area-inset-left));
+  background: rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(3px);
+}
+
+.mobileSheet {
+  width: min(560px, 100%);
+  border-radius: 1.25rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: mobileSheetIn 0.16s ease-out;
+}
+
+@keyframes mobileSheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobileSheetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.75rem 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.mobileSheetTitle {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.35em;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.mobileSheetClose {
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: transparent;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+}
+
+.mobileSheetClose:hover {
+  border-color: rgba(0, 0, 0, 0.22);
+  color: rgba(0, 0, 0, 0.75);
+}
+
+.mobileSheetList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.mobileSheetLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(0, 0, 0, 0.02);
+  padding: 0.9rem 1rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  color: rgba(0, 0, 0, 0.7);
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.mobileSheetLink:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.mobileSheetLinkActive {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.9);
+}
+
+.mobileSheetCard {
+  border-radius: 1.25rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.8);
+  padding: 0.75rem;
+}
+
+.mobileSheetCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.mobileSheetCardTitle {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.mobileDirtyDot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 9999px;
+  background: rgb(217, 119, 6);
+  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.18);
+}
+
+.mobilePrimaryAction {
+  width: 100%;
+  margin-top: 0.75rem;
+  border-radius: 9999px;
+  border: none;
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  cursor: pointer;
+  transition: opacity 0.12s ease;
+}
+
+.mobilePrimaryAction:hover {
+  opacity: 0.92;
+}
+
+.mobilePrimaryActionDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mobileSheetHint {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.mobileSheetHintError {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: rgb(220, 38, 38);
+}
+
+.mobileActionRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(0, 0, 0, 0.02);
+  padding: 0.85rem 0.9rem;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.mobileActionRow:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.mobileActionRowLeft {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.mobileActionRowDanger .mobileActionRowLeft {
+  color: rgb(220, 38, 38);
+}
+
+.mobileSheetIcon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+@media (max-width: 1023px) {
+  .mobileFab {
+    display: flex;
+  }
+
+  .mobileOverlay {
+    display: flex;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .shell {
+    padding-top: calc(1rem + 3.25rem + env(safe-area-inset-top));
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .shell {
+    padding-top: calc(1.5rem + 3.25rem + env(safe-area-inset-top));
+  }
+}
