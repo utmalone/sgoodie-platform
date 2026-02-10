@@ -1862,13 +1862,13 @@
     display: none;
   }
 
-  .shell {
+  .shellMobileChrome {
     padding-top: calc(1rem + 3.25rem + env(safe-area-inset-top));
   }
 }
 
 @media (min-width: 640px) and (max-width: 1023px) {
-  .shell {
+  .shellMobileChrome {
     padding-top: calc(1.5rem + 3.25rem + env(safe-area-inset-top));
   }
 }

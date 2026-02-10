@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { AdminNav } from './AdminNav';
 import { AdminPreviewModal } from './AdminPreviewModal';
@@ -574,6 +574,8 @@ function AdminShellInner({ children }: { children: React.ReactNode }) {
   const { isOpen, initialPath, refreshKey, openPreview, closePreview } = usePreview();
   const pathname = usePathname();
   const router = useRouter();
+  const { status: sessionStatus } = useSession();
+  const isAuthenticated = sessionStatus === 'authenticated';
 
   // Inactivity timeout hook
   useInactivityTimeout();
@@ -591,110 +593,125 @@ function AdminShellInner({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <div className={styles.shell} style={isOpen ? { display: 'none' } : undefined}>
-        <AdminMobileChrome key={`${isOpen}-${pathname}`} pathname={pathname} previewPath={previewPath} />
-        <aside className={styles.sidebar}>
-          <div>
-            <h2 className={styles.sidebarTitle}>Admin</h2>
-            <p className={styles.sidebarSubtitle}>S.Goodie</p>
-            <div className={styles.sidebarNav}>
-              <AdminNav />
+      <div
+        className={`${styles.shell} ${isAuthenticated ? styles.shellMobileChrome : ''}`}
+        style={isOpen ? { display: 'none' } : undefined}
+      >
+        {isAuthenticated && (
+          <AdminMobileChrome
+            key={`${isOpen}-${pathname}`}
+            pathname={pathname}
+            previewPath={previewPath}
+          />
+        )}
+        {isAuthenticated && (
+          <aside className={styles.sidebar}>
+            <div>
+              <h2 className={styles.sidebarTitle}>Admin</h2>
+              <p className={styles.sidebarSubtitle}>S.Goodie</p>
+              <div className={styles.sidebarNav}>
+                <AdminNav />
+              </div>
             </div>
-          </div>
-          
-          <div className={styles.sidebarFooter}>
-            {/* Preview Button */}
-            <button
-              type="button"
-              onClick={() => openPreview(previewPath)}
-              className={styles.previewBtn}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5" />
-                <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
-              <span>Preview Site</span>
-            </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                const sep = previewPath.includes('?') ? '&' : '?';
-                window.open(`${previewPath}${sep}preview=draft`, '_blank', 'noopener,noreferrer');
-              }}
-              className={styles.previewBtn}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path
-                  d="M6.5 3H3.5A1.5 1.5 0 002 4.5v8A1.5 1.5 0 003.5 14h8A1.5 1.5 0 0013 12.5v-3"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M9 2h5v5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M14 2L7.5 8.5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span>Preview Tab</span>
-            </button>
+            <div className={styles.sidebarFooter}>
+              {/* Preview Button */}
+              <button
+                type="button"
+                onClick={() => openPreview(previewPath)}
+                className={styles.previewBtn}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5" />
+                  <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
+                <span>Preview Site</span>
+              </button>
 
-            {/* Master Save Button */}
-            <MasterSaveButton />
+              <button
+                type="button"
+                onClick={() => {
+                  const sep = previewPath.includes('?') ? '&' : '?';
+                  window.open(`${previewPath}${sep}preview=draft`, '_blank', 'noopener,noreferrer');
+                }}
+                className={styles.previewBtn}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M6.5 3H3.5A1.5 1.5 0 002 4.5v8A1.5 1.5 0 003.5 14h8A1.5 1.5 0 0013 12.5v-3"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M9 2h5v5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M14 2L7.5 8.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>Preview Tab</span>
+              </button>
 
-            {/* Divider */}
-            <div className={styles.divider} />
+              {/* Master Save Button */}
+              <MasterSaveButton />
 
-            {/* Public Site Button */}
-            <button
-              type="button"
-              onClick={() => router.push('/')}
-              className={styles.previewBtn}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path
-                  d="M8 2.5a5.5 5.5 0 1 1-5.5 5.5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M2.5 8H8V2.5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span>Public Home</span>
-            </button>
+              {/* Divider */}
+              <div className={styles.divider} />
 
-            {/* Logout Button */}
-            <button type="button" onClick={() => signOut({ callbackUrl: '/' })} className={styles.logoutBtn}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path
-                  d="M5 12H3a1 1 0 01-1-1V3a1 1 0 011-1h2M9.5 10l3-3-3-3M12.5 7H5"
-                  stroke="currentColor"
-                  strokeWidth="1.25"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span>Log out</span>
-            </button>
-          </div>
-        </aside>
+              {/* Public Site Button */}
+              <button
+                type="button"
+                onClick={() => router.push('/')}
+                className={styles.previewBtn}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M8 2.5a5.5 5.5 0 1 1-5.5 5.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M2.5 8H8V2.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>Public Home</span>
+              </button>
+
+              {/* Logout Button */}
+              <button
+                type="button"
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className={styles.logoutBtn}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path
+                    d="M5 12H3a1 1 0 01-1-1V3a1 1 0 011-1h2M9.5 10l3-3-3-3M12.5 7H5"
+                    stroke="currentColor"
+                    strokeWidth="1.25"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>Log out</span>
+              </button>
+            </div>
+          </aside>
+        )}
         <main className={styles.mainContent}>{children}</main>
       </div>
       <AdminPreviewModal
