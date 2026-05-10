@@ -120,6 +120,10 @@ resource "aws_amplify_app" "main" {
       phases:
         preBuild:
           commands:
+            - nvm install 24.15.0
+            - nvm use 24.15.0
+            - node --version
+            - npm --version
             - npm ci
         build:
           commands:
@@ -159,7 +163,7 @@ resource "aws_amplify_branch" "main" {
   framework = "Next.js - SSR"
   stage     = "PRODUCTION"
 
-  enable_auto_build = true
+  enable_auto_build     = true
   environment_variables = var.environment_variables
 
   tags = {

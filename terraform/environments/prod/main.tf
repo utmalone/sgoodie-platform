@@ -21,11 +21,11 @@ terraform {
 
   # Remote state configuration - stores state in S3 with DynamoDB locking
   backend "s3" {
-    bucket         = "sgoodie-terraform-state-667516054009"
-    key            = "prod/terraform.tfstate"
-    region         = "us-east-1"
-    use_lockfile   = true
-    encrypt        = true
+    bucket       = "sgoodie-terraform-state-667516054009"
+    key          = "prod/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true
+    encrypt      = true
   }
 }
 
@@ -169,7 +169,7 @@ module "amplify" {
   # Note: AWS_ prefix is reserved by Amplify, so we use different names
   environment_variables = merge(
     {
-      NODE_VERSION = "24"
+      NODE_VERSION        = "24.15.0"
       USE_MOCK_DATA       = "false"
       NEXTAUTH_URL        = var.nextauth_url
       NEXTAUTH_SECRET     = var.nextauth_secret

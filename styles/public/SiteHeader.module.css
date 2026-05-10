@@ -42,13 +42,14 @@
 }
 
 .inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   height: 4rem;
 }
 
 .logo {
+  justify-self: start;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -58,6 +59,7 @@
 .nav {
   display: none;
   align-items: center;
+  justify-self: center;
   gap: 1.5rem;
   font-size: .75rem;
   font-weight: 1000;
@@ -177,6 +179,7 @@
 
 .iconRow {
   display: none;
+  justify-self: end;
   align-items: center;
   gap: 1rem;
 }
@@ -207,6 +210,7 @@
 }
 
 .menuButton {
+  justify-self: end;
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.3em;

@@ -17,11 +17,11 @@ terraform {
 
   # Remote state configuration - separate from prod
   backend "s3" {
-    bucket         = "sgoodie-terraform-state-667516054009"
-    key            = "staging/terraform.tfstate"
-    region         = "us-east-1"
-    use_lockfile   = true
-    encrypt        = true
+    bucket       = "sgoodie-terraform-state-667516054009"
+    key          = "staging/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true
+    encrypt      = true
   }
 }
 
