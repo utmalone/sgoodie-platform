@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { JournalPhotoGrid } from '@/components/portfolio/JournalPhotoGrid';
+import { JournalMarkdown } from '@/components/portfolio/JournalMarkdown';
 import { JournalPostDraftClient } from '@/components/preview/JournalPostDraftClient';
 import { getAllJournalPosts, getJournalPostBySlug } from '@/lib/data/journal';
 import { getPhotosByIds } from '@/lib/data/photos';
@@ -21,9 +23,32 @@ export async function generateMetadata({ params }: JournalPostPageProps): Promis
   const { slug } = await params;
   const post = await getJournalPostBySlug(slug);
   if (!post) return {};
+
+  const title = (post.metaTitle?.trim() || `${post.title} | Journal`).trim();
+  const description = (post.metaDescription?.trim() || post.excerpt || '').trim();
+
+  let heroSrc: string | undefined;
+  if (post.heroPhotoId) {
+    const [hero] = await getPhotosByIds([post.heroPhotoId]);
+    heroSrc = hero?.src;
+  }
+
   return {
-    title: `${post.title} | Journal`,
-    description: post.excerpt
+    title,
+    description,
+    keywords: post.metaKeywords?.trim() ? post.metaKeywords.trim() : undefined,
+    openGraph: {
+      title,
+      description,
+      type: 'article',
+      ...(heroSrc ? { images: [{ url: heroSrc, alt: post.title }] } : {})
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      ...(heroSrc ? { images: [heroSrc] } : {})
+    }
   };
 }
 
@@ -35,48 +60,67 @@ export default async function JournalPostPage({ params, searchParams }: JournalP
   const post = await getJournalPostBySlug(slug);
   if (!post) notFound();
 
-  // Get hero photo and gallery photos
-  const allPhotoIds = [post.heroPhotoId, ...post.galleryPhotoIds];
-  const photos = await getPhotosByIds(allPhotoIds);
+  const heroIds = post.heroPhotoId ? [post.heroPhotoId] : [];
+  const galleryIds = post.galleryPhotoIds || [];
+  const allIds = [...new Set([...heroIds, ...galleryIds].filter(Boolean))];
+  const photos = await getPhotosByIds(allIds);
   const photosById = new Map(photos.map((photo) => [photo.id, photo]));
 
-  // Combine hero and gallery photos for the grid
-  const gridPhotos = allPhotoIds
+  const heroPhoto = post.heroPhotoId ? photosById.get(post.heroPhotoId) : undefined;
+  const gridPhotos = galleryIds
     .map((id) => photosById.get(id))
     .filter((photo): photo is NonNullable<typeof photo> => Boolean(photo));
+
+  /** For preview client: same combined list as before for photo fetching */
+  const previewGridPhotos = allIds.map((id) => photosById.get(id)).filter(Boolean) as typeof photos;
+
+  const dateLabel = post.date
+    ? new Date(post.date + 'T12:00:00').toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    : '';
 
   return (
     <div className={styles.wrapper}>
       {isPreview ? (
-        <JournalPostDraftClient fallbackPost={post} gridPhotos={gridPhotos} enabled />
+        <JournalPostDraftClient fallbackPost={post} gridPhotos={previewGridPhotos} enabled />
       ) : (
         <>
-          {/* Header */}
+          {heroPhoto ? (
+            <section className={styles.heroSection}>
+              <div className={styles.heroImageWrap}>
+                <Image
+                  src={heroPhoto.src}
+                  alt={heroPhoto.alt || post.title}
+                  fill
+                  priority
+                  sizes="100vw"
+                  className={styles.heroImg}
+                />
+              </div>
+            </section>
+          ) : null}
+
           <header className={styles.header}>
             <h1 className={styles.title}>{post.title}</h1>
             <p className={styles.category}>{post.category}</p>
+            {dateLabel ? (
+              <p className={styles.metaRow}>
+                {post.author} · {dateLabel}
+              </p>
+            ) : (
+              <p className={styles.metaRow}>{post.author}</p>
+            )}
           </header>
 
-          {/* Photo Grid */}
-          {gridPhotos.length > 0 && (
-            <section className={styles.gridSection}>
-              <JournalPhotoGrid photos={gridPhotos} />
-            </section>
-          )}
-
-          {/* Content Section - Body and Credits */}
           <section className={styles.contentSection}>
             <div className={styles.contentGrid}>
-              {/* Body Text */}
               <div className={styles.bodyColumn}>
-                {post.body.split('\n\n').map((paragraph, idx) => (
-                  <p key={idx} className={styles.bodyParagraph}>
-                    {paragraph}
-                  </p>
-                ))}
+                <JournalMarkdown markdown={post.body || ''} />
               </div>
 
-              {/* Credits */}
               {post.credits && post.credits.length > 0 && (
                 <aside className={styles.creditsColumn}>
                   <p className={styles.creditsLabel}>Credits</p>
@@ -93,10 +137,15 @@ export default async function JournalPostPage({ params, searchParams }: JournalP
               )}
             </div>
           </section>
+
+          {gridPhotos.length > 0 && (
+            <section className={styles.gridSection}>
+              <JournalPhotoGrid photos={gridPhotos} />
+            </section>
+          )}
         </>
       )}
 
-      {/* Back Link */}
       <div className={styles.backSection}>
         <Link href={isPreview ? '/journal?preview=draft' : '/journal'} className={styles.backLink}>
           {'<- Back to Journal'}

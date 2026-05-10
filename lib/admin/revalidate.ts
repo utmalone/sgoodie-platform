@@ -12,6 +12,8 @@ function revalidateTags(tags: string[]) {
  */
 export function revalidatePortfolioPages() {
   revalidateTags([CacheTags.projects, CacheTags.workIndex]);
+  revalidateTag(CacheTags.projects, { expire: 0 });
+  revalidateTag(CacheTags.workIndex, { expire: 0 });
   portfolioCategories.forEach((cat) => revalidatePath(`/portfolio/${cat}`));
 }
 

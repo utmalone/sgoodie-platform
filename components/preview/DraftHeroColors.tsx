@@ -1,9 +1,10 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { loadDraftAboutContent } from '@/lib/admin/draft-about-store';
 import { loadDraftPages } from '@/lib/admin/draft-store';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 
 type DraftHeroColorsProps = {
@@ -25,6 +26,7 @@ export function DraftHeroColors({
   savedSubtitleColor,
   children
 }: DraftHeroColorsProps) {
+  const mounted = useMounted();
   const keys = store === 'about'
     ? [DRAFT_ABOUT_STORAGE_KEY, PREVIEW_REFRESH_KEY]
     : [DRAFT_PAGES_STORAGE_KEY, PREVIEW_REFRESH_KEY];
@@ -32,6 +34,9 @@ export function DraftHeroColors({
 
   const [titleColor, subtitleColor] = useMemo(() => {
     void signal; // Recompute when the preview signal changes.
+    if (!mounted) {
+      return [savedTitleColor, savedSubtitleColor];
+    }
     if (store === 'about') {
       const draft = loadDraftAboutContent();
       return [
@@ -50,12 +55,12 @@ export function DraftHeroColors({
     }
 
     return [savedTitleColor, savedSubtitleColor];
-  }, [savedSubtitleColor, savedTitleColor, signal, slug, store]);
+  }, [savedSubtitleColor, savedTitleColor, signal, slug, store, mounted]);
 
   const style = {
     ...(titleColor ? { '--hero-title-color': titleColor } : {}),
     ...(subtitleColor ? { '--hero-subtitle-color': subtitleColor } : {})
-  } as React.CSSProperties;
+  } as CSSProperties;
 
   return <div style={style}>{children}</div>;
 }

@@ -571,7 +571,7 @@ function useInactivityTimeout() {
 }
 
 function AdminShellInner({ children }: { children: React.ReactNode }) {
-  const { isOpen, initialPath, refreshKey, openPreview, closePreview } = usePreview();
+  const { isOpen, initialPath, refreshKey, openPreview, closePreview, activePreviewPath } = usePreview();
   const pathname = usePathname();
   const router = useRouter();
   const { status: sessionStatus } = useSession();
@@ -581,6 +581,7 @@ function AdminShellInner({ children }: { children: React.ReactNode }) {
   useInactivityTimeout();
 
   function getPreviewPath() {
+    if (activePreviewPath) return activePreviewPath;
     for (const [adminPath, publicPath] of Object.entries(previewPathMap)) {
       if (pathname.startsWith(adminPath)) {
         return publicPath;

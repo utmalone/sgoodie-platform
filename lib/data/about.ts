@@ -1,5 +1,5 @@
 import { unstable_cache } from 'next/cache';
-import type { AboutPageContent } from '@/types';
+import type { AboutPageContent, Award } from '@/types';
 import { CacheTags } from '@/lib/cache-tags';
 import { readJson, writeJson } from './local-store';
 import { isMockMode, getItem, putItem } from './db';
@@ -16,6 +16,10 @@ const defaultAboutContent: AboutPageContent = {
   approachItems: [],
   featuredTitle: 'Featured In',
   featuredPublications: [],
+  awardsTitle: 'Awards',
+  awards: [],
+  clientsTitle: 'Selected Clients',
+  clients: [],
   bio: {
     name: 'S.Goodie',
     photoId: '',
@@ -23,13 +27,51 @@ const defaultAboutContent: AboutPageContent = {
   }
 };
 
+function normalizeSavedAwards(raw: unknown): Award[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const a = item as Partial<Award> & Record<string, unknown>;
+      if (typeof a.id !== 'string' || a.id.trim() === '') return null;
+      return {
+        id: a.id,
+        name: typeof a.name === 'string' ? a.name : '',
+        ...(typeof a.year === 'string' && a.year.trim() ? { year: a.year } : {}),
+        ...(typeof a.photoId === 'string' && a.photoId.trim() ? { photoId: a.photoId } : {}),
+        ...(typeof a.description === 'string' && a.description.trim() ? { description: a.description } : {})
+      } satisfies Award;
+    })
+    .filter(Boolean) as Award[];
+}
+
+function normalizeAboutContent(raw: AboutPageContent): AboutPageContent {
+  return {
+    ...defaultAboutContent,
+    ...raw,
+    introParagraphs: raw.introParagraphs ?? [],
+    approachItems: raw.approachItems ?? [],
+    featuredPublications: raw.featuredPublications ?? [],
+    awards: normalizeSavedAwards(raw.awards),
+    clients: Array.isArray(raw.clients) ? raw.clients : [],
+    awardsTitle: raw.awardsTitle ?? defaultAboutContent.awardsTitle,
+    clientsTitle: raw.clientsTitle ?? defaultAboutContent.clientsTitle,
+    bio: {
+      ...defaultAboutContent.bio,
+      ...raw.bio,
+      paragraphs: raw.bio?.paragraphs ?? []
+    }
+  };
+}
+
 /**
  * Fetch the structured About page content.
  */
 async function loadAboutContent(): Promise<AboutPageContent> {
   if (isMockMode()) {
     try {
-      return await readJson<AboutPageContent>('about.json');
+      const raw = await readJson<AboutPageContent>('about.json');
+      return normalizeAboutContent(raw);
     } catch {
       return defaultAboutContent;
     }
@@ -37,7 +79,7 @@ async function loadAboutContent(): Promise<AboutPageContent> {
 
   // DynamoDB mode - return default if not found
   const content = await getItem<AboutPageContent & { slug: string }>(TABLE_NAME, { slug: ABOUT_SLUG });
-  return content || defaultAboutContent;
+  return content ? normalizeAboutContent(content) : defaultAboutContent;
 }
 
 const getAboutContentCached = unstable_cache(

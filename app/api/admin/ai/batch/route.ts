@@ -177,6 +177,8 @@ export async function POST(request: Request) {
           introParagraphs: [...(aboutContent.introParagraphs || [])],
           approachItems: (aboutContent.approachItems || []).map((item) => ({ ...item })),
           featuredPublications: [...(aboutContent.featuredPublications || [])],
+          awards: [...(aboutContent.awards || [])],
+          clients: [...(aboutContent.clients || [])],
           bio: {
             ...aboutContent.bio,
             paragraphs: [...(aboutContent.bio?.paragraphs || [])]

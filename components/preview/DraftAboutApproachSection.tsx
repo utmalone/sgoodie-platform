@@ -6,6 +6,7 @@ import type { ApproachItem } from '@/types';
 import type { PhotoAsset } from '@/types';
 import { loadDraftAboutContent } from '@/lib/admin/draft-about-store';
 import { DraftAboutApproachText } from '@/components/preview/DraftAboutApproachText';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import styles from '@/styles/public/AboutPage.module.css';
 
@@ -39,15 +40,17 @@ export function DraftAboutApproachSection({
   approachItems,
   approachPhotoMap
 }: DraftAboutApproachSectionProps) {
+  const mounted = useMounted();
   const signal = usePreviewKeySignal([DRAFT_ABOUT_KEY, PREVIEW_REFRESH_KEY], isPreview);
 
   const items = useMemo(() => {
     if (!isPreview) return approachItems;
+    if (!mounted) return approachItems;
     void signal; // Recompute when draft about content changes.
     const draft = loadDraftAboutContent();
     const draftIds = draft?.approachItems?.map((i) => i.id).filter(Boolean) ?? [];
     return applyDraftOrder(approachItems, draftIds);
-  }, [approachItems, isPreview, signal]);
+  }, [approachItems, isPreview, signal, mounted]);
 
   return (
     <div className={styles.approachGrid}>

@@ -7,9 +7,11 @@ type PreviewContextType = {
   isOpen: boolean;
   initialPath: string;
   refreshKey: number;
+  activePreviewPath: string | null;
   openPreview: (path?: string) => void;
   closePreview: () => void;
   refreshPreview: () => void;
+  setActivePreviewPath: (path: string | null) => void;
 };
 
 const PreviewContext = createContext<PreviewContextType | null>(null);
@@ -45,6 +47,7 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(stored?.isOpen ?? false);
   const [initialPath, setInitialPath] = useState(stored?.initialPath ?? '/');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [activePreviewPath, setActivePreviewPath] = useState<string | null>(null);
 
   const openPreview = useCallback((path: string = '/') => {
     setInitialPath(path);
@@ -71,7 +74,16 @@ export function PreviewProvider({ children }: { children: ReactNode }) {
 
   return (
     <PreviewContext.Provider
-      value={{ isOpen, initialPath, refreshKey, openPreview, closePreview, refreshPreview }}
+      value={{
+        isOpen,
+        initialPath,
+        refreshKey,
+        activePreviewPath,
+        openPreview,
+        closePreview,
+        refreshPreview,
+        setActivePreviewPath
+      }}
     >
       {children}
     </PreviewContext.Provider>

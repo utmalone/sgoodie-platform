@@ -187,10 +187,27 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
       const url = isNew ? '/api/admin/projects' : `/api/admin/projects/${projectId}`;
       const method = isNew ? 'POST' : 'PUT';
 
+      let payload: Partial<Project> = { ...project };
+      if (!isNew && projectId) {
+        try {
+          const latestRes = await fetch(`/api/admin/projects/${projectId}`);
+          if (latestRes.ok) {
+            const latest = (await latestRes.json()) as Project;
+            const statusUnchanged =
+              (project.status || 'draft') === (savedProject.status || 'draft');
+            if (statusUnchanged) {
+              payload = { ...payload, status: latest.status };
+            }
+          }
+        } catch {
+          /* keep payload as-is */
+        }
+      }
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(project)
+        body: JSON.stringify(payload)
       });
 
       if (!res.ok) {
@@ -214,7 +231,7 @@ export function AdminPortfolioEditorClient({ projectId }: AdminPortfolioEditorCl
       setStatus('Failed to save project.');
       return false;
     }
-  }, [project, isNew, projectId, router, refreshPreview]);
+  }, [project, savedProject, isNew, projectId, router, refreshPreview]);
 
   // Register/unregister changes with master save context
   useEffect(() => {

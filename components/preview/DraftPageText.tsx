@@ -9,6 +9,7 @@ type PageTextField = keyof Pick<
   PageContent,
   | 'title'
   | 'intro'
+  | 'body'
   | 'metaTitle'
   | 'metaDescription'
   | 'metaKeywords'

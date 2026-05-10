@@ -38,7 +38,12 @@ export async function PUT(request: Request) {
       slug: payload.slug,
       title: payload.title ?? '',
       intro: payload.intro ?? '',
+      body: typeof payload.body === 'string' ? payload.body : '',
       gallery: Array.isArray(payload.gallery) ? payload.gallery : [],
+      ...(typeof payload.heroTitleColor === 'string' ? { heroTitleColor: payload.heroTitleColor } : {}),
+      ...(typeof payload.heroSubtitleColor === 'string'
+        ? { heroSubtitleColor: payload.heroSubtitleColor }
+        : {}),
       metaTitle: payload.metaTitle ?? '',
       metaDescription: payload.metaDescription ?? '',
       metaKeywords: payload.metaKeywords ?? ''

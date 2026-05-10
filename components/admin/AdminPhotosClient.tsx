@@ -25,7 +25,7 @@ import {
   loadDraftAboutContent,
   saveDraftAboutContent
 } from '@/lib/admin/draft-about-store';
-import { saveDraftHomeLayout } from '@/lib/admin/draft-home-layout-store';
+import { saveDraftHomeLayout, clearDraftHomeLayout } from '@/lib/admin/draft-home-layout-store';
 import { saveDraftContactContent } from '@/lib/admin/draft-contact-store';
 import guidelineStyles from '@/styles/admin/PhotoGuidelines.module.css';
 import sharedStyles from '@/styles/admin/AdminShared.module.css';
@@ -464,6 +464,10 @@ export function AdminPhotosClient() {
             ...item,
             photoId: item.photoId && knownPhotoIds.has(item.photoId) ? item.photoId : ''
           })),
+          awards: (layouts.about.awards || []).map((item) => ({
+            ...item,
+            photoId: item.photoId && knownPhotoIds.has(item.photoId) ? item.photoId : ''
+          })),
           bio: {
             ...layouts.about.bio,
             photoId:
@@ -604,6 +608,7 @@ export function AdminPhotosClient() {
     } else if (activeSlug === 'about' && layouts.about) {
       addId(layouts.about.heroPhotoId);
       layouts.about.approachItems?.forEach(item => addId(item.photoId));
+      layouts.about.awards?.forEach((a) => addId(a.photoId));
       addId(layouts.about.bio?.photoId);
     } else if (activeSlug === 'contact' && layouts.contact) {
       addId(layouts.contact.heroPhotoId);
@@ -995,7 +1000,24 @@ export function AdminPhotosClient() {
       const updated = { ...layouts.home, heroPhotoId, featurePhotoIds };
       setLayouts((prev) => ({ ...prev, home: updated }));
       saveDraftHomeLayout({ heroPhotoId, featurePhotoIds });
-      setStatus('Order updated.');
+      try {
+        const res = await fetch('/api/admin/layouts/home', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ heroPhotoId, featurePhotoIds })
+        });
+        if (res.ok) {
+          const serverHome = (await res.json()) as HomeLayout;
+          clearDraftHomeLayout();
+          setSavedLayouts((prev) => ({ ...prev, home: serverHome }));
+          setLayouts((prev) => ({ ...prev, home: serverHome }));
+          setStatus('Order saved.');
+        } else {
+          setStatus('Order updated locally. Save All to sync.');
+        }
+      } catch {
+        setStatus('Order updated locally. Save All to sync.');
+      }
       refreshPreview();
     } else if (activeSlug === 'about' && layouts.about) {
       const heroPhotoId = newIds[0] && photosById.has(newIds[0]) ? newIds[0] : '';

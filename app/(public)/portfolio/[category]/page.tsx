@@ -9,6 +9,7 @@ import { getPageBySlug } from '@/lib/data/pages';
 import { getPhotosByIds } from '@/lib/data/photos';
 import { getWorkIndex } from '@/lib/data/work';
 import { WorkGalleryGrid } from '@/components/portfolio/WorkGalleryGrid';
+import { PortfolioCategoryCopy } from '@/components/portfolio/PortfolioCategoryCopy';
 import { DraftPageText } from '@/components/preview/DraftPageText';
 import { DraftPortfolioProjectsSection } from '@/components/preview/DraftPortfolioProjectsSection';
 import {
@@ -103,6 +104,14 @@ export default async function PortfolioCategoryPage({ params, searchParams }: Pa
           )}
         </h1>
       </header>
+
+      <PortfolioCategoryCopy
+        slug={`portfolio-${category}`}
+        category={category as PortfolioCategory}
+        liveIntro={page.intro || ''}
+        liveBody={page.body || ''}
+        isPreview={isPreview}
+      />
 
       {/* Projects Grid */}
       {isPreview ? (

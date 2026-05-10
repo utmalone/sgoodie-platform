@@ -1,10 +1,12 @@
 'use client';
 
 import { useMemo } from 'react';
+import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import type { JournalPost, PhotoAsset } from '@/types';
 import { loadDraftJournalPost } from '@/lib/admin/draft-journal-post-store';
 import { JournalPhotoGrid } from '@/components/portfolio/JournalPhotoGrid';
+import { JournalMarkdown } from '@/components/portfolio/JournalMarkdown';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import styles from '@/styles/public/JournalPostPage.module.css';
 
@@ -40,7 +42,7 @@ export function JournalPostDraftClient({
 
   const draft = useMemo(() => {
     if (!enabled) return null;
-    void draftSignal; // Recompute when draft post changes.
+    void draftSignal;
     return loadDraftJournalPost(fallbackPost.id);
   }, [draftSignal, enabled, fallbackPost.id]);
 
@@ -77,38 +79,56 @@ export function JournalPostDraftClient({
     return new Map(photos.map((photo) => [photo.id, photo]));
   }, [gridPhotos, photosQuery.data]);
 
-  const resolvedGridPhotos = useMemo(() => {
-    return requestedPhotoIds.map((id) => photosById.get(id)).filter(Boolean) as PhotoAsset[];
-  }, [photosById, requestedPhotoIds]);
+  const heroPhoto = post.heroPhotoId ? photosById.get(post.heroPhotoId) : undefined;
+  const resolvedGalleryPhotos = useMemo(() => {
+    return (post.galleryPhotoIds || [])
+      .map((id) => photosById.get(id))
+      .filter(Boolean) as PhotoAsset[];
+  }, [photosById, post.galleryPhotoIds]);
+
+  const dateLabel = post.date
+    ? new Date(post.date + 'T12:00:00').toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    : '';
 
   return (
     <>
-      {/* Header */}
+      {heroPhoto ? (
+        <section className={styles.heroSection}>
+          <div className={styles.heroImageWrap}>
+            <Image
+              src={heroPhoto.src}
+              alt={heroPhoto.alt || post.title}
+              fill
+              priority
+              sizes="100vw"
+              className={styles.heroImg}
+            />
+          </div>
+        </section>
+      ) : null}
+
       <header className={styles.header}>
         <h1 className={styles.title}>{post.title}</h1>
         <p className={styles.category}>{post.category}</p>
+        {dateLabel ? (
+          <p className={styles.metaRow}>
+            {post.author} · {dateLabel}
+          </p>
+        ) : (
+          <p className={styles.metaRow}>{post.author}</p>
+        )}
       </header>
 
-      {/* Photo Grid */}
-      {resolvedGridPhotos.length > 0 && (
-        <section className={styles.gridSection}>
-          <JournalPhotoGrid photos={resolvedGridPhotos} />
-        </section>
-      )}
-
-      {/* Content Section - Body and Credits */}
       <section className={styles.contentSection}>
         <div className={styles.contentGrid}>
-          {/* Body Text */}
           <div className={styles.bodyColumn}>
-            {post.body.split('\n\n').map((paragraph, idx) => (
-              <p key={idx} className={styles.bodyParagraph}>
-                {paragraph}
-              </p>
-            ))}
+            <JournalMarkdown markdown={post.body || ''} />
           </div>
 
-          {/* Credits */}
           {post.credits && post.credits.length > 0 && (
             <aside className={styles.creditsColumn}>
               <p className={styles.creditsLabel}>Credits</p>
@@ -125,6 +145,12 @@ export function JournalPostDraftClient({
           )}
         </div>
       </section>
+
+      {resolvedGalleryPhotos.length > 0 && (
+        <section className={styles.gridSection}>
+          <JournalPhotoGrid photos={resolvedGalleryPhotos} />
+        </section>
+      )}
     </>
   );
 }

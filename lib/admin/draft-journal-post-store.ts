@@ -3,7 +3,19 @@
 import type { JournalPost, ProjectCredit } from '@/types';
 
 export type DraftJournalPostContent = Partial<
-  Pick<JournalPost, 'title' | 'category' | 'excerpt' | 'body' | 'credits' | 'heroPhotoId' | 'galleryPhotoIds'>
+  Pick<
+    JournalPost,
+    | 'title'
+    | 'category'
+    | 'excerpt'
+    | 'body'
+    | 'credits'
+    | 'heroPhotoId'
+    | 'galleryPhotoIds'
+    | 'metaTitle'
+    | 'metaDescription'
+    | 'metaKeywords'
+  >
 >;
 
 type DraftPayload = {
@@ -50,6 +62,9 @@ function normalizeDraftPost(raw: unknown): DraftJournalPostContent | null {
     category: typeof data.category === 'string' ? data.category : undefined,
     excerpt: typeof data.excerpt === 'string' ? data.excerpt : undefined,
     body: typeof data.body === 'string' ? data.body : undefined,
+    metaTitle: typeof data.metaTitle === 'string' ? data.metaTitle : undefined,
+    metaDescription: typeof data.metaDescription === 'string' ? data.metaDescription : undefined,
+    metaKeywords: typeof data.metaKeywords === 'string' ? data.metaKeywords : undefined,
     credits: normalizeCredits(data.credits),
     heroPhotoId: typeof data.heroPhotoId === 'string' ? data.heroPhotoId : undefined,
     galleryPhotoIds: normalizeStringArray(data.galleryPhotoIds)

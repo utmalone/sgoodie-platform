@@ -23,6 +23,8 @@ export type PageContent = {
   slug: string; // Can be PageSlug or portfolio category slugs (e.g., 'portfolio-hotels')
   title: string;
   intro: string;
+  /** Long-form copy (e.g. brand packages). Paragraphs separated by blank lines. */
+  body?: string;
   gallery: string[];
   heroTitleColor?: string;
   heroSubtitleColor?: string;
@@ -128,6 +130,9 @@ export type JournalPost = {
   heroPhotoId: string;
   galleryPhotoIds: string[];
   credits?: ProjectCredit[];
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
 };
 
 /** Approach card for About page */
@@ -145,6 +150,16 @@ export type BioSection = {
   paragraphs: string[];
 };
 
+/** Award / recognition on About page (optional image) */
+export type Award = {
+  id: string;
+  name: string;
+  year?: string;
+  photoId?: string;
+  /** Shown on the back of the award card (public + preview) */
+  description?: string;
+};
+
 /** About page structured content */
 export type AboutPageContent = {
   heroPhotoId: string;
@@ -157,6 +172,10 @@ export type AboutPageContent = {
   approachItems: ApproachItem[];
   featuredTitle: string;
   featuredPublications: string[];
+  awardsTitle: string;
+  awards: Award[];
+  clientsTitle: string;
+  clients: string[];
   bio: BioSection;
 };
 

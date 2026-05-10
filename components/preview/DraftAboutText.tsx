@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { loadDraftAboutContent } from '@/lib/admin/draft-about-store';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 
 type AboutTextField =
@@ -9,6 +10,8 @@ type AboutTextField =
   | 'heroSubtitle'
   | 'approachTitle'
   | 'featuredTitle'
+  | 'awardsTitle'
+  | 'clientsTitle'
   | 'bioName';
 
 type DraftAboutTextProps = {
@@ -25,15 +28,16 @@ export function DraftAboutText({
   fallback,
   enabled = false
 }: DraftAboutTextProps) {
+  const mounted = useMounted();
   const signal = usePreviewKeySignal([DRAFT_ABOUT_STORAGE_KEY, PREVIEW_REFRESH_KEY], enabled);
 
   const draftValue = useMemo(() => {
-    if (!enabled) return null;
+    if (!enabled || !mounted) return null;
     void signal; // Recompute when draft about content changes.
     const draft = loadDraftAboutContent();
     const value = field === 'bioName' ? draft?.bio?.name : draft?.[field];
     return typeof value === 'string' ? value : null;
-  }, [enabled, field, signal]);
+  }, [enabled, field, signal, mounted]);
 
   if (!enabled) return fallback;
   return draftValue ?? fallback;

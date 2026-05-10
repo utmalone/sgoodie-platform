@@ -190,9 +190,14 @@ export function AdminPortfolioClient() {
         return;
       }
 
-      setProjects((prev) =>
-        prev.map((p) => (p.id === project.id ? { ...p, status: newStatus } : p))
-      );
+      const listRes = await fetch('/api/admin/projects');
+      if (listRes.ok) {
+        setProjects((await listRes.json()) as Project[]);
+      } else {
+        setProjects((prev) =>
+          prev.map((p) => (p.id === project.id ? { ...p, status: newStatus } : p))
+        );
+      }
       setStatus(newStatus === 'published' ? 'Published.' : 'Set to draft.');
       refreshPreview();
       setTimeout(() => setStatus(''), 2000);

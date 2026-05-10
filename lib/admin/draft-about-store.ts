@@ -1,6 +1,6 @@
 'use client';
 
-import type { ApproachItem } from '@/types';
+import type { ApproachItem, Award } from '@/types';
 
 export type DraftAboutContent = {
   heroTitle?: string;
@@ -12,6 +12,10 @@ export type DraftAboutContent = {
   approachItems?: Array<Pick<ApproachItem, 'id' | 'title' | 'description'>>;
   featuredTitle?: string;
   featuredPublications?: string[];
+  awardsTitle?: string;
+  awards?: Award[];
+  clientsTitle?: string;
+  clients?: string[];
   bio?: {
     name?: string;
     paragraphs?: string[];
@@ -50,13 +54,36 @@ function normalizeApproachItems(value: unknown): DraftAboutContent['approachItem
   return items.length ? items : undefined;
 }
 
+function normalizeAwards(value: unknown): Award[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const items = value
+    .map((raw) => {
+      if (!raw || typeof raw !== 'object') return null;
+      const item = raw as Partial<Award> & Record<string, unknown>;
+      if (typeof item.id !== 'string' || item.id.trim() === '') return null;
+      return {
+        id: item.id,
+        name: typeof item.name === 'string' ? item.name : '',
+        ...(typeof item.year === 'string' && item.year.trim() ? { year: item.year } : {}),
+        ...(typeof item.photoId === 'string' && item.photoId.trim() ? { photoId: item.photoId } : {}),
+        ...(typeof item.description === 'string' && item.description.trim()
+          ? { description: item.description }
+          : {})
+      } satisfies Award;
+    })
+    .filter(Boolean) as Award[];
+  return items.length ? items : undefined;
+}
+
 function normalizeDraftAboutContent(raw: unknown): DraftAboutContent | null {
   if (!raw || typeof raw !== 'object') return null;
   const draft = raw as DraftAboutContent & Record<string, unknown>;
 
   const introParagraphs = normalizeStringArray(draft.introParagraphs);
   const featuredPublications = normalizeStringArray(draft.featuredPublications);
+  const clients = normalizeStringArray(draft.clients);
   const approachItems = normalizeApproachItems(draft.approachItems);
+  const awards = normalizeAwards(draft.awards);
 
   const bioRaw = draft.bio;
   const bio =
@@ -79,6 +106,10 @@ function normalizeDraftAboutContent(raw: unknown): DraftAboutContent | null {
     approachItems,
     featuredTitle: typeof draft.featuredTitle === 'string' ? draft.featuredTitle : undefined,
     featuredPublications,
+    awardsTitle: typeof draft.awardsTitle === 'string' ? draft.awardsTitle : undefined,
+    awards,
+    clientsTitle: typeof draft.clientsTitle === 'string' ? draft.clientsTitle : undefined,
+    clients,
     bio
   };
 }

@@ -39,10 +39,10 @@ export function AdminPreviewModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Add preview query param so pages know to show draft content
+  // Add preview query param so pages know to show draft content (refreshKey is for toast/UI only — avoid remounting iframe on every edit)
   const separator = initialPath.includes('?') ? '&' : '?';
-  const previewUrl = `${initialPath}${separator}preview=draft&refresh=${refreshKey}`;
-  const iframeKey = previewUrl;
+  const previewUrl = `${initialPath}${separator}preview=draft`;
+  const iframeKey = initialPath;
   const isLoading = isOpen && loadedKey !== iframeKey;
   const showToast = isOpen && refreshKey > 0;
 

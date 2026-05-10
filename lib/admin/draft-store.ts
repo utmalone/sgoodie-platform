@@ -23,6 +23,7 @@ function normalizeDraftPage(raw: unknown): PageContent | null {
     slug: page.slug,
     title: typeof page.title === 'string' ? page.title : '',
     intro: typeof page.intro === 'string' ? page.intro : '',
+    body: typeof page.body === 'string' ? page.body : '',
     gallery,
     ...(typeof page.heroTitleColor === 'string' ? { heroTitleColor: page.heroTitleColor } : {}),
     ...(typeof page.heroSubtitleColor === 'string' ? { heroSubtitleColor: page.heroSubtitleColor } : {}),

@@ -4,11 +4,46 @@
   padding-top: 2rem;
 }
 
+/* Landscape hero (post detail) */
+.heroSection {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  margin-top: 0;
+}
+
+.heroImageWrap {
+  position: relative;
+  width: 100%;
+  min-height: 42vh;
+  aspect-ratio: 21 / 9;
+  max-height: min(70vh, 52vw);
+  background: var(--fog);
+}
+
+.heroImg {
+  object-fit: cover;
+}
+
+@media (min-width: 768px) {
+  .heroImageWrap {
+    min-height: 48vh;
+  }
+}
+
 /* Header */
 .header {
   text-align: center;
-  padding-block: 4rem;
+  padding-block: 3rem 2rem;
   padding-inline: 1.5rem;
+}
+
+.metaRow {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-top: 0.75rem;
 }
 
 .title {
@@ -16,7 +51,7 @@
   font-weight: 500;
   font-family: var(--font-display), sans-serif;
   line-height: 1.2;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .category {
@@ -26,7 +61,7 @@
   color: var(--ink-soft);
 }
 
-/* Grid Section */
+/* Grid Section (gallery only) */
 .gridSection {
   padding-block: 2rem;
   background: var(--fog);
@@ -50,11 +85,71 @@
   margin: 0 auto;
 }
 
+/* Markdown body */
+.markdown {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.mdH2 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  font-family: var(--font-display), sans-serif;
+  color: var(--ink);
+  margin: 1.5rem 0 0.5rem;
+  line-height: 1.25;
+}
+
+.mdH3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-family: var(--font-display), sans-serif;
+  color: var(--ink);
+  margin: 1.25rem 0 0.35rem;
+  line-height: 1.3;
+}
+
+.mdP {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.mdLink {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.mdStrong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.mdEm {
+  font-style: italic;
+}
+
+.mdUl,
+.mdOl {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  line-height: 1.75;
+}
+
+.mdLi {
+  margin-bottom: 0.35rem;
+}
+
 /* Body Column */
 .bodyColumn {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0;
 }
 
 .bodyParagraph {
@@ -124,7 +219,7 @@
 
 @media (min-width: 768px) {
   .header {
-    padding-block: 5rem;
+    padding-block: 4rem 2.5rem;
   }
 
   .title {
@@ -138,7 +233,7 @@
 
 @media (min-width: 1280px) {
   .header {
-    padding-block: 6rem;
+    padding-block: 5rem 3rem;
   }
 
   .title {

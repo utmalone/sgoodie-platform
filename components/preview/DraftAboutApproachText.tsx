@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { loadDraftAboutContent } from '@/lib/admin/draft-about-store';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 
 type DraftAboutApproachTextProps = {
@@ -20,10 +21,11 @@ export function DraftAboutApproachText({
   fallback,
   enabled = false
 }: DraftAboutApproachTextProps) {
+  const mounted = useMounted();
   const signal = usePreviewKeySignal([DRAFT_ABOUT_STORAGE_KEY, PREVIEW_REFRESH_KEY], enabled);
 
   const draftValue = useMemo(() => {
-    if (!enabled) return null;
+    if (!enabled || !mounted) return null;
     void signal; // Recompute when draft about content changes.
     const draft = loadDraftAboutContent();
     const items = draft?.approachItems;
@@ -34,7 +36,7 @@ export function DraftAboutApproachText({
     const match = items.find((item) => item.id === itemId);
     const value = match?.[field];
     return typeof value === 'string' ? value : null;
-  }, [enabled, field, itemId, signal]);
+  }, [enabled, field, itemId, signal, mounted]);
 
   if (!enabled) return fallback;
   return draftValue ?? fallback;

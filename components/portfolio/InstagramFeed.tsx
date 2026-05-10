@@ -30,15 +30,24 @@ export function InstagramFeed({ handle, instagramUrl }: InstagramFeedProps) {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    const trimmedHandle = handle?.trim() ?? '';
+
     async function fetchInstagramPosts() {
+      if (!trimmedHandle) {
+        setLoading(false);
+        setError(true);
+        return;
+      }
       try {
-        // Try to fetch from our API endpoint
-        const res = await fetch(`/api/instagram?handle=${handle}`);
+        const res = await fetch(`/api/instagram?handle=${encodeURIComponent(trimmedHandle)}`);
         if (res.ok) {
-          const data = await res.json();
-          setPosts(data.posts.slice(0, 6)); // Latest 6 posts
+          const data = (await res.json()) as { posts?: InstagramPost[]; error?: string };
+          const list = Array.isArray(data.posts) ? data.posts : [];
+          setPosts(list.slice(0, 6));
+          if (data.error && list.length === 0) {
+            setError(true);
+          }
         } else {
-          // Fallback: show placeholder posts that link to Instagram
           setError(true);
         }
       } catch {
@@ -63,6 +72,7 @@ export function InstagramFeed({ handle, instagramUrl }: InstagramFeedProps) {
   ];
 
   const displayPosts = posts.length > 0 ? posts : placeholderPosts;
+  const profileHref = instagramUrl?.trim() || (handle?.trim() ? `https://instagram.com/${handle.replace(/^@/, '')}` : '#');
 
   if (loading) {
     return (
@@ -80,6 +90,16 @@ export function InstagramFeed({ handle, instagramUrl }: InstagramFeedProps) {
   return (
     <section className={styles.section}>
       <h2 className={styles.title}>Follow Along On Instagram</h2>
+      {error && (
+        <p className={styles.notice}>
+          {posts.length === 0
+            ? 'Live Instagram feed is unavailable. Showing placeholders — open your profile below.'
+            : 'Some posts could not be loaded.'}{' '}
+          <a href={profileHref} target="_blank" rel="noopener noreferrer" className={styles.profileLink}>
+            View on Instagram
+          </a>
+        </p>
+      )}
       <div className={styles.grid}>
         {displayPosts.map((post) => (
           <a

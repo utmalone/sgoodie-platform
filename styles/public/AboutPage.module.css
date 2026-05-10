@@ -180,6 +180,253 @@
   color: var(--ink);
 }
 
+/* Awards Section */
+.awardsSection {
+  padding: 6rem 0;
+  padding-inline: clamp(1.5rem, 10vw, 10rem);
+}
+
+.awardsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+  gap: 3rem 2rem;
+  width: 100%;
+  max-width: 64rem;
+  margin-inline: auto;
+}
+
+.awardCard {
+  position: relative;
+  flex: 0 1 calc((100% - 2 * 2rem) / 3);
+  min-width: 0;
+  max-width: calc((100% - 2 * 2rem) / 3);
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  perspective: 1200px;
+  aspect-ratio: 4 / 5;
+  display: block;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 639px) {
+  .awardCard {
+    flex: 0 0 auto;
+    width: min(20rem, 100%);
+    max-width: min(20rem, 100%);
+  }
+}
+
+.awardCard:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}
+
+.awardCardInner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.6s ease;
+}
+
+.awardCardFlipped .awardCardInner {
+  transform: rotateY(180deg);
+}
+
+.awardCardFront,
+.awardCardBack {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.awardCardFront {
+  overflow: hidden;
+  background: var(--fog);
+}
+
+.awardCardBack {
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem;
+  background: var(--fog);
+  border: 1px solid var(--line);
+  gap: 0.75rem;
+}
+
+.awardImageWrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--fog);
+}
+
+.awardImg {
+  object-fit: cover;
+  transition: transform 0.5s ease, filter 0.35s ease;
+}
+
+.awardCard:hover .awardImg {
+  filter: brightness(0.72);
+  transform: scale(1.02);
+}
+
+.awardCardFlipped:hover .awardImg {
+  filter: none;
+  transform: none;
+}
+
+.awardImagePlaceholder {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  background: var(--fog);
+  border: 1px dashed var(--line);
+}
+
+.awardCardOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 1rem 1.25rem;
+  background: radial-gradient(
+    ellipse 85% 70% at 50% 50%,
+    rgba(0, 0, 0, 0.25) 0%,
+    rgba(0, 0, 0, 0.72) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.28s ease;
+  pointer-events: none;
+}
+
+.awardCard:hover .awardCardOverlay {
+  opacity: 1;
+}
+
+.awardCardFlipped .awardCardOverlay {
+  opacity: 0;
+}
+
+.awardNameOverlay {
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.45;
+  color: #fff;
+  margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+}
+
+.awardYearOverlay {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0.65rem 0 0;
+}
+
+.awardDescription {
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: 22rem;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.awardDescriptionEmpty {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ink-muted);
+  font-style: italic;
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .awardCardInner {
+    transition: none;
+  }
+
+  .awardCardFlipped .awardCardInner {
+    transform: none;
+  }
+
+  .awardCardFront,
+  .awardCardBack {
+    transition: opacity 0.2s ease;
+    transform: none;
+    backface-visibility: visible;
+    -webkit-backface-visibility: visible;
+  }
+
+  .awardCardBack {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .awardCardFlipped .awardCardFront {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .awardCardFlipped .awardCardBack {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Clients Section */
+.clientsSection {
+  padding: 6rem 0;
+  background: var(--fog);
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding-inline: clamp(1.5rem, 10vw, 10rem);
+}
+
+.clientsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  text-align: center;
+}
+
+.clientItem {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
 /* Bio Section */
 .bioSection {
   display: grid;

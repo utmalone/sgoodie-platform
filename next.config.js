@@ -33,6 +33,12 @@ remotePatterns.push(
     protocol: 'https',
     hostname: 'images.unsplash.com',
     pathname: '/**'
+  },
+  // Instagram CDN — media_url hostnames vary by region
+  {
+    protocol: 'https',
+    hostname: '*.cdninstagram.com',
+    pathname: '/**'
   }
 );
 

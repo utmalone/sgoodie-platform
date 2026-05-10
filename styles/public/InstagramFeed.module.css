@@ -15,6 +15,25 @@
   margin-bottom: 2rem;
 }
 
+.notice {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  max-width: 36rem;
+  margin: -1rem auto 1.5rem;
+  line-height: 1.5;
+}
+
+.profileLink {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.profileLink:hover {
+  opacity: 0.7;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

@@ -21,8 +21,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const handle = searchParams.get('handle');
 
-  if (!handle) {
-    return NextResponse.json({ error: 'Handle is required' }, { status: 400 });
+  if (!handle?.trim()) {
+    return NextResponse.json({ posts: [] as unknown[] });
   }
 
   // Check if Instagram access token is configured
@@ -31,7 +31,9 @@ export async function GET(request: Request) {
   const accessToken = envToken || (secretId ? await getSecretString(secretId) : null);
 
   if (!accessToken) {
-    // Return empty posts - component will use placeholder images
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[instagram] No INSTAGRAM_ACCESS_TOKEN or INSTAGRAM_ACCESS_TOKEN_SECRET_ID — returning empty posts.');
+    }
     return NextResponse.json({ posts: [] });
   }
 
@@ -43,15 +45,19 @@ export async function GET(request: Request) {
 
     if (!response.ok) {
       console.error('Instagram API error:', await response.text());
-      return NextResponse.json({ posts: [] });
+      return NextResponse.json({ posts: [], error: 'instagram_api_error' });
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      data?: Array<{ id: string; media_url: string; permalink: string; caption?: string; media_type: string }>;
+    };
 
-    const posts = data.data
-      .filter((item: { media_type: string }) => item.media_type === 'IMAGE' || item.media_type === 'CAROUSEL_ALBUM')
+    const raw = Array.isArray(data.data) ? data.data : [];
+
+    const posts = raw
+      .filter((item) => item.media_type === 'IMAGE' || item.media_type === 'CAROUSEL_ALBUM')
       .slice(0, 6)
-      .map((item: { id: string; media_url: string; permalink: string; caption?: string }) => ({
+      .map((item) => ({
         id: item.id,
         mediaUrl: item.media_url,
         permalink: item.permalink,
@@ -61,6 +67,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ posts });
   } catch (error) {
     console.error('Instagram fetch error:', error);
-    return NextResponse.json({ posts: [] });
+    return NextResponse.json({ posts: [], error: 'instagram_fetch_failed' });
   }
 }

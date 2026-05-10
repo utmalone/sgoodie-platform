@@ -39,7 +39,10 @@ const emptyPost: Omit<JournalPost, 'id'> = {
   body: '',
   heroPhotoId: '',
   galleryPhotoIds: [],
-  credits: []
+  credits: [],
+  metaTitle: '',
+  metaDescription: '',
+  metaKeywords: ''
 };
 
 const journalFieldHelp = {
@@ -68,7 +71,20 @@ const journalFieldHelp = {
     'Example: A quick look at our latest hotel shoot.'
   ],
   body: [
-    'Full article content. Use paragraphs and line breaks.'
+    'Article content as Markdown: **bold**, [links](https://…), ## headings, lists.',
+    'Use the formatting buttons to insert common patterns.'
+  ],
+  metaTitle: [
+    'SEO title for search and social (optional).',
+    'Example: Behind the Scenes | S.Goodie Journal.'
+  ],
+  metaDescription: [
+    'SEO summary (optional). Defaults to the excerpt when empty.',
+    'Aim for 140–160 characters.'
+  ],
+  metaKeywords: [
+    'Comma-separated keywords (optional).',
+    'Example: hotel photography, editorial, Washington DC.'
   ]
 };
 
@@ -91,6 +107,7 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
   const [showHeroSelector, setShowHeroSelector] = useState(false);
   const [showGallerySelector, setShowGallerySelector] = useState(false);
   const [draggedPhotoId, setDraggedPhotoId] = useState<string | null>(null);
+  const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Check if post has unsaved changes
   const isDirty = useMemo(() => {
@@ -197,7 +214,10 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
       body: post.body,
       heroPhotoId: post.heroPhotoId,
       galleryPhotoIds: post.galleryPhotoIds,
-      credits: post.credits
+      credits: post.credits,
+      metaTitle: post.metaTitle,
+      metaDescription: post.metaDescription,
+      metaKeywords: post.metaKeywords
     }),
     [post]
   );
@@ -312,6 +332,42 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
     );
   }
 
+  function insertBodySnippet(before: string, after = '') {
+    const ta = bodyTextareaRef.current;
+    const text = post.body || '';
+    const start = ta?.selectionStart ?? text.length;
+    const end = ta?.selectionEnd ?? text.length;
+    const selected = text.slice(start, end);
+    const next = text.slice(0, start) + before + selected + after + text.slice(end);
+    updateField('body', next);
+    requestAnimationFrame(() => {
+      if (!ta) return;
+      ta.focus();
+      const pos = start + before.length + selected.length + after.length;
+      ta.setSelectionRange(pos, pos);
+    });
+  }
+
+  function insertBodyLink() {
+    const url = typeof window !== 'undefined' ? window.prompt('Link URL', 'https://') : null;
+    if (!url?.trim()) return;
+    const ta = bodyTextareaRef.current;
+    const text = post.body || '';
+    const start = ta?.selectionStart ?? text.length;
+    const end = ta?.selectionEnd ?? text.length;
+    const selected = text.slice(start, end);
+    const linkText = selected || 'link text';
+    const snippet = `[${linkText}](${url.trim()})`;
+    const next = text.slice(0, start) + snippet + text.slice(end);
+    updateField('body', next);
+    requestAnimationFrame(() => {
+      if (!ta) return;
+      ta.focus();
+      const pos = start + snippet.length;
+      ta.setSelectionRange(pos, pos);
+    });
+  }
+
   async function handleAiFix(field: 'title' | 'excerpt' | 'body') {
     const key = `journal-${field}`;
     if (aiLoadingKey) return;
@@ -338,6 +394,59 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
               category: post.category,
               author: post.author,
               date: post.date
+            }
+          }
+        })
+      });
+
+      if (!res.ok) {
+        const message = await getApiErrorMessage(res, 'AI request failed.');
+        setAiStatus(message);
+        setAiResult(key, false);
+        return;
+      }
+
+      const data = (await res.json()) as { output?: string };
+      if (data.output) {
+        updateField(field, data.output);
+        setAiStatus('AI update complete.');
+        setAiResult(key, true);
+      } else {
+        setAiStatus('AI did not return a result.');
+        setAiResult(key, false);
+      }
+    } catch {
+      setAiStatus('AI request failed.');
+      setAiResult(key, false);
+    } finally {
+      setAiLoadingKey(null);
+    }
+  }
+
+  async function handleAiFixSeo(field: 'metaTitle' | 'metaDescription' | 'metaKeywords') {
+    const key = `journal-${field}`;
+    if (aiLoadingKey) return;
+    setAiLoadingKey(key);
+    setAiStatus('Optimizing with AI...');
+
+    try {
+      const model = loadAiModel();
+      const res = await fetch('/api/admin/ai/optimize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'seo',
+          target: 'page',
+          field: `journal.${field}`,
+          input: String((post as JournalPost)[field] || ''),
+          model,
+          context: {
+            post: {
+              slug: post.slug,
+              title: post.title,
+              excerpt: post.excerpt,
+              body: post.body,
+              category: post.category
             }
           }
         })
@@ -509,11 +618,26 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
               </span>
               <AiFixButton onClick={() => handleAiFix('body')} loading={aiLoadingKey === 'journal-body'} />
             </div>
+            <div className={styles.markdownToolbar}>
+              <button type="button" className={styles.toolbarBtn} onClick={() => insertBodySnippet('## ', '')}>
+                H2
+              </button>
+              <button type="button" className={styles.toolbarBtn} onClick={() => insertBodySnippet('### ', '')}>
+                H3
+              </button>
+              <button type="button" className={styles.toolbarBtn} onClick={() => insertBodySnippet('**', '**')}>
+                Bold
+              </button>
+              <button type="button" className={styles.toolbarBtn} onClick={insertBodyLink}>
+                Link
+              </button>
+            </div>
             <textarea
+              ref={bodyTextareaRef}
               value={post.body || ''}
               onChange={(e) => updateField('body', e.target.value)}
               className={`${styles.textarea} ${styles.textareaBody}`}
-              placeholder="Full post content. Use double line breaks for paragraphs..."
+              placeholder="Markdown: paragraphs, **bold**, [text](url), ## headings..."
             />
           </label>
         </div>
@@ -531,7 +655,8 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
               />
             </div>
             <p className={styles.cardDescription}>
-              Featured image shown on the journal index. Optional.
+              Wide landscape hero at the top of the post detail page (like other page heroes). Also used for
+              social preview when filled.
             </p>
           </div>
           <div className={styles.heroButtonRow}>
@@ -580,7 +705,7 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
               />
             </div>
             <p className={styles.cardDescription}>
-              Additional photos shown on the post detail page.
+              Gallery appears below the article on the post page. The hero image is not repeated here.
             </p>
           </div>
           <button
@@ -639,6 +764,70 @@ export function AdminJournalEditorClient({ postId }: AdminJournalEditorClientPro
         ) : (
           <p className={styles.emptyText}>No gallery photos added yet.</p>
         )}
+      </section>
+
+      {/* SEO */}
+      <section className={styles.card}>
+        <h2 className={styles.cardTitle}>SEO Metadata</h2>
+        <p className={styles.cardDescription}>
+          Optional. When empty, the post title and excerpt are used for search and social cards.
+        </p>
+        <div className={styles.formGrid}>
+          <label className={`${styles.label} ${getAiFixRowClass('journal-metaTitle')}`}>
+            <div className={styles.sectionHeader}>
+              <span className={styles.labelText}>
+                Meta Title
+                <FieldInfoTooltip label="Meta Title" lines={journalFieldHelp.metaTitle} />
+              </span>
+              <AiFixButton
+                onClick={() => handleAiFixSeo('metaTitle')}
+                loading={aiLoadingKey === 'journal-metaTitle'}
+              />
+            </div>
+            <input
+              value={post.metaTitle || ''}
+              onChange={(e) => updateField('metaTitle', e.target.value)}
+              className={styles.input}
+              placeholder="Overrides browser title / OG title"
+            />
+          </label>
+          <label className={`${styles.label} ${getAiFixRowClass('journal-metaDescription')}`}>
+            <div className={styles.sectionHeader}>
+              <span className={styles.labelText}>
+                Meta Description
+                <FieldInfoTooltip label="Meta Description" lines={journalFieldHelp.metaDescription} />
+              </span>
+              <AiFixButton
+                onClick={() => handleAiFixSeo('metaDescription')}
+                loading={aiLoadingKey === 'journal-metaDescription'}
+              />
+            </div>
+            <textarea
+              value={post.metaDescription || ''}
+              onChange={(e) => updateField('metaDescription', e.target.value)}
+              className={styles.textarea}
+              placeholder="Search / social description"
+            />
+          </label>
+          <label className={`${styles.label} ${getAiFixRowClass('journal-metaKeywords')}`}>
+            <div className={styles.sectionHeader}>
+              <span className={styles.labelText}>
+                Meta Keywords
+                <FieldInfoTooltip label="Meta Keywords" lines={journalFieldHelp.metaKeywords} />
+              </span>
+              <AiFixButton
+                onClick={() => handleAiFixSeo('metaKeywords')}
+                loading={aiLoadingKey === 'journal-metaKeywords'}
+              />
+            </div>
+            <textarea
+              value={post.metaKeywords || ''}
+              onChange={(e) => updateField('metaKeywords', e.target.value)}
+              className={styles.textarea}
+              placeholder="Comma-separated"
+            />
+          </label>
+        </div>
       </section>
 
       {/* Credits */}

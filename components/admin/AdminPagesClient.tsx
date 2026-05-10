@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { PageContent, PageSlug, PhotoAsset, HomeLayout, AboutPageContent, ContactPageContent } from '@/types';
+import type { PageContent, PageSlug, PhotoAsset, HomeLayout, AboutPageContent, ContactPageContent, Award } from '@/types';
 import { pageLabels, pageOrder } from '@/lib/admin/page-config';
 import { loadDraftPages, saveDraftPages } from '@/lib/admin/draft-store';
 import { loadDraftHomeLayout, saveDraftHomeLayout } from '@/lib/admin/draft-home-layout-store';
@@ -13,6 +13,7 @@ import { loadAiModel } from '@/lib/admin/ai-model';
 import { getApiErrorMessage } from '@/lib/admin/api-error';
 import { AiFixButton } from '@/components/admin/AiFixButton';
 import { FieldInfoTooltip } from '@/components/admin/FieldInfoTooltip';
+import { AdminPhotoSelector } from '@/components/admin/AdminPhotoSelector';
 import { useSave } from '@/lib/admin/save-context';
 import { usePreview } from '@/lib/admin/preview-context';
 import {
@@ -22,10 +23,14 @@ import {
 } from '@/lib/admin/portfolio-config';
 import styles from '@/styles/admin/AdminShared.module.css';
 
+/** Set true to restore the Featured In editor block (keep in sync with public About page). */
+const SHOW_ABOUT_FEATURED_IN_EDITOR = false;
+
 const emptyPage: PageContent = {
   slug: 'home',
   title: '',
   intro: '',
+  body: '',
   gallery: [],
   metaTitle: '',
   metaDescription: '',
@@ -47,6 +52,10 @@ const pageFieldHelp = {
   intro: [
     'Short opening paragraph near the top of the page.',
     'Example: We craft visual stories for boutique hotels.'
+  ],
+  body: [
+    'Longer page copy (e.g. brand packages). Use blank lines between paragraphs.',
+    'Shown on portfolio category pages below the title.'
   ],
   metaTitle: [
     'SEO title shown in search results. Keep around 50-60 characters.',
@@ -81,6 +90,10 @@ const aboutFieldHelp = {
   approachItems: ['Cards displayed in the approach section (title + description).', 'Add your photos in the photo section first.'],
   featuredTitle: ['Heading for the publications list.'],
   featuredPublications: ['List of publications (one per line).'],
+  awardsTitle: ['Heading for the awards / recognition section.'],
+  awards: ['Each award can include a name, optional year, optional description (back of card), and optional photo.'],
+  clientsTitle: ['Heading for the client list section.'],
+  clients: ['Client or brand names (one per line).'],
   bioName: ['Name used in the bio section heading (e.g., \"S.Goodie\").'],
   bioParagraphs: ['Bio paragraphs shown next to the bio photo (one paragraph per block).']
 };
@@ -101,6 +114,14 @@ const aboutSectionHelp = {
   featured: [
     'Two-column list of publications under the “Featured In” heading.',
     'Add one publication per line.'
+  ],
+  awards: [
+    'Grid of awards with optional photographs.',
+    'Drag cards to reorder. Add photos via Select photo (upload in Photos first).'
+  ],
+  clients: [
+    'List of client names displayed like the Featured In grid.',
+    'One client per line.'
   ],
   bio: [
     'Photo + bio text near the bottom of the About page.',
@@ -158,6 +179,16 @@ function pickAboutText(content: AboutPageContent) {
     })),
     featuredTitle: content.featuredTitle,
     featuredPublications: content.featuredPublications,
+    awardsTitle: content.awardsTitle,
+    awards: (content.awards || []).map((item) => ({
+      id: item.id,
+      name: item.name,
+      year: item.year,
+      photoId: item.photoId,
+      description: item.description
+    })),
+    clientsTitle: content.clientsTitle,
+    clients: content.clients || [],
     bio: {
       name: content.bio?.name,
       paragraphs: content.bio?.paragraphs
@@ -190,7 +221,7 @@ type PageLayouts = {
 
 export function AdminPagesClient() {
   const { registerChange, unregisterChange } = useSave();
-  const { refreshPreview, openPreview } = usePreview();
+  const { refreshPreview, openPreview, setActivePreviewPath } = usePreview();
   const [savedPages, setSavedPages] = useState<PageContent[]>([]);
   const [draftPages, setDraftPages] = useState<PageContent[]>([]);
   const [photos, setPhotos] = useState<PhotoAsset[]>([]);
@@ -207,6 +238,9 @@ export function AdminPagesClient() {
   const [aiResultSuccess, setAiResultSuccess] = useState(false);
   const [draggedApproachIndex, setDraggedApproachIndex] = useState<number | null>(null);
   const [approachDropTarget, setApproachDropTarget] = useState<number | null>(null);
+  const [draggedAwardIndex, setDraggedAwardIndex] = useState<number | null>(null);
+  const [awardDropTarget, setAwardDropTarget] = useState<number | null>(null);
+  const [awardPhotoPickerId, setAwardPhotoPickerId] = useState<string | null>(null);
   const aiResultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const emptyDragImage = useMemo(() => {
     if (typeof document === 'undefined') return null;
@@ -382,6 +416,10 @@ export function AdminPagesClient() {
         approachItems,
         featuredTitle: currentText.featuredTitle,
         featuredPublications: currentText.featuredPublications ?? [],
+        awardsTitle: currentText.awardsTitle,
+        awards: currentText.awards ?? [],
+        clientsTitle: currentText.clientsTitle,
+        clients: currentText.clients ?? [],
         bio: {
           ...latest.bio,
           name: currentText.bio?.name || latest.bio?.name || '',
@@ -578,6 +616,10 @@ export function AdminPagesClient() {
               ...(draftAbout.featuredPublications
                 ? { featuredPublications: draftAbout.featuredPublications }
                 : null),
+              ...(draftAbout.awardsTitle ? { awardsTitle: draftAbout.awardsTitle } : null),
+              ...(draftAbout.awards?.length ? { awards: draftAbout.awards } : null),
+              ...(draftAbout.clientsTitle ? { clientsTitle: draftAbout.clientsTitle } : null),
+              ...(draftAbout.clients ? { clients: draftAbout.clients } : null),
               ...(draftAbout.bio
                 ? {
                     bio: {
@@ -702,6 +744,10 @@ export function AdminPagesClient() {
       approachItems,
       featuredTitle: layouts.about.featuredTitle,
       featuredPublications: layouts.about.featuredPublications,
+      awardsTitle: layouts.about.awardsTitle,
+      awards: layouts.about.awards,
+      clientsTitle: layouts.about.clientsTitle,
+      clients: layouts.about.clients,
       bio: {
         name: layouts.about.bio?.name,
         paragraphs: layouts.about.bio?.paragraphs
@@ -857,6 +903,85 @@ export function AdminPagesClient() {
     });
   }
 
+  function newAwardId() {
+    return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `award-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  }
+
+  function addAward() {
+    setLayouts((prev) => {
+      if (!prev.about) return prev;
+      const nextAward: Award = { id: newAwardId(), name: '', year: '', photoId: '', description: '' };
+      return {
+        ...prev,
+        about: {
+          ...prev.about,
+          awards: [...(prev.about.awards || []), nextAward]
+        }
+      };
+    });
+  }
+
+  function removeAward(index: number) {
+    setLayouts((prev) => {
+      if (!prev.about) return prev;
+      const next = (prev.about.awards || []).filter((_, i) => i !== index);
+      return { ...prev, about: { ...prev.about, awards: next } };
+    });
+  }
+
+  function updateAwardAtIndex(index: number, patch: Partial<Award>) {
+    setLayouts((prev) => {
+      if (!prev.about) return prev;
+      const awards = [...(prev.about.awards || [])];
+      const cur = awards[index];
+      if (!cur) return prev;
+      awards[index] = { ...cur, ...patch };
+      return { ...prev, about: { ...prev.about, awards } };
+    });
+  }
+
+  function reorderAwards(fromIndex: number, toIndex: number) {
+    setLayouts((prev) => {
+      if (!prev.about) return prev;
+      const list = [...(prev.about.awards || [])];
+      if (fromIndex < 0 || toIndex < 0 || fromIndex >= list.length || toIndex >= list.length) {
+        return prev;
+      }
+      [list[fromIndex], list[toIndex]] = [list[toIndex], list[fromIndex]];
+      return { ...prev, about: { ...prev.about, awards: list } };
+    });
+    refreshPreview();
+  }
+
+  function updateClient(index: number, value: string) {
+    setLayouts((prev) => {
+      if (!prev.about) return prev;
+      const next = [...(prev.about.clients || [])];
+      next[index] = value;
+      return { ...prev, about: { ...prev.about, clients: next } };
+    });
+  }
+
+  function addClient() {
+    setLayouts((prev) => {
+      if (!prev.about) return prev;
+      return {
+        ...prev,
+        about: { ...prev.about, clients: [...(prev.about.clients || []), ''] }
+      };
+    });
+  }
+
+  function removeClient(index: number) {
+    setLayouts((prev) => {
+      if (!prev.about) return prev;
+      const next = (prev.about.clients || []).filter((_, i) => i !== index);
+      return { ...prev, about: { ...prev.about, clients: next } };
+    });
+  }
+
   function updateBioParagraph(index: number, value: string) {
     setLayouts((prev) => {
       if (!prev.about) return prev;
@@ -982,7 +1107,7 @@ export function AdminPagesClient() {
   }
 
   async function handleAiFixPage(
-    field: 'title' | 'intro' | 'metaTitle' | 'metaDescription' | 'metaKeywords',
+    field: 'title' | 'intro' | 'body' | 'metaTitle' | 'metaDescription' | 'metaKeywords',
     mode: AiMode
   ) {
     await runAiFixRequest({
@@ -1010,7 +1135,9 @@ export function AdminPagesClient() {
     });
   }
 
-  async function handleAiFixAboutText(field: 'heroTitle' | 'heroSubtitle' | 'approachTitle' | 'featuredTitle') {
+  async function handleAiFixAboutText(
+    field: 'heroTitle' | 'heroSubtitle' | 'approachTitle' | 'featuredTitle' | 'awardsTitle' | 'clientsTitle'
+  ) {
     if (!layouts.about) return;
     await runAiFixRequest({
       key: `about-${field}`,
@@ -1168,6 +1295,11 @@ export function AdminPagesClient() {
     const sep = selectedPreviewPath.includes('?') ? '&' : '?';
     return `${selectedPreviewPath}${sep}preview=draft`;
   }, [selectedPreviewPath]);
+
+  useEffect(() => {
+    setActivePreviewPath(selectedPreviewPath);
+    return () => setActivePreviewPath(null);
+  }, [selectedPreviewPath, setActivePreviewPath]);
 
   if (isLoading) {
     return <p className={styles.statusMessage}>Loading admin content...</p>;
@@ -1579,53 +1711,244 @@ export function AdminPagesClient() {
               </div>
             </div>
 
+            {SHOW_ABOUT_FEATURED_IN_EDITOR ? (
+              <div className={styles.sectionCard}>
+                <div className={styles.sectionHeadingRow}>
+                  <p className={styles.sectionLabel}>Featured In</p>
+                  <FieldInfoTooltip
+                    label="Featured In"
+                    lines={aboutSectionHelp.featured}
+                    align="right"
+                    example={{ src: '/admin/examples/about-featured-in.svg', alt: 'Featured in list example' }}
+                  />
+                </div>
+                <label className={`${styles.label} ${getAiFixRowClass('about-featuredTitle')}`}>
+                  <div className={styles.fieldHeader}>
+                    <span className={styles.labelText}>
+                      Section Title
+                      <FieldInfoTooltip label="Featured Title" lines={aboutFieldHelp.featuredTitle} align="right" />
+                    </span>
+                    <AiFixButton onClick={() => handleAiFixAboutText('featuredTitle')} loading={aiLoadingKey === 'about-featuredTitle'} />
+                  </div>
+                  <input
+                    value={layouts.about.featuredTitle}
+                    onChange={(event) => updateAboutField('featuredTitle', event.target.value)}
+                    className={styles.input}
+                  />
+                </label>
+                <p className={styles.cardDescription}>{aboutFieldHelp.featuredPublications[0]}</p>
+                <div className={styles.formGrid}>
+                  {(layouts.about.featuredPublications || []).map((pub, idx) => (
+                    <div key={idx} className={styles.label}>
+                      <div className={styles.fieldHeader}>
+                        <span className={styles.labelText}>Publication {idx + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeFeaturedPublication(idx)}
+                          className={styles.btnDanger}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <input
+                        value={pub}
+                        onChange={(event) => updateFeaturedPublication(idx, event.target.value)}
+                        className={styles.input}
+                      />
+                    </div>
+                  ))}
+                  <button type="button" onClick={addFeaturedPublication} className={styles.btnSecondary}>
+                    Add Publication
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             <div className={styles.sectionCard}>
               <div className={styles.sectionHeadingRow}>
-                <p className={styles.sectionLabel}>Featured In</p>
+                <p className={styles.sectionLabel}>Awards</p>
                 <FieldInfoTooltip
-                  label="Featured In"
-                  lines={aboutSectionHelp.featured}
+                  label="Awards"
+                  lines={aboutSectionHelp.awards}
                   align="right"
-                  example={{ src: '/admin/examples/about-featured-in.svg', alt: 'Featured in list example' }}
                 />
               </div>
-              <label className={`${styles.label} ${getAiFixRowClass('about-featuredTitle')}`}>
+              <label className={`${styles.label} ${getAiFixRowClass('about-awardsTitle')}`}>
                 <div className={styles.fieldHeader}>
                   <span className={styles.labelText}>
                     Section Title
-                    <FieldInfoTooltip label="Featured Title" lines={aboutFieldHelp.featuredTitle} align="right" />
+                    <FieldInfoTooltip label="Awards title" lines={aboutFieldHelp.awardsTitle} align="right" />
                   </span>
-                  <AiFixButton onClick={() => handleAiFixAboutText('featuredTitle')} loading={aiLoadingKey === 'about-featuredTitle'} />
+                  <AiFixButton
+                    onClick={() => handleAiFixAboutText('awardsTitle')}
+                    loading={aiLoadingKey === 'about-awardsTitle'}
+                  />
                 </div>
                 <input
-                  value={layouts.about.featuredTitle}
-                  onChange={(event) => updateAboutField('featuredTitle', event.target.value)}
+                  value={layouts.about.awardsTitle}
+                  onChange={(event) => updateAboutField('awardsTitle', event.target.value)}
                   className={styles.input}
                 />
               </label>
-              <p className={styles.cardDescription}>{aboutFieldHelp.featuredPublications[0]}</p>
+              <p className={styles.cardDescription}>{aboutFieldHelp.awards[0]}</p>
               <div className={styles.formGrid}>
-                {(layouts.about.featuredPublications || []).map((pub, idx) => (
+                {(layouts.about.awards || []).map((award, displayIndex) => {
+                  const photo = photosById.get(award.photoId || '');
+                  const isDragging = draggedAwardIndex === displayIndex;
+                  const isDropTarget = awardDropTarget === displayIndex;
+                  return (
+                    <div
+                      key={award.id}
+                      className={`${styles.card} ${styles.approachCard} ${isDragging ? styles.approachCardDragging : ''} ${isDropTarget ? styles.approachCardDropTarget : ''}`}
+                      style={{ padding: '1rem' }}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggedAwardIndex(displayIndex);
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', String(displayIndex));
+                        if (emptyDragImage) {
+                          e.dataTransfer.setDragImage(emptyDragImage, 0, 0);
+                        }
+                      }}
+                      onDragEnd={() => {
+                        setDraggedAwardIndex(null);
+                        setAwardDropTarget(null);
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        if (draggedAwardIndex !== null && draggedAwardIndex !== displayIndex) {
+                          setAwardDropTarget(displayIndex);
+                        }
+                      }}
+                      onDragLeave={() => setAwardDropTarget(null)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (draggedAwardIndex !== null && draggedAwardIndex !== displayIndex) {
+                          reorderAwards(draggedAwardIndex, displayIndex);
+                        }
+                        setDraggedAwardIndex(null);
+                        setAwardDropTarget(null);
+                      }}
+                    >
+                      <div className={styles.approachCardHeader}>
+                        <div className={styles.approachCardPhoto}>
+                          {photo && (
+                            <Image
+                              src={photo.src}
+                              alt={photo.alt || award.name}
+                              fill
+                              sizes="80px"
+                              className={styles.approachCardPhotoImg}
+                              draggable={false}
+                              style={{ pointerEvents: 'none' }}
+                            />
+                          )}
+                        </div>
+                        <div className={styles.approachCardHeaderMeta}>
+                          <p className={styles.sectionLabel}>Award {displayIndex + 1}</p>
+                          <span className={styles.approachCardDragHint}>Drag to reorder</span>
+                        </div>
+                      </div>
+                      <div className={styles.formRow}>
+                        <label className={styles.label}>
+                          <span className={styles.labelText}>Name</span>
+                          <input
+                            value={award.name}
+                            onChange={(event) =>
+                              updateAwardAtIndex(displayIndex, { name: event.target.value })
+                            }
+                            className={styles.input}
+                          />
+                        </label>
+                        <label className={styles.label}>
+                          <span className={styles.labelText}>Year (optional)</span>
+                          <input
+                            value={award.year || ''}
+                            onChange={(event) =>
+                              updateAwardAtIndex(displayIndex, { year: event.target.value })
+                            }
+                            className={styles.input}
+                          />
+                        </label>
+                      </div>
+                      <label className={styles.label}>
+                        <span className={styles.labelText}>Description (back of card)</span>
+                        <textarea
+                          value={award.description || ''}
+                          onChange={(event) =>
+                            updateAwardAtIndex(displayIndex, { description: event.target.value })
+                          }
+                          className={styles.input}
+                          rows={3}
+                          placeholder="Optional — shown when visitors flip the award card."
+                        />
+                      </label>
+                      <div className={styles.formRow}>
+                        <button
+                          type="button"
+                          onClick={() => setAwardPhotoPickerId(award.id)}
+                          className={styles.btnSecondary}
+                        >
+                          {award.photoId ? 'Change photo' : 'Select photo'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeAward(displayIndex)}
+                          className={styles.btnDanger}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                <button type="button" onClick={addAward} className={styles.btnSecondary}>
+                  Add Award
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.sectionCard}>
+              <div className={styles.sectionHeadingRow}>
+                <p className={styles.sectionLabel}>Clients</p>
+                <FieldInfoTooltip label="Clients" lines={aboutSectionHelp.clients} align="right" />
+              </div>
+              <label className={`${styles.label} ${getAiFixRowClass('about-clientsTitle')}`}>
+                <div className={styles.fieldHeader}>
+                  <span className={styles.labelText}>
+                    Section Title
+                    <FieldInfoTooltip label="Clients title" lines={aboutFieldHelp.clientsTitle} align="right" />
+                  </span>
+                  <AiFixButton
+                    onClick={() => handleAiFixAboutText('clientsTitle')}
+                    loading={aiLoadingKey === 'about-clientsTitle'}
+                  />
+                </div>
+                <input
+                  value={layouts.about.clientsTitle}
+                  onChange={(event) => updateAboutField('clientsTitle', event.target.value)}
+                  className={styles.input}
+                />
+              </label>
+              <p className={styles.cardDescription}>{aboutFieldHelp.clients[0]}</p>
+              <div className={styles.formGrid}>
+                {(layouts.about.clients || []).map((client, idx) => (
                   <div key={idx} className={styles.label}>
                     <div className={styles.fieldHeader}>
-                      <span className={styles.labelText}>Publication {idx + 1}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeFeaturedPublication(idx)}
-                        className={styles.btnDanger}
-                      >
+                      <span className={styles.labelText}>Client {idx + 1}</span>
+                      <button type="button" onClick={() => removeClient(idx)} className={styles.btnDanger}>
                         Remove
                       </button>
                     </div>
                     <input
-                      value={pub}
-                      onChange={(event) => updateFeaturedPublication(idx, event.target.value)}
+                      value={client}
+                      onChange={(event) => updateClient(idx, event.target.value)}
                       className={styles.input}
                     />
                   </div>
                 ))}
-                <button type="button" onClick={addFeaturedPublication} className={styles.btnSecondary}>
-                  Add Publication
+                <button type="button" onClick={addClient} className={styles.btnSecondary}>
+                  Add Client
                 </button>
               </div>
             </div>
@@ -1690,6 +2013,32 @@ export function AdminPagesClient() {
               </div>
             </div>
           </div>
+          <AdminPhotoSelector
+            isOpen={awardPhotoPickerId !== null}
+            onClose={() => setAwardPhotoPickerId(null)}
+            onSelect={(ids) => {
+              const id = ids[0];
+              if (awardPhotoPickerId && id) {
+                setLayouts((prev) => {
+                  if (!prev.about) return prev;
+                  const awards = (prev.about.awards || []).map((a) =>
+                    a.id === awardPhotoPickerId ? { ...a, photoId: id } : a
+                  );
+                  return { ...prev, about: { ...prev.about, awards } };
+                });
+                refreshPreview();
+              }
+              setAwardPhotoPickerId(null);
+            }}
+            selectedIds={
+              awardPhotoPickerId
+                ? [layouts.about.awards?.find((a) => a.id === awardPhotoPickerId)?.photoId || ''].filter(
+                    Boolean
+                  )
+                : []
+            }
+            title="Select award photo"
+          />
         </section>
       )}
 
@@ -1888,6 +2237,54 @@ export function AdminPagesClient() {
                 value={activePage.title}
                 onChange={(event) => updateField('title', event.target.value)}
                 className={styles.input}
+              />
+            </label>
+          </div>
+        </section>
+      )}
+
+      {isPortfolioSelected && (
+        <section className={styles.card}>
+          <h2 className={styles.cardTitle}>Category page copy</h2>
+          <p className={styles.cardDescription}>
+            Optional intro and longer copy on the {portfolioCategoryLabels[activePortfolioCategory]} portfolio
+            page. Use blank lines between paragraphs. For Brand, the first intro paragraph is shown as a heading.
+          </p>
+          <div className={styles.formGrid}>
+            <label className={`${styles.label} ${getAiFixRowClass('page-intro')}`}>
+              <div className={styles.fieldHeader}>
+                <span className={styles.labelText}>
+                  Intro
+                  <FieldInfoTooltip label="Intro" lines={pageFieldHelp.intro} />
+                </span>
+                <AiFixButton
+                  onClick={() => handleAiFixPage('intro', 'text')}
+                  loading={aiLoadingKey === 'page-intro'}
+                />
+              </div>
+              <textarea
+                value={activePage.intro}
+                onChange={(event) => updateField('intro', event.target.value)}
+                className={styles.textarea}
+                placeholder="Opening paragraphs for this category page..."
+              />
+            </label>
+            <label className={`${styles.label} ${getAiFixRowClass('page-body')}`}>
+              <div className={styles.fieldHeader}>
+                <span className={styles.labelText}>
+                  Body
+                  <FieldInfoTooltip label="Body" lines={pageFieldHelp.body} />
+                </span>
+                <AiFixButton
+                  onClick={() => handleAiFixPage('body', 'text')}
+                  loading={aiLoadingKey === 'page-body'}
+                />
+              </div>
+              <textarea
+                value={activePage.body || ''}
+                onChange={(event) => updateField('body', event.target.value)}
+                className={`${styles.textarea} ${styles.textareaBody}`}
+                placeholder="Longer copy (packages, details). Blank line between paragraphs."
               />
             </label>
           </div>

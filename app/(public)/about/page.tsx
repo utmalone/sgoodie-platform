@@ -4,13 +4,18 @@ import Link from 'next/link';
 import { DraftAboutText } from '@/components/preview/DraftAboutText';
 import { DraftAboutIntroParagraphs } from '@/components/preview/DraftAboutIntroParagraphs';
 import { DraftAboutApproachSection } from '@/components/preview/DraftAboutApproachSection';
-import { DraftAboutFeaturedPublications } from '@/components/preview/DraftAboutFeaturedPublications';
+import { DraftAboutAwardsSection } from '@/components/preview/DraftAboutAwardsSection';
+import { DraftAboutClients } from '@/components/preview/DraftAboutClients';
 import { DraftAboutBioParagraphs } from '@/components/preview/DraftAboutBioParagraphs';
+import { DraftAboutFeaturedPublications } from '@/components/preview/DraftAboutFeaturedPublications';
 import { DraftHeroColors } from '@/components/preview/DraftHeroColors';
 import { getAboutContent } from '@/lib/data/about';
 import { getPageBySlug } from '@/lib/data/pages';
-import { getPhotosByIds, getPhotoById } from '@/lib/data/photos';
+import { getAllPhotos, getPhotosByIds, getPhotoById } from '@/lib/data/photos';
 import styles from '@/styles/public/AboutPage.module.css';
+
+/** Set true to show the Featured In block again (Awards/Clients stay as-is). */
+const SHOW_ABOUT_FEATURED_IN = false;
 
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getPageBySlug('about');
@@ -31,9 +36,12 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
 
   const content = await getAboutContent();
   const heroPhoto = await getPhotoById(content.heroPhotoId);
-  const approachPhotoIds = content.approachItems.map((item) => item.photoId);
+  const approachPhotoIds = (content.approachItems || []).map((item) => item.photoId);
   const approachPhotos = await getPhotosByIds(approachPhotoIds);
   const approachPhotoMap = new Map(approachPhotos.map((photo) => [photo.id, photo]));
+  const awardPhotoIds = (content.awards || []).map((a) => a.photoId).filter(Boolean) as string[];
+  const awardPhotos = isPreview ? await getAllPhotos() : await getPhotosByIds(awardPhotoIds);
+  const awardPhotoMap = new Map(awardPhotos.map((photo) => [photo.id, photo]));
   const bioPhoto = await getPhotoById(content.bio.photoId);
 
   return (
@@ -99,13 +107,13 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
         <div className={styles.introContent}>
           {isPreview ? (
             <DraftAboutIntroParagraphs
-              fallback={content.introParagraphs}
+              fallback={content.introParagraphs ?? []}
               normalClassName={styles.introText}
               boldClassName={styles.introBold}
               enabled
             />
           ) : (
-            content.introParagraphs.map((paragraph, idx) => (
+            (content.introParagraphs || []).map((paragraph, idx) => (
               <p
                 key={idx}
                 className={idx === 1 ? styles.introBold : styles.introText}
@@ -128,36 +136,81 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
         </h2>
         <DraftAboutApproachSection
           isPreview={isPreview}
-          approachItems={content.approachItems}
+          approachItems={content.approachItems || []}
           approachPhotoMap={approachPhotoMap}
         />
       </section>
 
-      {/* Featured In Section */}
-      <section className={styles.featuredSection}>
-        <h2 className={styles.sectionTitle}>
-          {isPreview ? (
-            <DraftAboutText field="featuredTitle" fallback={content.featuredTitle} enabled />
-          ) : (
-            content.featuredTitle
-          )}
-        </h2>
-        <div className={styles.featuredGrid}>
-          {isPreview ? (
-            <DraftAboutFeaturedPublications
-              fallback={content.featuredPublications}
-              itemClassName={styles.featuredItem}
-              enabled
-            />
-          ) : (
-            content.featuredPublications.map((pub, idx) => (
-              <p key={idx} className={styles.featuredItem}>
-                {pub}
-              </p>
-            ))
-          )}
-        </div>
-      </section>
+      {SHOW_ABOUT_FEATURED_IN ? (
+        <section className={styles.featuredSection}>
+          <h2 className={styles.sectionTitle}>
+            {isPreview ? (
+              <DraftAboutText field="featuredTitle" fallback={content.featuredTitle} enabled />
+            ) : (
+              content.featuredTitle
+            )}
+          </h2>
+          <div className={styles.featuredGrid}>
+            {isPreview ? (
+              <DraftAboutFeaturedPublications
+                fallback={content.featuredPublications ?? []}
+                itemClassName={styles.featuredItem}
+                enabled
+              />
+            ) : (
+              (content.featuredPublications || []).map((pub, idx) => (
+                <p key={idx} className={styles.featuredItem}>
+                  {pub}
+                </p>
+              ))
+            )}
+          </div>
+        </section>
+      ) : null}
+
+      {/* Awards */}
+      {(isPreview || (content.awards?.length ?? 0) > 0) && (
+        <section className={styles.awardsSection}>
+          <h2 className={styles.sectionTitle}>
+            {isPreview ? (
+              <DraftAboutText field="awardsTitle" fallback={content.awardsTitle} enabled />
+            ) : (
+              content.awardsTitle
+            )}
+          </h2>
+          <DraftAboutAwardsSection
+            isPreview={isPreview}
+            awards={content.awards || []}
+            photoById={awardPhotoMap}
+          />
+        </section>
+      )}
+
+      {/* Clients */}
+      {(isPreview || (content.clients?.length ?? 0) > 0) && (
+        <section className={styles.clientsSection}>
+          <h2 className={styles.sectionTitle}>
+            {isPreview ? (
+              <DraftAboutText field="clientsTitle" fallback={content.clientsTitle} enabled />
+            ) : (
+              content.clientsTitle
+            )}
+          </h2>
+          <div className={styles.clientsGrid}>
+            {isPreview ? (
+              <DraftAboutClients fallback={content.clients ?? []} itemClassName={styles.clientItem} enabled />
+            ) : (
+              (content.clients || []).map((name, idx) =>
+                name.trim() ? (
+                  <p key={idx} className={styles.clientItem}>
+                    {name}
+                  </p>
+                ) : null
+              )
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Bio Section */}
       <section className={styles.bioSection}>
@@ -183,12 +236,12 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
           </h2>
           {isPreview ? (
             <DraftAboutBioParagraphs
-              fallback={content.bio.paragraphs}
+              fallback={content.bio?.paragraphs ?? []}
               paragraphClassName={styles.bioText}
               enabled
             />
           ) : (
-            content.bio.paragraphs.map((paragraph, idx) => (
+            (content.bio?.paragraphs || []).map((paragraph, idx) => (
               <p key={idx} className={styles.bioText}>
                 {paragraph}
               </p>
