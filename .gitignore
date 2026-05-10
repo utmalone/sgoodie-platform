@@ -36,6 +36,7 @@ amplify-build-log.txt
 .eslintcache
 .tmp-swc
 next-swc-win32-x64-msvc-14.2.33.tgz
+_msi_support_page.html
 
 # Terraform
 .terraform

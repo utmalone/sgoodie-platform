@@ -5,8 +5,6 @@ import { PreviewBanner } from '@/components/layout/PreviewBanner';
 import { getProfile } from '@/lib/data/profile';
 import layoutStyles from '@/styles/public/layout.module.css';
 
-export const dynamic = 'force-dynamic';
-
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const profile = await getProfile();
   
@@ -30,7 +28,9 @@ export default async function PublicLayout({ children }: { children: React.React
       <Suspense fallback={null}>
         <PreviewBanner />
       </Suspense>
-      <SiteHeader siteName={profile.name} socialLinks={socialLinks} />
+      <Suspense fallback={<div aria-hidden style={{ height: '4rem' }} />}>
+        <SiteHeader siteName={profile.name} socialLinks={socialLinks} />
+      </Suspense>
       <main id="main-content" className={`${layoutStyles.container} ${layoutStyles.main}`}>
         {children}
       </main>

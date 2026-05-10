@@ -6,6 +6,11 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const session = await requireAdminApi();
+  if (!session) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const index = await getJournalIndex();
   return Response.json(index, { headers: { 'Cache-Control': 'no-store' } });
 }

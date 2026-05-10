@@ -169,6 +169,7 @@ module "amplify" {
   # Note: AWS_ prefix is reserved by Amplify, so we use different names
   environment_variables = merge(
     {
+      NODE_VERSION = "24"
       USE_MOCK_DATA       = "false"
       NEXTAUTH_URL        = var.nextauth_url
       NEXTAUTH_SECRET     = var.nextauth_secret

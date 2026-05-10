@@ -5,7 +5,7 @@ import { authOptions } from './options';
 /**
  * Server-side helper to require admin authentication.
  * Redirects to login if not authenticated.
- * Note: Middleware handles primary route protection, this is for additional checks.
+ * Root `proxy.ts` (Next.js 16) guards `/admin/*` routes listed there; pages should still call this for SSR safety.
  */
 export async function requireAdmin() {
   const session = await getServerSession(authOptions);

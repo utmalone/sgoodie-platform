@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getOpenAiKey } from '@/lib/ai/openai';
+import { requireAdminApi } from '@/lib/auth/require-admin-api';
 
 const PHOTO_SEO_PROMPT = `You are helping a professional photographer organize their portfolio website. 
 
@@ -17,6 +18,11 @@ Describe what you see in the image - the subject, setting, lighting, mood, and a
 Please respond with only the JSON object.`;
 
 export async function POST(request: Request) {
+  const session = await requireAdminApi();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;

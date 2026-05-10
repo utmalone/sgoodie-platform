@@ -4,7 +4,7 @@ import type { PhotoAsset } from '@/types';
 import { CacheTags } from '@/lib/cache-tags';
 import { readJson, writeJson } from './local-store';
 import { removePhotoFromPages } from './pages';
-import { isMockMode, getAllItems, getItem, putItem, deleteItem } from './db';
+import { isMockMode, getAllItems, getItem, putItem, deleteItem, batchGetItems } from './db';
 
 const PHOTOS_FILE = 'photos.json';
 const TABLE_NAME = 'photos';
@@ -81,8 +81,18 @@ export async function getPhotosByIds(ids: string[]): Promise<PhotoAsset[]> {
   if (filteredIds.length === 0) {
     return [];
   }
-  const photos = await getAllPhotos();
-  const map = new Map(photos.map((photo) => [photo.id, photo]));
+
+  if (isMockMode()) {
+    const photos = await loadAllPhotos();
+    const map = new Map(photos.map((photo) => [photo.id, photo]));
+    return filteredIds.map((id) => map.get(id)).filter(Boolean) as PhotoAsset[];
+  }
+
+  const raw = await batchGetItems<unknown>(TABLE_NAME, filteredIds.map((id) => ({ id })));
+  const normalized = raw
+    .map((photo) => normalizePhotoAsset(photo))
+    .filter(Boolean) as PhotoAsset[];
+  const map = new Map(normalized.map((photo) => [photo.id, photo]));
   return filteredIds.map((id) => map.get(id)).filter(Boolean) as PhotoAsset[];
 }
 

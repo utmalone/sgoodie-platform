@@ -5,14 +5,16 @@ import { verifyAdminCredentials } from './admin-store';
 // Session timeout: 30 minutes of inactivity
 const SESSION_MAX_AGE = 30 * 60; // 30 minutes in seconds
 
-// Ensure NEXTAUTH_SECRET is set
-const secret = process.env.NEXTAUTH_SECRET;
-if (!secret && process.env.NODE_ENV === 'production') {
-  console.error('NEXTAUTH_SECRET is not set in production!');
+const resolvedSecret =
+  process.env.NEXTAUTH_SECRET ||
+  (process.env.NODE_ENV === 'production' ? undefined : 'dev-secret-not-for-production');
+
+if (!resolvedSecret) {
+  throw new Error('NEXTAUTH_SECRET is required in production');
 }
 
 export const authOptions: NextAuthOptions = {
-  secret: secret || 'dev-secret-not-for-production',
+  secret: resolvedSecret,
   session: {
     strategy: 'jwt',
     maxAge: SESSION_MAX_AGE,

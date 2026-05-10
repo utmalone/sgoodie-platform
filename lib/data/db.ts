@@ -3,7 +3,7 @@
  * Provides read/write operations with graceful handling of empty data
  */
 
-import { GetCommand, PutCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, PutCommand, ScanCommand, DeleteCommand, BatchGetCommand } from '@aws-sdk/lib-dynamodb';
 import { db } from '@/lib/aws/dynamodb';
 
 const TABLE_PREFIX = process.env.DYNAMODB_TABLE_PREFIX || 'sgoodie-platform';
@@ -47,6 +47,66 @@ export async function getItem<T>(
     console.error(`Error getting item from ${tableName}:`, error);
     return null;
   }
+}
+
+/**
+ * Batch get items by primary keys (up to 100 keys per DynamoDB round-trip).
+ */
+export async function batchGetItems<T>(
+  tableName: string,
+  keys: Record<string, string>[]
+): Promise<T[]> {
+  const tableFullName = getTableName(tableName);
+  const validKeys = keys.filter(
+    (key) =>
+      Object.keys(key).length > 0 &&
+      Object.values(key).every((value) => typeof value === 'string' && value.trim() !== '')
+  );
+  if (validKeys.length === 0) {
+    return [];
+  }
+
+  const all: T[] = [];
+  const chunkSize = 100;
+
+  for (let offset = 0; offset < validKeys.length; offset += chunkSize) {
+    let chunkKeys = validKeys.slice(offset, offset + chunkSize).map((k) => ({ ...k }));
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        const result = await db.send(
+          new BatchGetCommand({
+            RequestItems: {
+              [tableFullName]: {
+                Keys: chunkKeys
+              }
+            }
+          })
+        );
+
+        const items = (result.Responses?.[tableFullName] ?? []) as T[];
+        all.push(...items);
+
+        const pending = result.UnprocessedKeys?.[tableFullName]?.Keys as
+          | Record<string, string>[]
+          | undefined;
+
+        if (!pending?.length) {
+          chunkKeys = [];
+          break;
+        }
+
+        chunkKeys = pending.map((k) => ({ ...k }));
+
+        await new Promise((resolve) => setTimeout(resolve, 50 * (attempt + 1)));
+      } catch (error) {
+        console.error(`Error batchGetting from ${tableName}:`, error);
+        break;
+      }
+    }
+  }
+
+  return all;
 }
 
 /**
