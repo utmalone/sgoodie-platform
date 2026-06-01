@@ -191,6 +191,9 @@ resource "aws_amplify_domain_association" "main" {
   app_id      = aws_amplify_app.main.id
   domain_name = var.domain_name
 
+  # Do not block apply while DNS is still being configured at GoDaddy
+  wait_for_verification = var.domain_wait_for_verification
+
   sub_domain {
     branch_name = aws_amplify_branch.main.branch_name
     prefix      = ""

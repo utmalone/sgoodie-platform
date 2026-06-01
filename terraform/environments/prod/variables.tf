@@ -39,9 +39,9 @@ variable "github_access_token" {
 # Domain Configuration
 # -----------------------------------------------------------------------------
 variable "domain_name" {
-  description = "Custom domain name (optional, e.g., sgoodie.com)"
+  description = "Custom domain for Amplify hosting (apex + www subdomain association)"
   type        = string
-  default     = ""
+  default     = "sgoodiephotography.com"
 }
 
 # -----------------------------------------------------------------------------
@@ -101,7 +101,7 @@ variable "dynamodb_session_token" {
 }
 
 variable "nextauth_url" {
-  description = "NextAuth.js callback URL (e.g., https://main.xxx.amplifyapp.com)"
+  description = "NextAuth.js callback URL. When empty and domain_name is set, defaults to https://<domain_name>"
   type        = string
   default     = ""
 }

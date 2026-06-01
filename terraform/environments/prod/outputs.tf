@@ -21,6 +21,20 @@ output "amplify_production_branch_url" {
   value       = module.amplify.production_branch_url
 }
 
+output "site_url" {
+  description = "Canonical production site URL (custom domain when configured)"
+  value       = local.site_url != "" ? local.site_url : module.amplify.production_branch_url
+}
+
+output "custom_domain_dns" {
+  description = "DNS records to add at GoDaddy after terraform apply (see docs/CUSTOM_DOMAIN.md)"
+  value = {
+    certificate_verification = module.amplify.domain_certificate_verification_dns_record
+    subdomains               = module.amplify.domain_subdomain_dns_records
+    domain_association_arn   = module.amplify.domain_association_arn
+  }
+}
+
 # -----------------------------------------------------------------------------
 # Storage Outputs
 # -----------------------------------------------------------------------------

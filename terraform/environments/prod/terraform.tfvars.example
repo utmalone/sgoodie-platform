@@ -18,8 +18,8 @@ github_repo = "sgoodie-platform"
 # Required scopes: repo, admin:repo_hook
 github_access_token = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
-# Custom domain (optional - leave empty to use Amplify default domain)
-domain_name = ""
+# Custom domain (Amplify associates apex + www; configure DNS at GoDaddy — see docs/CUSTOM_DOMAIN.md)
+domain_name = "sgoodiephotography.com"
 
 # Application Secrets
 nextauth_secret     = "your-random-32-char-secret-here"

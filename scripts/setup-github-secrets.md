@@ -22,8 +22,9 @@ Click "New repository secret" for each of the following:
   6. Copy the token (starts with `ghp_`)
 - **Value:** The generated token
 
-### 3. NEXTAUTH_URL
-- **Value:** Your production URL (e.g., `https://main.<app>.amplifyapp.com` or your custom domain)
+### 3. NEXTAUTH_URL (optional — Terraform sets this automatically)
+- Production uses **`https://sgoodiephotography.com`** via Terraform (`domain_name`).
+- You do **not** need this secret for deploys; remove it or keep it for reference only.
 
 ### 4. NEXTAUTH_SECRET
 - **How to create:** Generate a random 32+ character string

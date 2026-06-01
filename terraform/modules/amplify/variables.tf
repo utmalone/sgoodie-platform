@@ -29,9 +29,15 @@ variable "github_access_token" {
 }
 
 variable "domain_name" {
-  description = "Custom domain name (optional)"
+  description = "Custom domain name (optional, e.g. sgoodiephotography.com)"
   type        = string
   default     = ""
+}
+
+variable "domain_wait_for_verification" {
+  description = "Wait for Amplify domain verification during apply. Set false until GoDaddy DNS records are in place."
+  type        = bool
+  default     = false
 }
 
 variable "environment_variables" {

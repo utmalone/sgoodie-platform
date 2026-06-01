@@ -68,6 +68,11 @@ locals {
     Project     = local.project_name
     Environment = var.environment
   }
+
+  # Canonical public site URL (used for NextAuth when nextauth_url is not overridden)
+  site_url = var.domain_name != "" ? "https://${var.domain_name}" : ""
+
+  nextauth_url = var.nextauth_url != "" ? var.nextauth_url : local.site_url
 }
 
 # -----------------------------------------------------------------------------
@@ -171,7 +176,7 @@ module "amplify" {
     {
       NODE_VERSION        = "24.15.0"
       USE_MOCK_DATA       = "false"
-      NEXTAUTH_URL        = var.nextauth_url
+      NEXTAUTH_URL        = local.nextauth_url
       NEXTAUTH_SECRET     = var.nextauth_secret
       ADMIN_EMAIL         = var.admin_email
       ADMIN_PASSWORD_HASH = var.admin_password_hash
