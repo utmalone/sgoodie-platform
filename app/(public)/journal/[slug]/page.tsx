@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { JournalPhotoGrid } from '@/components/portfolio/JournalPhotoGrid';
-import { JournalMarkdown } from '@/components/portfolio/JournalMarkdown';
+import { JournalArticle } from '@/components/portfolio/JournalArticle';
 import { JournalPostDraftClient } from '@/components/preview/JournalPostDraftClient';
 import { getAllJournalPosts, getJournalPostBySlug } from '@/lib/data/journal';
 import { getPhotosByIds } from '@/lib/data/photos';
@@ -118,33 +117,8 @@ export default async function JournalPostPage({ params, searchParams }: JournalP
           </header>
 
           <section className={styles.contentSection}>
-            <div className={styles.contentGrid}>
-              <div className={styles.bodyColumn}>
-                <JournalMarkdown markdown={post.body || ''} />
-              </div>
-
-              {post.credits && post.credits.length > 0 && (
-                <aside className={styles.creditsColumn}>
-                  <p className={styles.creditsLabel}>Credits</p>
-                  <div className={styles.creditsDivider} />
-                  <div className={styles.creditsList}>
-                    {post.credits.map((credit) => (
-                      <div key={`${credit.label}-${credit.value}`} className={styles.creditItem}>
-                        <span className={styles.creditLabel}>{credit.label}:</span>
-                        <span className={styles.creditValue}>{credit.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </aside>
-              )}
-            </div>
+            <JournalArticle body={post.body || ''} photos={gridPhotos} />
           </section>
-
-          {gridPhotos.length > 0 && (
-            <section className={styles.gridSection}>
-              <JournalPhotoGrid photos={gridPhotos} />
-            </section>
-          )}
         </>
       )}
 

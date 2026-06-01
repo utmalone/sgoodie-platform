@@ -57,11 +57,23 @@ export async function batchGetItems<T>(
   keys: Record<string, string>[]
 ): Promise<T[]> {
   const tableFullName = getTableName(tableName);
-  const validKeys = keys.filter(
+  const filteredKeys = keys.filter(
     (key) =>
       Object.keys(key).length > 0 &&
       Object.values(key).every((value) => typeof value === 'string' && value.trim() !== '')
   );
+
+  // DynamoDB BatchGetItem rejects duplicate keys with a ValidationException, so
+  // collapse duplicates before sending. Callers map results back by id, so
+  // dropping duplicates here does not change their output.
+  const seenKeys = new Set<string>();
+  const validKeys = filteredKeys.filter((key) => {
+    const signature = JSON.stringify(key);
+    if (seenKeys.has(signature)) return false;
+    seenKeys.add(signature);
+    return true;
+  });
+
   if (validKeys.length === 0) {
     return [];
   }

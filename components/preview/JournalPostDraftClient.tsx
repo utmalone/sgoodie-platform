@@ -5,8 +5,7 @@ import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import type { JournalPost, PhotoAsset } from '@/types';
 import { loadDraftJournalPost } from '@/lib/admin/draft-journal-post-store';
-import { JournalPhotoGrid } from '@/components/portfolio/JournalPhotoGrid';
-import { JournalMarkdown } from '@/components/portfolio/JournalMarkdown';
+import { JournalArticle } from '@/components/portfolio/JournalArticle';
 import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import styles from '@/styles/public/JournalPostPage.module.css';
@@ -126,33 +125,8 @@ export function JournalPostDraftClient({
       </header>
 
       <section className={styles.contentSection}>
-        <div className={styles.contentGrid}>
-          <div className={styles.bodyColumn}>
-            <JournalMarkdown markdown={post.body || ''} />
-          </div>
-
-          {post.credits && post.credits.length > 0 && (
-            <aside className={styles.creditsColumn}>
-              <p className={styles.creditsLabel}>Credits</p>
-              <div className={styles.creditsDivider} />
-              <div className={styles.creditsList}>
-                {post.credits.map((credit) => (
-                  <div key={`${credit.label}-${credit.value}`} className={styles.creditItem}>
-                    <span className={styles.creditLabel}>{credit.label}:</span>
-                    <span className={styles.creditValue}>{credit.value}</span>
-                  </div>
-                ))}
-              </div>
-            </aside>
-          )}
-        </div>
+        <JournalArticle body={post.body || ''} photos={resolvedGalleryPhotos} />
       </section>
-
-      {resolvedGalleryPhotos.length > 0 && (
-        <section className={styles.gridSection}>
-          <JournalPhotoGrid photos={resolvedGalleryPhotos} />
-        </section>
-      )}
     </>
   );
 }
