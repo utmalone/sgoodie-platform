@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import type { PortfolioCategory } from '@/lib/admin/portfolio-config';
 import { loadDraftPages } from '@/lib/admin/draft-store';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import styles from '@/styles/public/WorkPage.module.css';
 
@@ -22,19 +23,20 @@ function useMergedPageText(
   fallback: string,
   isPreview: boolean
 ): string {
+  const mounted = useMounted();
   const signal = usePreviewKeySignal(
     [DRAFT_PAGES_STORAGE_KEY, PREVIEW_REFRESH_KEY],
     isPreview
   );
 
   return useMemo(() => {
-    if (!isPreview) return fallback;
+    if (!isPreview || !mounted) return fallback;
     void signal;
     const pages = loadDraftPages();
     const page = pages?.find((item) => item.slug === slug);
     const value = page?.[field];
     return typeof value === 'string' ? value : fallback;
-  }, [isPreview, field, slug, signal, fallback]);
+  }, [isPreview, field, slug, signal, fallback, mounted]);
 }
 
 type BlocksProps = {

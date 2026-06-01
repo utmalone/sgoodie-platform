@@ -3,8 +3,8 @@ import { fetchOpenAiModels } from '@/lib/ai/openai';
 
 export const runtime = 'nodejs';
 
-export async function GET() {
-  const session = await requireAdminApi();
+export async function GET(request: Request) {
+  const session = await requireAdminApi(request);
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }

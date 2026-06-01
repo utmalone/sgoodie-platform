@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { loadDraftProject } from '@/lib/admin/draft-project-store';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import styles from '@/styles/public/ProjectHero.module.css';
 
@@ -20,14 +21,15 @@ export function ProjectHeroDraftText({
   fallbackSubtitle,
   enabled = false
 }: ProjectHeroDraftTextProps) {
+  const mounted = useMounted();
   const draftKey = useMemo(() => `sgoodie.admin.draft.project.${projectId}`, [projectId]);
   const signal = usePreviewKeySignal([draftKey, PREVIEW_REFRESH_KEY], enabled);
 
   const draft = useMemo(() => {
-    if (!enabled) return null;
+    if (!enabled || !mounted) return null;
     void signal; // Recompute when draft project changes.
     return loadDraftProject(projectId);
-  }, [enabled, projectId, signal]);
+  }, [enabled, projectId, signal, mounted]);
 
   const title = draft?.title ?? fallbackTitle;
   const subtitle = draft?.subtitle ?? fallbackSubtitle ?? '';

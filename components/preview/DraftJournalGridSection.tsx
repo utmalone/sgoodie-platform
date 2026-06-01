@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { JournalPost, PhotoAsset } from '@/types';
 import { loadDraftJournalIndex } from '@/lib/admin/draft-journal-index-store';
 import { JournalGrid } from '@/components/portfolio/JournalGrid';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 
 const PREVIEW_REFRESH_KEY = 'admin-preview-refresh';
@@ -31,14 +32,15 @@ export function DraftJournalGridSection({
   startIndex,
   endIndex
 }: DraftJournalGridSectionProps) {
+  const mounted = useMounted();
   const draftSignal = usePreviewKeySignal([DRAFT_JOURNAL_INDEX_KEY], isPreview);
   const refreshSignal = usePreviewKeySignal([PREVIEW_REFRESH_KEY], isPreview);
 
   const draftIndex = useMemo(() => {
-    if (!isPreview) return null;
+    if (!isPreview || !mounted) return null;
     void draftSignal; // Recompute when draft journal index changes.
     return loadDraftJournalIndex();
-  }, [draftSignal, isPreview]);
+  }, [draftSignal, isPreview, mounted]);
 
   const journalIndexQuery = useQuery({
     queryKey: ['admin', 'layout', 'journal', refreshSignal],
@@ -48,7 +50,7 @@ export function DraftJournalGridSection({
   });
 
   const orderedPosts = useMemo(() => {
-    if (!isPreview) return allPosts;
+    if (!isPreview || !mounted) return allPosts;
 
     const journalIndex = draftIndex ?? journalIndexQuery.data ?? null;
     const ids = Array.isArray(journalIndex?.postIds) ? journalIndex.postIds : [];
@@ -63,7 +65,7 @@ export function DraftJournalGridSection({
     const idSet = new Set(ids);
     const remaining = dateSorted.filter((post) => !idSet.has(post.id));
     return [...ordered, ...remaining];
-  }, [allPosts, draftIndex, isPreview, journalIndexQuery.data]);
+  }, [allPosts, draftIndex, isPreview, journalIndexQuery.data, mounted]);
 
   const posts = orderedPosts.slice(startIndex, endIndex);
 

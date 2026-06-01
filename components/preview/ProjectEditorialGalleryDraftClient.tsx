@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import type { EditorialRow, EditorialRowCaption, PhotoAsset } from '@/types';
 import { loadDraftProject } from '@/lib/admin/draft-project-store';
 import { EditorialGallery } from '@/components/portfolio/EditorialGallery';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 
 type ProjectEditorialGalleryDraftClientProps = {
@@ -23,14 +24,15 @@ export function ProjectEditorialGalleryDraftClient({
   fallbackCaptions,
   enabled = false
 }: ProjectEditorialGalleryDraftClientProps) {
+  const mounted = useMounted();
   const draftKey = useMemo(() => `sgoodie.admin.draft.project.${projectId}`, [projectId]);
   const signal = usePreviewKeySignal([draftKey, PREVIEW_REFRESH_KEY], enabled);
 
   const draft = useMemo(() => {
-    if (!enabled) return null;
+    if (!enabled || !mounted) return null;
     void signal; // Recompute when draft project changes.
     return loadDraftProject(projectId);
-  }, [enabled, projectId, signal]);
+  }, [enabled, projectId, signal, mounted]);
 
   const captions = draft?.editorialCaptions ?? fallbackCaptions;
 

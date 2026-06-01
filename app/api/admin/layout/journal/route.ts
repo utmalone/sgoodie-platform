@@ -5,8 +5,8 @@ import { revalidateJournalPages } from '@/lib/admin/revalidate';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const session = await requireAdminApi();
+export async function GET(request: Request) {
+  const session = await requireAdminApi(request);
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -16,7 +16,7 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const session = await requireAdminApi();
+  const session = await requireAdminApi(request);
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }

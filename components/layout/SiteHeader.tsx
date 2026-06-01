@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { loadDraftProfile } from '@/lib/admin/draft-profile-store';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import layoutStyles from '@/styles/public/layout.module.css';
 import styles from '@/styles/public/SiteHeader.module.css';
@@ -94,6 +95,7 @@ type SiteHeaderInnerProps = {
 };
 
 function SiteHeaderInner({ siteName, socialLinks, pathname, isDraftPreview }: SiteHeaderInnerProps) {
+  const mounted = useMounted();
   const [menuOpen, setMenuOpen] = useState(false);
   const [portfolioOpen, setPortfolioOpen] = useState(false);
   const [mobilePortfolioOpen, setMobilePortfolioOpen] = useState(false);
@@ -102,11 +104,11 @@ function SiteHeaderInner({ siteName, socialLinks, pathname, isDraftPreview }: Si
   const draftSignal = usePreviewKeySignal([DRAFT_PROFILE_KEY, PREVIEW_REFRESH_KEY], isDraftPreview);
 
   const draftSiteName = useMemo(() => {
-    if (!isDraftPreview) return null;
+    if (!isDraftPreview || !mounted) return null;
     void draftSignal; // Recompute when the preview signal changes.
     const draft = loadDraftProfile();
     return draft?.name ?? null;
-  }, [draftSignal, isDraftPreview]);
+  }, [draftSignal, isDraftPreview, mounted]);
 
   const buildHref = useMemo(() => {
     if (!isDraftPreview) return (href: string) => href;

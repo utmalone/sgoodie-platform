@@ -143,6 +143,7 @@ async function verifyPasswordHash(hash: string, password: string) {
 
 async function upgradeLegacyHash(record: AdminAuthRecord, password: string) {
   if (!isLegacySha256(record.passwordHash)) return record;
+  if (isMockMode()) return record;
 
   try {
     const nextHash = await hashPassword(password);

@@ -3,7 +3,7 @@ import { requireAdminApi } from '@/lib/auth/require-admin-api';
 import { updateAdminPassword } from '@/lib/auth/admin-store';
 
 export async function PUT(request: Request) {
-  const session = await requireAdminApi();
+  const session = await requireAdminApi(request);
   if (!session) {
     return new NextResponse('Unauthorized', { status: 401 });
   }

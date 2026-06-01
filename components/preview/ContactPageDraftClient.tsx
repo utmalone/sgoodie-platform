@@ -7,6 +7,7 @@ import { ContactForm } from '@/components/portfolio/ContactForm';
 import { InstagramFeed } from '@/components/portfolio/InstagramFeed';
 import type { ContactPageContent, PhotoAsset, SiteProfile } from '@/types';
 import { loadDraftContactContent } from '@/lib/admin/draft-contact-store';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import styles from '@/styles/public/ContactPage.module.css';
 
@@ -31,13 +32,15 @@ export function ContactPageDraftClient({
   profile,
   heroPhoto: initialHeroPhoto
 }: ContactPageDraftClientProps) {
+  const mounted = useMounted();
   const draftSignal = usePreviewKeySignal([DRAFT_CONTACT_STORAGE_KEY]);
   const refreshSignal = usePreviewKeySignal([PREVIEW_REFRESH_KEY]);
 
   const draft = useMemo(() => {
+    if (!mounted) return null;
     void draftSignal; // Recompute when the draft changes in another tab.
     return loadDraftContactContent();
-  }, [draftSignal]);
+  }, [draftSignal, mounted]);
 
   const content = useMemo(() => {
     if (!draft) return fallbackContent;

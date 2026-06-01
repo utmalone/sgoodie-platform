@@ -8,6 +8,7 @@ import type { PhotoAsset } from '@/types';
 import { FullBleedHero } from '@/components/portfolio/FullBleedHero';
 import { HomeGalleryGrid } from '@/components/portfolio/HomeGalleryGrid';
 import { loadDraftHomeLayout } from '@/lib/admin/draft-home-layout-store';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import styles from '@/styles/public/HomePage.module.css';
 
@@ -31,14 +32,15 @@ export function DraftHomePhotosSection({
   heroContent,
   introContent
 }: DraftHomePhotosSectionProps) {
+  const mounted = useMounted();
   const draftSignal = usePreviewKeySignal([HOME_LAYOUT_DRAFT_KEY], isPreview);
   const refreshSignal = usePreviewKeySignal([PREVIEW_REFRESH_KEY], isPreview);
 
   const draftLayout = useMemo(() => {
-    if (!isPreview) return null;
+    if (!isPreview || !mounted) return null;
     void draftSignal; // Recompute when draft home layout changes.
     return loadDraftHomeLayout();
-  }, [draftSignal, isPreview]);
+  }, [draftSignal, isPreview, mounted]);
 
   const layoutQuery = useQuery({
     queryKey: ['admin', 'layout', 'home', refreshSignal],

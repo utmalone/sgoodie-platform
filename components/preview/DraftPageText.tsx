@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import type { PageContent } from '@/types';
 import { loadDraftPages } from '@/lib/admin/draft-store';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 
 type PageTextField = keyof Pick<
@@ -31,16 +32,17 @@ export function DraftPageText({
   fallback,
   enabled = false
 }: DraftPageTextProps) {
+  const mounted = useMounted();
   const signal = usePreviewKeySignal([DRAFT_PAGES_STORAGE_KEY, PREVIEW_REFRESH_KEY], enabled);
 
   const draftValue = useMemo(() => {
-    if (!enabled) return null;
+    if (!enabled || !mounted) return null;
     void signal; // Recompute when draft pages change.
     const pages = loadDraftPages();
     const page = pages?.find((item) => item.slug === slug);
     const value = page?.[field];
     return typeof value === 'string' ? value : null;
-  }, [enabled, field, signal, slug]);
+  }, [enabled, field, signal, slug, mounted]);
 
   if (!enabled) return fallback;
   return draftValue ?? fallback;

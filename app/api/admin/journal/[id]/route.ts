@@ -11,8 +11,8 @@ export const runtime = 'nodejs';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-export async function GET(_: Request, context: RouteContext) {
-  const session = await requireAdminApi();
+export async function GET(request: Request, context: RouteContext) {
+  const session = await requireAdminApi(request);
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -33,7 +33,7 @@ export async function GET(_: Request, context: RouteContext) {
 }
 
 export async function PUT(request: Request, context: RouteContext) {
-  const session = await requireAdminApi();
+  const session = await requireAdminApi(request);
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -55,8 +55,8 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(_: Request, context: RouteContext) {
-  const session = await requireAdminApi();
+export async function DELETE(request: Request, context: RouteContext) {
+  const session = await requireAdminApi(request);
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }

@@ -14,6 +14,8 @@ type JournalPostPageProps = {
   searchParams: Promise<{ preview?: string }>;
 };
 
+export const dynamic = 'force-dynamic';
+
 export async function generateStaticParams() {
   const posts = await getAllJournalPosts();
   return posts.map((post) => ({ slug: post.slug }));

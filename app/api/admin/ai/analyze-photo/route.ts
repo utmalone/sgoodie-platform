@@ -18,7 +18,7 @@ Describe what you see in the image - the subject, setting, lighting, mood, and a
 Please respond with only the JSON object.`;
 
 export async function POST(request: Request) {
-  const session = await requireAdminApi();
+  const session = await requireAdminApi(request);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

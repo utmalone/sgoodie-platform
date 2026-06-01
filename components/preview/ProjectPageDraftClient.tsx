@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { PhotoAsset, Project } from '@/types';
 import { EditorialGallery } from '@/components/portfolio/EditorialGallery';
 import { loadDraftProject } from '@/lib/admin/draft-project-store';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import heroStyles from '@/styles/public/ProjectHero.module.css';
 import detailStyles from '@/styles/public/WorkDetailPage.module.css';
@@ -33,6 +34,7 @@ export function ProjectPageDraftClient({
   initialPhotos,
   enabled = false
 }: ProjectPageDraftClientProps) {
+  const mounted = useMounted();
   const draftKey = useMemo(
     () => `sgoodie.admin.draft.project.${fallbackProject.id}`,
     [fallbackProject.id]
@@ -42,10 +44,10 @@ export function ProjectPageDraftClient({
   const refreshSignal = usePreviewKeySignal([PREVIEW_REFRESH_KEY], enabled);
 
   const draft = useMemo(() => {
-    if (!enabled) return null;
+    if (!enabled || !mounted) return null;
     void draftSignal; // Recompute when draft project changes.
     return loadDraftProject(fallbackProject.id);
-  }, [draftSignal, enabled, fallbackProject.id]);
+  }, [draftSignal, enabled, fallbackProject.id, mounted]);
 
   const project = useMemo(() => {
     if (!draft) return fallbackProject;

@@ -14,6 +14,8 @@ type ProjectPageProps = {
   searchParams: Promise<{ preview?: string }>;
 };
 
+export const dynamic = 'force-dynamic';
+
 export async function generateStaticParams() {
   const projects = await getAllProjects();
   return projects.map((project) => ({ slug: project.slug }));

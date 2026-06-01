@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { PhotoAsset, Project, ProjectCategory } from '@/types';
 import { loadDraftWorkIndex } from '@/lib/admin/draft-work-index-store';
 import { WorkGalleryGrid } from '@/components/portfolio/WorkGalleryGrid';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 
 const PREVIEW_REFRESH_KEY = 'admin-preview-refresh';
@@ -31,14 +32,15 @@ export function DraftPortfolioProjectsSection({
   photosById,
   category
 }: DraftPortfolioProjectsSectionProps) {
+  const mounted = useMounted();
   const draftSignal = usePreviewKeySignal([DRAFT_WORK_INDEX_KEY], isPreview);
   const refreshSignal = usePreviewKeySignal([PREVIEW_REFRESH_KEY], isPreview);
 
   const draftIndex = useMemo(() => {
-    if (!isPreview) return null;
+    if (!isPreview || !mounted) return null;
     void draftSignal; // Recompute when draft work index changes.
     return loadDraftWorkIndex();
-  }, [draftSignal, isPreview]);
+  }, [draftSignal, isPreview, mounted]);
 
   const workIndexQuery = useQuery({
     queryKey: ['admin', 'layout', 'work', refreshSignal],
@@ -48,7 +50,7 @@ export function DraftPortfolioProjectsSection({
   });
 
   const items = useMemo(() => {
-    if (!isPreview) return initialItems;
+    if (!isPreview || !mounted) return initialItems;
 
     const workIndex = draftIndex ?? workIndexQuery.data ?? null;
     const ids = Array.isArray(workIndex?.projectIds) ? workIndex.projectIds : [];
@@ -68,7 +70,7 @@ export function DraftPortfolioProjectsSection({
       acc.push({ project, photo });
       return acc;
     }, []);
-  }, [draftIndex, initialItems, isPreview, photosById, projects, workIndexQuery.data]);
+  }, [draftIndex, initialItems, isPreview, mounted, photosById, projects, workIndexQuery.data]);
 
   if (items.length === 0) return null;
 

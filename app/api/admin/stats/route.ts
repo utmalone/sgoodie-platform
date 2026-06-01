@@ -5,7 +5,7 @@ import { buildDashboardStats, type DashboardStatsOptions, type Period } from '@/
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
-  const session = await requireAdminApi();
+  const session = await requireAdminApi(request);
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }

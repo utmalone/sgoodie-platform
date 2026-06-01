@@ -5,8 +5,8 @@ import type { JournalPost } from '@/types';
 
 export const runtime = 'nodejs';
 
-export async function GET() {
-  const session = await requireAdminApi();
+export async function GET(request: Request) {
+  const session = await requireAdminApi(request);
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -23,7 +23,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const session = await requireAdminApi();
+  const session = await requireAdminApi(request);
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }

@@ -2,8 +2,8 @@ import { requireAdminApi } from '@/lib/auth/require-admin-api';
 import { revalidateLayoutsImmediate } from '@/lib/admin/revalidate';
 import { getContactContent, updateContactContent } from '@/lib/data/contact';
 
-export async function GET() {
-  const session = await requireAdminApi();
+export async function GET(request: Request) {
+  const session = await requireAdminApi(request);
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -13,7 +13,7 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const session = await requireAdminApi();
+  const session = await requireAdminApi(request);
   if (!session) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }

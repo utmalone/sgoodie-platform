@@ -72,7 +72,9 @@ export function SaveProvider({ children }: { children: ReactNode }) {
       setTimeout(() => setStatus('idle'), 3000);
     } else {
       const failedCount = results.filter((r) => !r).length;
-      setErrorMessage(`${failedCount} item(s) failed to save.`);
+      setErrorMessage(
+        `${failedCount} item(s) failed to save. Check the status message on each screen — a 401 means your session expired; log in again and retry.`
+      );
       setStatus('error');
     }
   }, [pendingChanges]);

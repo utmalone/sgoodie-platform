@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import type { HomeLayout } from '@/types';
 import { loadDraftHomeLayout } from '@/lib/admin/draft-home-layout-store';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 
 type HomeTextField = keyof Pick<HomeLayout, 'introText' | 'heroEyebrow'>;
@@ -21,15 +22,16 @@ export function DraftHomeLayoutText({
   fallback,
   enabled = false
 }: DraftHomeLayoutTextProps) {
+  const mounted = useMounted();
   const signal = usePreviewKeySignal([HOME_LAYOUT_DRAFT_KEY, PREVIEW_REFRESH_KEY], enabled);
 
   const draftValue = useMemo(() => {
-    if (!enabled) return null;
+    if (!enabled || !mounted) return null;
     void signal; // Recompute when draft home layout changes.
     const draft = loadDraftHomeLayout();
     const value = draft?.[field];
     return typeof value === 'string' ? value : null;
-  }, [enabled, field, signal]);
+  }, [enabled, field, signal, mounted]);
 
   if (!enabled) return fallback;
   return draftValue ?? fallback;

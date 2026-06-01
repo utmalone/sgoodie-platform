@@ -7,6 +7,7 @@ import type { JournalPost, PhotoAsset } from '@/types';
 import { loadDraftJournalPost } from '@/lib/admin/draft-journal-post-store';
 import { JournalPhotoGrid } from '@/components/portfolio/JournalPhotoGrid';
 import { JournalMarkdown } from '@/components/portfolio/JournalMarkdown';
+import { useMounted } from '@/lib/preview/use-mounted';
 import { usePreviewKeySignal } from '@/lib/preview/use-preview-signal';
 import styles from '@/styles/public/JournalPostPage.module.css';
 
@@ -33,6 +34,7 @@ export function JournalPostDraftClient({
   gridPhotos,
   enabled = false
 }: JournalPostDraftClientProps) {
+  const mounted = useMounted();
   const draftKey = useMemo(
     () => `sgoodie.admin.draft.journal.${fallbackPost.id}`,
     [fallbackPost.id]
@@ -41,10 +43,10 @@ export function JournalPostDraftClient({
   const refreshSignal = usePreviewKeySignal([PREVIEW_REFRESH_KEY], enabled);
 
   const draft = useMemo(() => {
-    if (!enabled) return null;
+    if (!enabled || !mounted) return null;
     void draftSignal;
     return loadDraftJournalPost(fallbackPost.id);
-  }, [draftSignal, enabled, fallbackPost.id]);
+  }, [draftSignal, enabled, fallbackPost.id, mounted]);
 
   const post = useMemo(() => {
     if (!draft) return fallbackPost;

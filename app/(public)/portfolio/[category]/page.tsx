@@ -24,6 +24,8 @@ type PageProps = {
   searchParams: Promise<{ preview?: string }>;
 };
 
+export const dynamic = 'force-dynamic';
+
 export async function generateStaticParams() {
   return portfolioCategories.map((category) => ({ category }));
 }

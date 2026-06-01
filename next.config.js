@@ -59,6 +59,8 @@ remotePatterns.push(
 
 const nextConfig = {
   output: 'standalone',
+  // Allow LAN access during local dev (Next.js 16 blocks cross-origin dev assets by default).
+  allowedDevOrigins: ['172.19.80.1'],
   turbopack: {
     root: __dirname
   },

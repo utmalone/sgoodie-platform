@@ -120,6 +120,7 @@ resource "aws_amplify_app" "main" {
       phases:
         preBuild:
           commands:
+            - rm -f ~/.nvm/default-packages
             - nvm install 24.15.0
             - nvm use 24.15.0
             - node --version
