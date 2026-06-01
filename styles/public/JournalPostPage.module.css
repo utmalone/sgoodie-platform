@@ -94,10 +94,13 @@
   gap: 3rem;
 }
 
+/* Intro + photo-less sections: a centered, readable measure with balanced
+   margins on both sides (instead of left-aligned text with an empty right). */
 .articleIntro,
-.fullSection {
+.centeredSection {
   max-width: 46rem;
   width: 100%;
+  margin-inline: auto;
 }
 
 .splitSection {
@@ -117,10 +120,19 @@
 }
 
 .splitPhotoFrame {
+  display: block;
   position: relative;
   width: 100%;
   overflow: hidden;
   background: var(--fog);
+  margin: 0;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+}
+
+.splitPhotoFrame:hover .splitPhotoImg {
+  transform: scale(1.02);
 }
 
 .splitPhotoPortrait .splitPhotoFrame {
@@ -133,6 +145,7 @@
 
 .splitPhotoImg {
   object-fit: cover;
+  transition: transform 0.4s ease;
 }
 
 @media (min-width: 900px) {

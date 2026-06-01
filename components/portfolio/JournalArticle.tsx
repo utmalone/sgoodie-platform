@@ -1,15 +1,19 @@
 'use client';
 
 import Image from 'next/image';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { PhotoAsset } from '@/types';
 import { JournalMarkdown } from './JournalMarkdown';
-import { JournalPhotoGrid } from './JournalPhotoGrid';
+import { GalleryLightbox } from './GalleryLightbox';
 import styles from '@/styles/public/JournalPostPage.module.css';
+import gridStyles from '@/styles/public/JournalPhotoGrid.module.css';
 
 type JournalArticleProps = {
   body: string;
-  /** Gallery photos in order. The first few are placed beside sections; the rest fall into the grid. */
+  /**
+   * Gallery photos in order. They are paired with sections (alternating sides)
+   * until the photos run out; any extras fall into the grid below.
+   */
   photos: PhotoAsset[];
 };
 
@@ -22,9 +26,6 @@ type ParsedBody = {
   intro: string;
   sections: ParsedSection[];
 };
-
-/** Number of leading sections that get an alternating side-by-side photo. */
-const MAX_SIDE_BY_SIDE = 2;
 
 /**
  * Split markdown into an intro (everything before the first `##` heading) and
@@ -63,17 +64,65 @@ function sectionMarkdown(section: ParsedSection): string {
 
 export function JournalArticle({ body, photos }: JournalArticleProps) {
   const { intro, sections } = useMemo(() => parseBody(body || ''), [body]);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-  const sideBySideCount = Math.min(MAX_SIDE_BY_SIDE, sections.length, photos.length);
-  const sectionPhotos = photos.slice(0, sideBySideCount);
+  // Pair a photo with each section, alternating sides, until photos run out.
+  const sideBySideCount = Math.min(sections.length, photos.length);
   const gridPhotos = photos.slice(sideBySideCount);
 
-  if (!intro && sections.length === 0) {
-    return gridPhotos.length > 0 ? (
-      <section className={styles.gridSection}>
-        <JournalPhotoGrid photos={photos} />
-      </section>
+  const handlePrev = () => {
+    setActiveIndex((current) => {
+      if (current === null) return null;
+      return (current - 1 + photos.length) % photos.length;
+    });
+  };
+
+  const handleNext = () => {
+    setActiveIndex((current) => {
+      if (current === null) return null;
+      return (current + 1) % photos.length;
+    });
+  };
+
+  const lightbox =
+    photos.length > 0 ? (
+      <GalleryLightbox
+        photos={photos}
+        index={activeIndex}
+        onClose={() => setActiveIndex(null)}
+        onPrev={handlePrev}
+        onNext={handleNext}
+      />
     ) : null;
+
+  if (!intro && sections.length === 0) {
+    if (photos.length === 0) return null;
+    return (
+      <>
+        <section className={styles.gridSection}>
+          <div className={gridStyles.grid}>
+            {photos.map((photo, idx) => (
+              <button
+                key={photo.id}
+                type="button"
+                className={gridStyles.item}
+                onClick={() => setActiveIndex(idx)}
+                aria-label={`View ${photo.alt}`}
+              >
+                <Image
+                  src={photo.src}
+                  alt={photo.alt}
+                  fill
+                  sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 33vw"
+                  className={gridStyles.image}
+                />
+              </button>
+            ))}
+          </div>
+        </section>
+        {lightbox}
+      </>
+    );
   }
 
   return (
@@ -86,9 +135,10 @@ export function JournalArticle({ body, photos }: JournalArticleProps) {
         )}
 
         {sections.map((section, index) => {
-          const photo = index < sideBySideCount ? sectionPhotos[index] : undefined;
+          const hasPhoto = index < sideBySideCount;
 
-          if (photo) {
+          if (hasPhoto) {
+            const photo = photos[index];
             const reverse = index % 2 === 1;
             const sizeClass = index % 2 === 0 ? styles.splitPhotoPortrait : styles.splitPhotoLandscape;
             return (
@@ -100,7 +150,12 @@ export function JournalArticle({ body, photos }: JournalArticleProps) {
                   <JournalMarkdown markdown={sectionMarkdown(section)} />
                 </div>
                 <figure className={`${styles.splitPhoto} ${sizeClass}`}>
-                  <div className={styles.splitPhotoFrame}>
+                  <button
+                    type="button"
+                    className={styles.splitPhotoFrame}
+                    onClick={() => setActiveIndex(index)}
+                    aria-label={`View ${photo.alt || section.heading}`}
+                  >
                     <Image
                       src={photo.src}
                       alt={photo.alt || section.heading}
@@ -108,14 +163,14 @@ export function JournalArticle({ body, photos }: JournalArticleProps) {
                       sizes="(max-width: 899px) 100vw, 45vw"
                       className={styles.splitPhotoImg}
                     />
-                  </div>
+                  </button>
                 </figure>
               </div>
             );
           }
 
           return (
-            <div key={`section-${index}`} className={styles.fullSection}>
+            <div key={`section-${index}`} className={styles.centeredSection}>
               <JournalMarkdown markdown={sectionMarkdown(section)} />
             </div>
           );
@@ -124,9 +179,32 @@ export function JournalArticle({ body, photos }: JournalArticleProps) {
 
       {gridPhotos.length > 0 && (
         <section className={styles.gridSection}>
-          <JournalPhotoGrid photos={gridPhotos} />
+          <div className={gridStyles.grid}>
+            {gridPhotos.map((photo, idx) => {
+              const fullIndex = sideBySideCount + idx;
+              return (
+                <button
+                  key={photo.id}
+                  type="button"
+                  className={gridStyles.item}
+                  onClick={() => setActiveIndex(fullIndex)}
+                  aria-label={`View ${photo.alt}`}
+                >
+                  <Image
+                    src={photo.src}
+                    alt={photo.alt}
+                    fill
+                    sizes="(max-width: 639px) 100vw, (max-width: 1279px) 50vw, 33vw"
+                    className={gridStyles.image}
+                  />
+                </button>
+              );
+            })}
+          </div>
         </section>
       )}
+
+      {lightbox}
     </>
   );
 }
