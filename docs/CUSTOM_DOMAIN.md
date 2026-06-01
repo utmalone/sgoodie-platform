@@ -49,12 +49,13 @@ The GitHub secret `NEXTAUTH_URL` is **no longer passed** to Terraform; the URL i
 
 If Terraform apply fails with `route53:ListHostedZones` or state `FAILED`:
 
-1. Re-run deploy after IAM fixes (GitHub Actions role needs Route53 list + Amplify domain association APIs).
-2. If the IAM policy still cannot self-update via CI, add `route53:ListHostedZones` and Amplify domain actions to `sgoodie-github-actions-policy-prod` in the IAM console once, or run `terraform apply` locally with admin credentials.
-3. Remove the failed association before retrying:
+**Root cause (CI):** GitHub Actions assumes the IAM role once per job. Updating the IAM policy in the same workflow run does **not** update the active STS session’s permissions. The deploy workflow applies IAM first, **re-assumes the role**, then creates the domain association.
+
+1. Remove the failed association before retrying:
    - **Amplify Console** → Hosting → Custom domains → remove `sgoodiephotography.com`, or
    - `aws amplify delete-domain-association --app-id <APP_ID> --domain-name sgoodiephotography.com`
-4. Push to `main` to run **Deploy to Production** again.
+2. Push to `main` to run **Deploy to Production** again (IAM target apply → credential refresh → full apply).
+3. If it still fails, add `route53:ListHostedZones` manually to `sgoodie-github-actions-policy-prod` in IAM, then re-run.
 
 ## Optional: wait for verification in Terraform
 

@@ -71,9 +71,48 @@ jobs:
             -var="instagram_access_token=${{ secrets.INSTAGRAM_ACCESS_TOKEN }}" \
             -out=tfplan
 
+      # Apply IAM policy first, then refresh OIDC credentials. STS permissions are fixed at
+      # AssumeRole time — updating IAM in the same session does not grant Route53 until
+      # the workflow assumes the role again.
+      - name: Terraform Apply GitHub IAM policy
+        working-directory: terraform/environments/prod
+        run: |
+          terraform apply -auto-approve -target=module.github_oidc \
+            -var="github_access_token=${{ secrets.GH_ACCESS_TOKEN }}" \
+            -var="domain_name=sgoodiephotography.com" \
+            -var="nextauth_secret=${{ secrets.NEXTAUTH_SECRET }}" \
+            -var="admin_email=${{ secrets.ADMIN_EMAIL }}" \
+            -var="admin_password_hash=${{ secrets.ADMIN_PASSWORD_HASH }}" \
+            -var="openai_api_key=${{ secrets.OPENAI_API_KEY }}" \
+            -var="instagram_access_token=${{ secrets.INSTAGRAM_ACCESS_TOKEN }}"
+
+      - name: Refresh AWS credentials after IAM update
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/sgoodie-github-actions-prod
+          aws-region: us-east-1
+
+      - name: Remove failed Amplify domain association if present
+        continue-on-error: true
+        working-directory: terraform/environments/prod
+        run: |
+          APP_ID="$(terraform output -raw amplify_app_id)"
+          aws amplify delete-domain-association \
+            --app-id "$APP_ID" \
+            --domain-name sgoodiephotography.com \
+            --region us-east-1 || true
+
       - name: Terraform Apply
         working-directory: terraform/environments/prod
-        run: terraform apply -auto-approve tfplan
+        run: |
+          terraform apply -auto-approve \
+            -var="github_access_token=${{ secrets.GH_ACCESS_TOKEN }}" \
+            -var="domain_name=sgoodiephotography.com" \
+            -var="nextauth_secret=${{ secrets.NEXTAUTH_SECRET }}" \
+            -var="admin_email=${{ secrets.ADMIN_EMAIL }}" \
+            -var="admin_password_hash=${{ secrets.ADMIN_PASSWORD_HASH }}" \
+            -var="openai_api_key=${{ secrets.OPENAI_API_KEY }}" \
+            -var="instagram_access_token=${{ secrets.INSTAGRAM_ACCESS_TOKEN }}"
 
       - name: Get Terraform Outputs
         id: outputs
