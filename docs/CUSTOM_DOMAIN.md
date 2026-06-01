@@ -45,6 +45,17 @@ Add every record Amplify shows to GoDaddy → **sgoodiephotography.com** → **D
 
 The GitHub secret `NEXTAUTH_URL` is **no longer passed** to Terraform; the URL is derived from `domain_name`. You can remove or update that secret for documentation only.
 
+## Troubleshooting: domain association FAILED
+
+If Terraform apply fails with `route53:ListHostedZones` or state `FAILED`:
+
+1. Re-run deploy after IAM fixes (GitHub Actions role needs Route53 list + Amplify domain association APIs).
+2. If the IAM policy still cannot self-update via CI, add `route53:ListHostedZones` and Amplify domain actions to `sgoodie-github-actions-policy-prod` in the IAM console once, or run `terraform apply` locally with admin credentials.
+3. Remove the failed association before retrying:
+   - **Amplify Console** → Hosting → Custom domains → remove `sgoodiephotography.com`, or
+   - `aws amplify delete-domain-association --app-id <APP_ID> --domain-name sgoodiephotography.com`
+4. Push to `main` to run **Deploy to Production** again.
+
 ## Optional: wait for verification in Terraform
 
 After DNS is correct, you can set `domain_wait_for_verification = true` on the Amplify module in `terraform/environments/prod/main.tf` if you want apply to block until Amplify verifies the domain.

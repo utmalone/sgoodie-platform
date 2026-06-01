@@ -5,6 +5,8 @@
 # authenticate with AWS without storing long-lived credentials.
 # =============================================================================
 
+data "aws_caller_identity" "current" {}
+
 # -----------------------------------------------------------------------------
 # OIDC Provider for GitHub Actions
 # -----------------------------------------------------------------------------
@@ -105,7 +107,7 @@ data "aws_iam_policy_document" "github_actions" {
     resources = var.dynamodb_table_arns
   }
 
-  # Amplify permissions for deployment
+  # Amplify permissions for deployment and custom domain association
   statement {
     effect = "Allow"
     actions = [
@@ -115,9 +117,27 @@ data "aws_iam_policy_document" "github_actions" {
       "amplify:GetJob",
       "amplify:ListJobs",
       "amplify:GetBranch",
-      "amplify:UpdateBranch"
+      "amplify:UpdateBranch",
+      "amplify:CreateDomainAssociation",
+      "amplify:DeleteDomainAssociation",
+      "amplify:GetDomainAssociation",
+      "amplify:UpdateDomainAssociation",
+      "amplify:ListDomainAssociations"
     ]
     resources = [var.amplify_app_arn, "${var.amplify_app_arn}/*"]
+  }
+
+  # Route53 read access required by Terraform/AWS when managing Amplify custom domains
+  # (DNS is still configured manually at GoDaddy; this does not create hosted zones)
+  statement {
+    effect = "Allow"
+    actions = [
+      "route53:ListHostedZones",
+      "route53:ListHostedZonesByName",
+      "route53:GetHostedZone",
+      "route53:ListResourceRecordSets"
+    ]
+    resources = ["*"]
   }
 
   # CloudFront cache invalidation
@@ -147,6 +167,21 @@ data "aws_iam_policy_document" "github_actions" {
       "secretsmanager:ListSecrets"
     ]
     resources = ["*"]
+  }
+
+  # Allow CI to update this role's IAM policy (e.g. when adding Route53 / Amplify domain permissions)
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:GetPolicy",
+      "iam:GetPolicyVersion",
+      "iam:ListPolicyVersions",
+      "iam:CreatePolicyVersion",
+      "iam:DeletePolicyVersion"
+    ]
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/sgoodie-github-actions-policy-${var.environment}"
+    ]
   }
 
 }
