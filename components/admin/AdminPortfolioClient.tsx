@@ -127,6 +127,25 @@ export function AdminPortfolioClient() {
     setDraggedId(projectId);
   }
 
+  // Rebuild the full cross-category order array from a reordered active-category
+  // list. Critically, the saved order of every OTHER category is preserved from
+  // the existing work index (not reset to the raw API/scan order), so editing
+  // one category never clobbers the ordering of the others.
+  function buildFullOrder(reordered: string[]): string[] {
+    const reorderedSet = new Set(reordered);
+    const knownIds = new Set(projects.map((p) => p.id));
+    const indexedIds = new Set(workIndex?.projectIds ?? []);
+
+    const preservedOthers = (workIndex?.projectIds ?? []).filter(
+      (id) => !reorderedSet.has(id) && knownIds.has(id)
+    );
+    const newOthers = projects
+      .map((p) => p.id)
+      .filter((id) => !reorderedSet.has(id) && !indexedIds.has(id));
+
+    return [...reordered, ...preservedOthers, ...newOthers];
+  }
+
   function handleDrop(targetId: string) {
     if (!draggedId || draggedId === targetId || !workIndex) return;
 
@@ -139,9 +158,7 @@ export function AdminPortfolioClient() {
     const reordered = [...currentOrder];
     [reordered[fromIndex], reordered[toIndex]] = [reordered[toIndex], reordered[fromIndex]];
 
-    const otherProjects = projects.filter((p) => p.category !== activeCategory);
-    const otherIds = otherProjects.map((p) => p.id);
-    const fullOrder = [...reordered, ...otherIds.filter((id) => !reordered.includes(id))];
+    const fullOrder = buildFullOrder(reordered);
 
     const newIndex = { projectIds: fullOrder };
     setWorkIndex(newIndex);
@@ -162,9 +179,7 @@ export function AdminPortfolioClient() {
     reordered.splice(fromIndex, 1);
     reordered.push(draggedId);
 
-    const otherProjects = projects.filter((p) => p.category !== activeCategory);
-    const otherIds = otherProjects.map((p) => p.id);
-    const fullOrder = [...reordered, ...otherIds.filter((id) => !reordered.includes(id))];
+    const fullOrder = buildFullOrder(reordered);
 
     const newIndex = { projectIds: fullOrder };
     setWorkIndex(newIndex);
